@@ -33,6 +33,7 @@ Registers
 - Program counter
 - General Purpose
 - Arithmetic Comparison
+- Status register (SR) "Used to indicate whether an operation was successful, to set and clear flags, and to store error information."
 
 Divide memory into segments and return chunk when asking for address
 Stack? (push, pop)
@@ -42,5 +43,7 @@ Read larger programs with file reader
 Future (optional) ideas:
 Simulate different access times
 Make assembler (Assembly -> Machine lang)
+Add muxers / demuxers
+External HW interfaces, Interrupts
 
 Upload to Git!!!

@@ -1,26 +1,29 @@
 ﻿using TinyProc.Memory;
+using TinyProc.Processor;
 
 class Program
 {
     public static readonly string TINYPROC_VERSION_STR = "0.0";
     static void Main(string[] args)
     {
-        Console.WriteLine($"TinyProc ver. {TINYPROC_VERSION_STR}");
+        Console.WriteLine($"\nTinyProc ver. {TINYPROC_VERSION_STR}");
 
         Console.WriteLine("Creating memory object");
-        RawMemory mem1 = new(16);
-        mem1.WriteLine = true;
+        RawMemory mem1 = new(32);
+        CPU cpu = new(mem1);
         
-        mem1.AddressBusData = 0x0;
-        mem1.DataBusData = 0xFFFF_FFFF;
+        for (int cycle = 1;; cycle++)
+        {
+            Console.WriteLine("====================================================================\n"
+                + $"Cycle {cycle}");
+            cpu.NextClock();
+            mem1.Dbg_PrintAll();
+            Console.WriteLine();
+            System.Threading.Thread.Sleep(1000);
 
-        mem1.AddressBusData = 0x1;
-        mem1.DataBusData = 0xFFFF_FFFF;
-
-        mem1.AddressBusData = 0x2;
-        mem1.DataBusData = 0x0000_FFFF;
-
-        mem1.ReadLine = true;
-        mem1.Dbg_PrintAll();
+            if (cycle > 0)
+                break;
+        }
+        Console.WriteLine("Leaving cycle loop and exiting...");
     }
 }
