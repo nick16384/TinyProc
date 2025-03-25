@@ -1,0 +1,44 @@
+Typical asm mnemonics:
+[INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
+e.g.
+ADD REG1 0x40 ; Adds 0x40 to register 1
+or
+ADDR REG1 REG2 ; Adds the value of register 2 to register 1
+
+Max. asm instruction length 5
+
+Instruction set:
+- JMP : Jump to address
+- MOV : Copy register to another register
+- ADD : Add value to register
+- ADDR : Adds the second register value to the first one
+- SUB
+- SUBR
+- BNE (Comparison register) (Address) : Branch if not equal
+- BEQ : Branch if equal
+- COMP : Compare register value to hardcoded value
+- CMPR : Compare register value to another
+- Memory?
+
+Pulsing clock (divided further into CPU cycles -> fetch, exec)
+Clock modes:
+1. Manual (Clock pulses once when user presses enter in console)
+2. Auto (Clock pulses in predefined frequency)
+
+Little / big endian? (Currently little endian)
+
+Registers
+- Program counter
+- General Purpose
+- Arithmetic Comparison
+
+Divide memory into segments and return chunk when asking for address
+Stack? (push, pop)
+
+Read larger programs with file reader
+
+Future (optional) ideas:
+Simulate different access times
+Make assembler (Assembly -> Machine lang)
+
+Upload to Git!!!
