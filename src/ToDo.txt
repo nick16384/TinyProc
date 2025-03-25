@@ -1,3 +1,5 @@
+Arch name: x25_32
+
 Typical asm mnemonics:
 [INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
 e.g.
@@ -25,7 +27,7 @@ Clock modes:
 1. Manual (Clock pulses once when user presses enter in console)
 2. Auto (Clock pulses in predefined frequency)
 
-Little / big endian? (Currently little endian)
+Little / big endian? (Currently big endian)
 
 Registers
 - Program counter

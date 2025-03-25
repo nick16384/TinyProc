@@ -1,36 +1,16 @@
-namespace TinyProc.Memory;
+namespace TinyProc.Processor;
 
-public class Register(RegisterType type)
+public class Register(bool isSpecial, RegisterRWAccess access)
 {
-    public static readonly ulong SYSTEM_WORD_SIZE = 64u;
-    public ulong Value { get; set; } = 0x0;
-    public readonly RegisterType Type = type;
+    public static readonly uint SYSTEM_WORD_SIZE = 32u;
+    public uint Value { get; set; } = 0x0;
+    public readonly RegisterRWAccess Access = access;
+    public readonly bool IsSpecial = isSpecial;
 }
 
-public enum RegisterType
+public enum RegisterRWAccess
 {
-    ProgramCounter,
-    GeneralPurpose,
-    ArithmeticComparison
-}
-
-public class SystemRegisterCollection
-{
-    // Program counter:
-    // Keeps address for next instruction
-    public readonly Register PC;
-    // General purpose registers
-    public readonly Register[] GPRs;
-    // Arithmetic comparison register:
-    // Keeps result of last comparison instruction
-    public readonly Register ACMP;
-
-    public SystemRegisterCollection(ulong gprCount)
-    {
-        PC = new Register(RegisterType.ProgramCounter);
-        GPRs = new Register[gprCount];
-        for (ulong i = 0; i < gprCount; i++)
-            GPRs[i] = new Register(RegisterType.GeneralPurpose);
-        ACMP = new Register(RegisterType.ArithmeticComparison);
-    }
+    ReadOnly,
+    ReadWrite,
+    WriteOnly
 }

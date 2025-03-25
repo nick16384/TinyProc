@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/theophil/git/TinyProc/TinyProc.csproj",
+      "projectUniqueName": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
       "projectName": "TinyProc",
-      "projectPath": "/home/theophil/git/TinyProc/TinyProc.csproj",
+      "projectPath": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
       "packagesPath": "/home/theophil/.nuget/packages/",
-      "outputPath": "/home/theophil/git/TinyProc/obj/",
+      "outputPath": "/home/theophil/git/TinyProc/src/TinyProc/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/theophil/.nuget/NuGet/NuGet.Config"
