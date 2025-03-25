@@ -9,6 +9,31 @@ public class RawMemory
     // A 2D bool array simulating RAM structure
     private readonly bool[,] _data;
 
+    // Logic that allows only either write or read line to be set:
+    private bool _readLine;
+    public bool ReadLine
+    {
+        get => _readLine;
+        set { _readLine = value; _writeLine = !value; }
+    }
+    private bool _writeLine;
+    public bool WriteLine
+    {
+        get => _writeLine;
+        set { _writeLine = value; _readLine = !value; }
+    }
+
+    public uint AddressBusData { get; set; } = 0x0u;
+    public uint DataBusData
+    {
+        get => Read(AddressBusData);
+        set
+        {
+            if (WriteLine)
+                Write(AddressBusData, value);
+        }
+    }
+
     public RawMemory(uint words)
     {
         if (words <= 1)
@@ -23,43 +48,51 @@ public class RawMemory
 
     private static readonly uint MASK_LEFT_BIT_SINGLE = 0x8000_0000u;
     // Reads block of 64 bits
-    public uint Read(uint addr)
+    private uint Read(uint addr)
     {
         CheckValidAddress(addr);
         uint readWord = 0x0;
-        for (uint x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
+        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
         {
             bool dataBit = _data[x, addr];
             uint dataBitAsuint = dataBit ? MASK_LEFT_BIT_SINGLE : 0x0u;
-            readWord |= dataBitAsuint >> (int)x;
+            readWord |= dataBitAsuint >> x;
         }
         return readWord;
     }
-    public void Write(uint addr, uint value)
+    private void Write(uint addr, uint value)
     {
         CheckValidAddress(addr);
         Console.WriteLine($"Write 0x{value:X} at 0x{addr:X}");
-        for (uint x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
+        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
         {
-            uint valueMasked = value & (MASK_LEFT_BIT_SINGLE >> (int)x);
+            uint valueMasked = value & (MASK_LEFT_BIT_SINGLE >> x);
             valueMasked >>= (int)(Register.SYSTEM_WORD_SIZE - 1 - x);
             bool isBitSet = valueMasked > 0;
             _data[x, addr] = isBitSet;
         }
     }
 
-    public void PrintAll()
+    public void Dbg_PrintAll()
     {
         Console.WriteLine("Printing full memory contents");
-        // Always switch between printing left and right (2 memory addresses per line)
-        bool printLeft = true;
+        // Print 4 addresses per line
+        // TODO: Add ASCII decoded variant
+        int printColumn = 1;
         for (uint y = 0; y < _words; y++)
         {
-            if (printLeft)
-                Console.Write($"{y:X8}: {Read(y):B32} \t ");
+            if (printColumn == 1)
+                Console.Write($"{y:X8}:");
+            if (printColumn < 4)
+            {
+                Console.Write($" {Read(y):X8}");
+                printColumn++;
+            }
             else
-                Console.WriteLine($"{y:X8}: {Read(y):B32}");
-            printLeft = !printLeft;
+            {
+                Console.WriteLine($" {Read(y):X8}");
+                printColumn = 1;
+            }
         }
     }
 
