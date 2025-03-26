@@ -45,5 +45,8 @@ Simulate different access times
 Make assembler (Assembly -> Machine lang)
 Add muxers / demuxers
 External HW interfaces, Interrupts
+Caches -> MMU
 
 Upload to Git!!!
+
+Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.

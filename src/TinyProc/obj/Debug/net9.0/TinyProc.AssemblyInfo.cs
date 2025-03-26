@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TinyProc")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9183fedc0dcfa371e0912b4c75177009cd8d818d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+33d01c935ef97de0f4784d624ac9f5aa7259820c")]
 [assembly: System.Reflection.AssemblyProductAttribute("TinyProc")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TinyProc")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

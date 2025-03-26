@@ -1,46 +1,55 @@
-using System.ComponentModel.DataAnnotations;
 using TinyProc.Memory;
 
 namespace TinyProc.Processor;
 
-public class CPU
+public partial class CPU
 {
-    protected Register MAR1 { get; set; } = new(true, RegisterRWAccess.ReadWrite);
-    protected Register MAR2 { get; set; } = new(true, RegisterRWAccess.ReadWrite);
-    protected Register MDR1 { get; private set; } = new(true, RegisterRWAccess.ReadOnly);
-    protected Register MDR2 { get; private set; } = new(true, RegisterRWAccess.ReadOnly);
+    readonly Register[] GPRs;
 
-    Register[] GPRs;
-
-    // TODO: Maybe CU as inner class of CPU?
-    ControlUnit CU;
-    ALU ALU;
-
-    RawMemory ram;
+    private readonly ControlUnit _CU;
+    private readonly ALU _ALU;
+    private readonly MMU _MMU;
 
     public CPU(RawMemory memory)
     {
-        this.ram = memory;
+        _ALU = new ALU();
+        _MMU = new MMU(memory);
+        _CU = new ControlUnit(this);
+
+        GPRs = new Register[8];
+        for (int i = 0; i < GPRs.Length; i++)
+        {
+            GPRs[i] = new Register(false, RegisterRWAccess.ReadWrite);
+        }
     }
 
-    public void NextClock()
+    private bool _clockLevel;
+    public bool ClockLevel
     {
-        Console.WriteLine("Clock pulse received; Executing next cycle.");
-        Subcycle_Fetch();
-        Subcycle_Decode();
-        Subcycle_Execute();
+        get => _clockLevel;
+        // If rising edge, initiate next clock cycle
+        set
+        {
+            bool clockLevelOld = _clockLevel;
+            _clockLevel = value;
+            if (clockLevelOld == false && value == true)
+                NextClock();
+        }
+    }
+
+    private void NextClock()
+    {
+        Console.WriteLine("Clock pulse received; Executing next cycle...");
+
+        Console.WriteLine("Fetching next instruction from memory");
+        
+        _CU._ControlBus.ControlState = ControlUnit.ControlState.Fetch1;
+        _CU._ControlBus.ControlState = ControlUnit.ControlState.Fetch2;
+        _CU._ControlBus.ControlState = ControlUnit.ControlState.Decode;
+        _CU._ControlBus.ControlState = ControlUnit.ControlState.Execute;
+
+        Console.WriteLine();
+
         Console.WriteLine("Cycle finished. Waiting for next clock pulse.");
-    }
-    private void Subcycle_Fetch()
-    {
-        //
-    }
-    private void Subcycle_Decode()
-    {
-        // something
-    }
-    private void Subcycle_Execute()
-    {
-        // something
     }
 }

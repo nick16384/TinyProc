@@ -23,14 +23,14 @@ public class RawMemory
         set { _writeLine = value; _readLine = !value; }
     }
 
-    public uint AddressBusData { get; set; } = 0x0u;
-    public uint DataBusData
+    public uint AddressBus { get; set; } = 0x0u;
+    public uint DataBus
     {
-        get => Read(AddressBusData);
+        get => Read(AddressBus);
         set
         {
             if (WriteLine)
-                Write(AddressBusData, value);
+                Write(AddressBus, value);
         }
     }
 
@@ -73,7 +73,7 @@ public class RawMemory
         }
     }
 
-    public void Dbg_PrintAll()
+    public void Debug_PrintAll()
     {
         Console.WriteLine("Printing full memory contents");
         // Print 4 addresses per line
@@ -99,7 +99,7 @@ public class RawMemory
     // Checks if address is below TotalSizeBits. If not, an exception is thrown.
     private void CheckValidAddress(uint addr)
     {
-        if (addr > _words)
-            throw new ArgumentException($"Error reading memory: Address 0x{addr:X} above 0x{_words:X}.");
+        if (addr > _words - 1)
+            throw new ArgumentException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
     }
 }
