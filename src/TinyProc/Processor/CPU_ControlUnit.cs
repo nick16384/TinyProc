@@ -36,12 +36,13 @@ public partial class CPU
             Decode,
             Execute
         }
-        private readonly ControlState _currentControlState;
+        private ControlState _currentControlState;
         private ControlState CurrentControlState
         {
             get => _currentControlState;
             set
             {
+                _currentControlState = value;
                 switch (value)
                 {
                     case ControlState.Fetch1:  InstructionFetch1();  break;

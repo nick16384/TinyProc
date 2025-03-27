@@ -1,25 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj": {}
+    "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj": {
+    "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj",
+        "projectUniqueName": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
         "projectName": "TinyProc",
-        "projectPath": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj",
-        "packagesPath": "C:\\Users\\Theophil\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\obj\\",
+        "projectPath": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
+        "packagesPath": "/home/theophil/.nuget/packages/",
+        "outputPath": "/home/theophil/git/TinyProc/src/TinyProc/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Theophil\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/theophil/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -38,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -59,7 +60,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.104/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

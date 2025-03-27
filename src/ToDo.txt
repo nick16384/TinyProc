@@ -26,8 +26,8 @@ Instruction bit structure:
 00 - 05 bit: opcode
 06 - 10 bit: conditional
 11      bit: reserved for instruction word extension bit (IEXT)
-12 - 31: reserved for later specification
-32 - 63: operand 2
+12 - 31 bit: reserved for later specification
+32 - 63 bit: operand 2
 
 Virtual instructions:
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
