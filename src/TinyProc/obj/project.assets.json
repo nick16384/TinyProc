@@ -8,25 +8,24 @@
     "net9.0": []
   },
   "packageFolders": {
-    "/home/theophil/.nuget/packages/": {}
+    "C:\\Users\\Theophil\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
+      "projectUniqueName": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj",
       "projectName": "TinyProc",
-      "projectPath": "/home/theophil/git/TinyProc/src/TinyProc/TinyProc.csproj",
-      "packagesPath": "/home/theophil/.nuget/packages/",
-      "outputPath": "/home/theophil/git/TinyProc/src/TinyProc/obj/",
+      "projectPath": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\TinyProc.csproj",
+      "packagesPath": "C:\\Users\\Theophil\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Theophil\\git\\TinyProc\\src\\TinyProc\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/theophil/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Theophil\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -45,7 +44,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net9.0": {
@@ -66,7 +65,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.104/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

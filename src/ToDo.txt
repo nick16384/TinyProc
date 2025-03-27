@@ -22,6 +22,21 @@ Instruction set:
 - CMPR : Compare register value to another
 - Memory?
 
+Instruction bit structure:
+00 - 05 bit: opcode
+06 - 10 bit: conditional
+11      bit: reserved for instruction word extension bit (IEXT)
+12 - 31: reserved for later specification
+32 - 63: operand 2
+
+Virtual instructions:
+Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
+- Maybe some time later, something stands here :(
+
+Flag registers:
+- Carry flag
+- 
+
 Pulsing clock (divided further into CPU cycles -> fetch, exec)
 Clock modes:
 1. Manual (Clock pulses once when user presses enter in console)
@@ -45,8 +60,11 @@ Simulate different access times
 Make assembler (Assembly -> Machine lang)
 Add muxers / demuxers
 External HW interfaces, Interrupts
-Caches -> MMU
-
-Upload to Git!!!
+Caches, virtual memory -> MMU
 
 Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
+
+Add gitignore to bin and obj
+
+Write full microarch spec into separate ordered document
+-> Either github markup or pdf document
