@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace TinyProc.Processor;
 
 public partial class CPU
@@ -5,9 +7,9 @@ public partial class CPU
     // The control unit directs control of individual CPU elements depending on the instruction bits.
     // It essentially decodes a received instruction and controls the components (e.g. ALU and registers)
     // its connected to.
-    private partial class ControlUnit
+    public partial class ControlUnit
     {
-        public static readonly uint PC_PROGRAM_START = 0x39u;
+        public static readonly uint PC_PROGRAM_START = 0x0u;
         // Program counter
         private readonly Register PC = new(true, RegisterRWAccess.ReadOnly);
         // Instruction register 1
@@ -51,35 +53,6 @@ public partial class CPU
                     case ControlState.Execute: InstructionExecute(); break;
                 }
             }
-        }
-
-        // Load first instruction word
-        private void InstructionFetch1()
-        {
-            _ControlBus.MAR = PC.Value;
-            IRA.Value = _ControlBus.MDR;
-        }
-        // Load second instruction word
-        private void InstructionFetch2()
-        {
-            _ControlBus.MAR = PC.Value + 0x1u;
-            IRB.Value = _ControlBus.MDR;
-        }
-        private void InstructionDecode()
-        {
-            PC.Value += 0x2u;
-            if (IRA.Value == 0x0u)
-                Console.WriteLine("[InstrDec] Temporary NOP");
-            // something
-            // put stuff in acc
-            // etc.
-            // essentially prepare for exec
-        }
-        private void InstructionExecute()
-        {
-            if (IRA.Value == 0x0u)
-                Console.WriteLine("[InstrExec] Temporary NOP");
-            // big switch case / if else
         }
     }
 }

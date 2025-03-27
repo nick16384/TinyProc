@@ -1,5 +1,6 @@
 namespace TinyProc.Memory;
 
+using System.Text;
 using TinyProc.Processor;
 
 public class RawMemory
@@ -10,17 +11,17 @@ public class RawMemory
     private readonly bool[,] _data;
 
     // Logic that allows only either write or read line to be set:
-    private bool _readLine;
-    public bool ReadLine
+    private bool _readEnable;
+    public bool ReadEnable
     {
-        get => _readLine;
-        set { _readLine = value; _writeLine = !value; }
+        get => _readEnable;
+        set { _readEnable = value; _writeEnable = !value; }
     }
-    private bool _writeLine;
-    public bool WriteLine
+    private bool _writeEnable;
+    public bool WriteEnable
     {
-        get => _writeLine;
-        set { _writeLine = value; _readLine = !value; }
+        get => _writeEnable;
+        set { _writeEnable = value; _readEnable = !value; }
     }
 
     public uint AddressBus { get; set; } = 0x0u;
@@ -29,7 +30,7 @@ public class RawMemory
         get => Read(AddressBus);
         set
         {
-            if (WriteLine)
+            if (WriteEnable)
                 Write(AddressBus, value);
         }
     }
@@ -62,6 +63,8 @@ public class RawMemory
     }
     private void Write(uint addr, uint value)
     {
+        if (addr == 0x00000039u)
+            Console.WriteLine("Miku says thank you!");
         CheckValidAddress(addr);
         Console.WriteLine($"Write 0x{value:X} at 0x{addr:X}");
         for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
@@ -73,25 +76,51 @@ public class RawMemory
         }
     }
 
-    public void Debug_PrintAll()
+    // TODO: Refactor this method to look more pleasing.
+    public void Debug_DumpAll()
     {
-        Console.WriteLine("Printing full memory contents");
+        Console.WriteLine("Dumping full memory contents");
         // Print 4 addresses per line
-        // TODO: Add ASCII decoded variant
+        bool printingAscii = false;
         int printColumn = 1;
         for (uint y = 0; y < _words; y++)
         {
-            if (printColumn == 1)
+            if (printColumn == 1 && !printingAscii)
                 Console.Write($"{y:X8}:");
             if (printColumn < 4)
             {
-                Console.Write($" {Read(y):X8}");
+                if (!printingAscii)
+                    Console.Write($" {Read(y):X8}");
+                else
+                {
+                    string str = Encoding.UTF8.GetString([(byte)Read(y)]);
+                    if (string.IsNullOrWhiteSpace(str) || str == ((char)0).ToString())
+                        Console.Write(".");
+                    else
+                        Console.Write(str);
+                }
                 printColumn++;
             }
             else
             {
-                Console.WriteLine($" {Read(y):X8}");
+                if (!printingAscii)
+                    Console.Write($" {Read(y):X8} \t ");
+                else
+                {
+                    string str = Encoding.UTF8.GetString([(byte)Read(y)]);
+                    if (string.IsNullOrWhiteSpace(str) || str == ((char)0).ToString())
+                        Console.WriteLine(".");
+                    else
+                        Console.WriteLine(str);
+                }
                 printColumn = 1;
+                if (!printingAscii)
+                {
+                    printingAscii = true;
+                    y -= 4;
+                }
+                else
+                    printingAscii = false;
             }
         }
     }

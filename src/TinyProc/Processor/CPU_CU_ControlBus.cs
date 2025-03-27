@@ -2,7 +2,7 @@ namespace TinyProc.Processor;
 
 public partial class CPU
 {
-    private partial class ControlUnit
+    public partial class ControlUnit
     {
         // Controls data flow into and out of the Control Unit.
         public class ControlBus(ControlUnit _CU, MMU _MMU)
@@ -32,6 +32,7 @@ public partial class CPU
             }
 
             // Memory management unit region
+            // TODO: Change code so that these registers are only accessible via the control bus.
             public uint MAR
             {
                 get => _MMU.MAR.Value;

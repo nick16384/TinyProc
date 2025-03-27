@@ -8,7 +8,7 @@ public partial class CPU
     // Memory management unit
     // Much simpler than in modern architectures (like x86_64), but essentially controls
     // memory flow in / out of the CPU
-    private class MMU
+    public class MMU
     {
         public class MemoryDataRegister(MMU mmu) : Register(true, RegisterRWAccess.ReadOnly)
         {
@@ -17,13 +17,13 @@ public partial class CPU
             {
                 get
                 {
-                    _mmu._RAM.ReadLine = true;
+                    _mmu._RAM.ReadEnable = true;
                     _mmu._RAM.AddressBus = _mmu.MAR.Value;
                     return _mmu._RAM.DataBus;
                 }
                 set
                 {
-                    _mmu._RAM.WriteLine = true;
+                    _mmu._RAM.WriteEnable = true;
                     _mmu._RAM.DataBus = value;
                 }
             }

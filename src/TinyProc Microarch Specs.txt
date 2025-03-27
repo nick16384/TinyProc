@@ -1,0 +1,99 @@
+Arch name: x25_32 (Year 2025, 32 bit word size)
+
+Endianness: Big endian
+Max. instruction mnemonic letters: 5
+Single universal addressing mode: absolute
+
+Typical asm mnemonics:
+[INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
+e.g.
+ADD REG1 0x40 ; Adds 0x40 to register 1
+or
+ADDR REG1 REG2 ; Adds the value of register 2 to register 1
+
+Instruction set:
+[Op Code] - [Mnemonic]? [Opt: Arg1] [Opt: Arg2] : [Description] (Supports conditions)
+[Op Code] - [Mnemonic] [Opt: Arg1] [Opt: Arg2] : [Description] (Does not support conditional execution)
+00 - NOP : Do nothing
+
+Branching:
+01 - JMP [Target address] : Jump to address
+02 - B? [Target address] : Branch on condition
+
+Inter-register non-arithmetic operations:
+03 - MOV [Destination register] [Source register] : Copy register to another register
+04 - TST : Test command; Sets all flags
+
+Flags:
+07 - CLZ : Clear zero flag
+08 - CLOF : Clear overflow flag
+09 - CLNG : Clear negative flag
+
+Inter-register arithmetic operations:
+10 - ADD? [Destination register] [Immediate] : Add value to register
+11 - ADDR? [Destination register] [Source register]: Adds the second register value to the first one
+12 - SUB? [Destination register] [Immediate] : Subtract value from register
+13 - SUBR? [Destination register] [Source register] : Subtract the second register value from the first one
+14 - MUL?
+15 - MULR?
+16 - AND?
+17 - ANDR?
+18 - OR?
+19 - ORR?
+1A - XOR?
+1B - XORR?
+1C - LS?
+1D - LSR?
+1E - RS?
+1F - RSR?
+20 - SRS? : Signed right shift (keeps leftmost bit always the same)
+21 - SRSR?
+22 - ROL?
+23 - ROLR?
+24 - ROR?
+25 - RORR?
+
+Add documentation for which flags get set by instructions
+
+Memory:
+30 - LOAD [Destination register] [Memory address] : Load memory at address to register
+31 - LOADR [Destination register] [Memory address from register]
+32 - STORE [Source register] [Memory address] : Store register at memory address
+33 - STORR [Source register] [Memory address from register]
+
+3F - <Highest possible value for opcode>
+
+Conditional codes:
+[Conditional code] - [Description] - [Instruction suffix]
+0 - Always execute - <None>
+1 - When comparison register set - EQ
+2 - When comparison register not set - NE
+3 - When overflow flag set - OF
+4 - When overflow flag not set - NO
+5 - When zero flag set - ZR
+6 - When zero flag not set - NZ
+7 - When negative flag set - NG
+8 - When negative flag not set - NN
+F - <Highest possible value for conditional>
+
+Instruction bit structure:
+00 - 05 bit: opcode
+06 - 10 bit: conditional
+11 - 30 bit: reserved for later specification
+31      bit: reserved for instruction word extension bit (IEXT)
+32 - 63 bit: operand 2 (immediate / memory address)
+
+Virtual instructions:
+Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
+- NOT (XOR X 0xffffffff)
+- COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
+
+Flags:
+- Overflow
+- Zero
+- Negative
+
+Registers
+- Program counter
+- General Purpose (x8)
+- Status register (SR): Per bit contains info like e.g. flags

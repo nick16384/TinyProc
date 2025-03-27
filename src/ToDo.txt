@@ -1,59 +1,15 @@
-Arch name: x25_32
-
-Typical asm mnemonics:
-[INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
-e.g.
-ADD REG1 0x40 ; Adds 0x40 to register 1
-or
-ADDR REG1 REG2 ; Adds the value of register 2 to register 1
-
-Max. asm instruction length 5
-
-Instruction set:
-- JMP : Jump to address
-- MOV : Copy register to another register
-- ADD : Add value to register
-- ADDR : Adds the second register value to the first one
-- SUB
-- SUBR
-- BNE (Comparison register) (Address) : Branch if not equal
-- BEQ : Branch if equal
-- COMP : Compare register value to hardcoded value
-- CMPR : Compare register value to another
-- Memory?
-
-Instruction bit structure:
-00 - 05 bit: opcode
-06 - 10 bit: conditional
-11      bit: reserved for instruction word extension bit (IEXT)
-12 - 31 bit: reserved for later specification
-32 - 63 bit: operand 2
-
-Virtual instructions:
-Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
-- Maybe some time later, something stands here :(
-
-Flag registers:
-- Carry flag
-- 
-
 Pulsing clock (divided further into CPU cycles -> fetch, exec)
 Clock modes:
 1. Manual (Clock pulses once when user presses enter in console)
 2. Auto (Clock pulses in predefined frequency)
 
-Little / big endian? (Currently big endian)
-
-Registers
-- Program counter
-- General Purpose
-- Arithmetic Comparison
-- Status register (SR) "Used to indicate whether an operation was successful, to set and clear flags, and to store error information."
-
 Divide memory into segments and return chunk when asking for address
 Stack? (push, pop)
 
 Read larger programs with file reader
+
+Implement ROM and special use memory regions
+(Mapped to one continuous address space by MMU)
 
 Future (optional) ideas:
 Simulate different access times
@@ -61,10 +17,13 @@ Make assembler (Assembly -> Machine lang)
 Add muxers / demuxers
 External HW interfaces, Interrupts
 Caches, virtual memory -> MMU
+Change CU code to better resemble binary logic
 
 Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
 
-Add gitignore to bin and obj
-
 Write full microarch spec into separate ordered document
 -> Either github markup or pdf document
+
+Find out, how status register works
+
+Refactor RawMemory.Debug_DumpAll() to look more pleasing.
