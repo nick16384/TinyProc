@@ -63,11 +63,16 @@ Memory:
 
 3F - <Highest possible value for opcode>
 
+Virtual instructions:
+Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
+- NOT (XOR X 0xffffffff)
+- COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
+
 Conditional codes:
 [Conditional code] - [Description] - [Instruction suffix]
 0 - Always execute - <None>
-1 - When comparison register set - EQ
-2 - When comparison register not set - NE
+1 - When comparison equal flag set - EQ
+2 - When comparison equal flag not set - NE
 3 - When overflow flag set - OF
 4 - When overflow flag not set - NO
 5 - When zero flag set - ZR
@@ -77,23 +82,43 @@ Conditional codes:
 F - <Highest possible value for conditional>
 
 Instruction bit structure:
-00 - 05 bit: opcode
-06 - 10 bit: conditional
-11 - 30 bit: reserved for later specification
-31      bit: reserved for instruction word extension bit (IEXT)
-32 - 63 bit: operand 2 (immediate / memory address)
+R-Type (Register type)
+[ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 5 Reserved* | 1 Word Extension** ] [ 32 Zero* ]
+RD: Destination register
+RS: Source register
 
-Virtual instructions:
-Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
-- NOT (XOR X 0xffffffff)
-- COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
+I-Type (Immediate type):
+[ 6 OpCode | 4 Conditional | 5 RD | 16 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+
+J-Type (Jump type):
+[ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]
+Address: Absolute memory address to jump to
+
+* Reserved & Zero region: Zeroed out / Filled with 0x0 bytes
+** Word Extension: Extend to 64 bit instruction (To be implemented later, currently always in use -> Always set to 1)
 
 Flags:
 - Overflow
 - Zero
 - Negative
+- Comparison
+- Carry
 
-Registers
-- Program counter
-- General Purpose (x8)
-- Status register (SR): Per bit contains info like e.g. flags
+Globally addressable Registers
+Format: [Register name] [Register code in instruction]
+- Program counter 0x00
+- General purpose 1 0x01
+- General purpose 2 0x02
+- General purpose 3 0x03
+- General purpose 4 0x04
+- General purpose 5 0x05
+- General purpose 6 0x06
+- General purpose 7 0x07
+- General purpose 8 0x08
+- Status register (SR) 0x10
+- <max. possible value> 0x1F
+
+Internal registers (Not addressable):
+- Bus 1, 2, 3 selectors
+- IRA / IRB
+- MAR / MDR

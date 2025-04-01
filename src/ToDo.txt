@@ -29,3 +29,6 @@ Find out, how status register works
 Refactor RawMemory.Debug_DumpAll() to look more pleasing.
 
 Add ALU Accumulator register
+
+Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
+-> Currently one continuous operation: Not realistic

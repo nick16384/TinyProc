@@ -8,7 +8,7 @@ public partial class CPU
     // Memory management unit
     // Much simpler than in modern architectures (like x86_64), but essentially controls
     // memory flow in / out of the CPU
-    private class MMU : IBusAttachable
+    private class MMU
     {
         public class MemoryDataRegister(MMU mmu) : Register(true, RegisterRWAccess.ReadOnly)
         {
@@ -43,30 +43,5 @@ public partial class CPU
         // When reading, contains the value at address set in MAR.
         // When writing, contains the value to be written to address in MAR.
         public readonly Register MDR;
-
-        // CPU internal bus relevant
-        public const uint IBUS_SUBCOMP_MMU_MAR = 0x1000;
-        public const uint IBUS_SUBCOMP_MMU_MDR = 0x1001;
-        private bool[] _CPUIntBusDataArray = [];
-
-        public void SetBusDataArray(bool[] busDataArray)
-        {
-            _CPUIntBusDataArray = busDataArray;
-        }
-        public void HandleBusUpdate()
-        {
-            uint subcompAddress = Bus.BoolArrayToUInt(_CPUIntBusDataArray, 0) >> 16;
-            bool isWriteRequest = _CPUIntBusDataArray[8];
-            uint data = Bus.BoolArrayToUInt(_CPUIntBusDataArray, 15);
-
-            if (subcompAddress == IBUS_SUBCOMP_MMU_MAR && !isWriteRequest)
-                _CPUIntBusDataArray = Bus.FillBoolArrayWithUInt(_CPUIntBusDataArray, MAR.Value, 15);
-            else if (subcompAddress == IBUS_SUBCOMP_MMU_MAR && isWriteRequest)
-                MAR.Value = data;
-            if (subcompAddress == IBUS_SUBCOMP_MMU_MDR && !isWriteRequest)
-                _CPUIntBusDataArray = Bus.FillBoolArrayWithUInt(_CPUIntBusDataArray, MDR.Value, 15);
-            else if (subcompAddress == IBUS_SUBCOMP_MMU_MDR && isWriteRequest)
-                MDR.Value = data;
-        }
     }
 }

@@ -1,19 +1,41 @@
-CPU internal bus:
-Width: 48 bits
-Structure:
-8 bits: Addressed subcomponent
-9th bit: Read (0); Write (1)
-10th - 16th bit: Reserved for later use
-32 bits: Data
+CPU internal busses:
+Bus count: 3 (B1, B2, B3)
 
-Subcomponents:
-0x00 - CU PC
-0x01 - CU IRA
-0x02 - CU IRB
-0x10 - MMU MAR
-0x11 - MMU MDR
-0x20 - ALU X
-0x21 - ALU Y
-0x22 - ALU Config (Rightmost bits)
-0x23 - ALU Result (Acc)
-0xFF - <highest possible value>
+B1 UBID: 0x00000001
+Connected to B1:
+- A in port of the ALU
+- PC out
+- MAR out
+- IRA out
+- IRB out
+- GP1-8 out
+
+B2 UBID: 0x00000002
+Connected to B2:
+- B in port of the ALU
+- MDR out
+- Constant +1 signal
+- Constant -1 signal
+- GP1-8 out
+
+B3 UBID: 0x00000003
+Connected to B3:
+- R out port of the ALU
+- GP1-8 in
+- PC in
+- MAR in
+- IRA in
+- IRB in
+- MDR in
+
+Register codes additional to the ones specified in the microarch specs:
+Note: Special registers start with 0x7 so they are within a different space than
+the other registers already specified in the microarch specifications.
+There should not be any overlap so the codes are usable interchangeably.
+Format: [Register] [32 bit Code]
+- MAR 0x70000000
+- MDR 0x70000001
+- IRA 0x70000002
+- IRB 0x70000003
+- CONST_PLUSONE 0x70000004
+- CONST_MINUSONE 0x70000005

@@ -15,13 +15,13 @@ public class RawMemory
     public bool ReadEnable
     {
         get => _readEnable;
-        set { _readEnable = value; _writeEnable = !value; }
+        set { _readEnable = value; _writeEnable = !value && _writeEnable; }
     }
     private bool _writeEnable;
     public bool WriteEnable
     {
         get => _writeEnable;
-        set { _writeEnable = value; _readEnable = !value; }
+        set { _writeEnable = value; _readEnable = !value && _readEnable; }
     }
 
     public uint AddressBus { get; set; } = 0x0u;

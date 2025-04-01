@@ -4,7 +4,7 @@ public interface IBusAttachable
 {
     public void SetBusDataArray(bool[] busDataArray, uint ubid);
     // No need to pass new data, since a reference to the data should be kept after SetBusArrayData() has been called.
-    public void HandleBusUpdate();
+    public void HandleBusUpdate(uint ubid);
 }
 
 public interface ISelectableBusAttachable : IBusAttachable
@@ -16,6 +16,7 @@ public interface ISelectableBusAttachable : IBusAttachable
 // Only the bus master should have a reference to the bus object.
 // The bus master however, also is part of the attached components array.
 // All other bus members update the data array via a reference (similar to a callback)
+// An externally managed bus with zero bus masters is also possible.
 public class Bus
 {
     private readonly IBusAttachable[] _registeredComponents;
@@ -29,16 +30,16 @@ public class Bus
                 throw new ArgumentException($"Bus write data has different size {value.Length} than bus width {_data.Length}.");
             _data = value;
             foreach (IBusAttachable component in _registeredComponents)
-                component.HandleBusUpdate();
+                component.HandleBusUpdate(_UBID);
         }
     }
     // Unique bus identifier
     // Useful, when attaching multiple busses to a single class, to identify which bus is "speaking"
     private readonly uint _UBID;
 
-    public Bus(int busWidth, IBusAttachable[] registeredComponents)
+    public Bus(int busWidth, uint UBID, IBusAttachable[] registeredComponents)
     {
-
+        _UBID = UBID;
         _data = new bool[busWidth];
         _registeredComponents = registeredComponents;
         foreach (IBusAttachable component in _registeredComponents)
@@ -109,19 +110,21 @@ public class SelectiveBus
             _data = value;
             foreach (ISelectableBusAttachable component in _registeredComponents)
             {
-                component.HandleBusUpdate();
+                component.HandleBusUpdate(_UBID);
                 if (component.Equals(SelectedComponent))
-                    component.HandleBusUpdateSelected();
+                    component.HandleBusUpdateSelected(_UBID);
             }
         }
     }
+    private readonly uint _UBID;
 
-    public SelectiveBus(int busWidth, ISelectableBusAttachable[] registeredComponents)
+    public SelectiveBus(int busWidth, uint UBID, ISelectableBusAttachable[] registeredComponents)
     {
+        _UBID = UBID;
         _data = new bool[busWidth];
         _registeredComponents = registeredComponents;
         foreach (ISelectableBusAttachable component in _registeredComponents)
-            component.SetBusDataArray(Data);
+            component.SetBusDataArray(Data, _UBID);
     }
 }
 
