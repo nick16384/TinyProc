@@ -7,7 +7,7 @@ public partial class CPU
     // The control unit directs control of individual CPU elements depending on the instruction bits.
     // It essentially decodes a received instruction and controls the components (e.g. ALU and registers)
     // its connected to.
-    public partial class ControlUnit
+    private partial class ControlUnit : IBusAttachable
     {
         public static readonly uint PC_PROGRAM_START = 0x0u;
         // Program counter
@@ -22,12 +22,12 @@ public partial class CPU
         // The parent CPU object (needed to reference e.g. registers)
         private readonly CPU _cpu;
 
-        public readonly ControlBus _ControlBus;
-
-        public ControlUnit(CPU cpu)
+        private ControlUnit(CPU cpu, MMU mmu, ALU alu)
         {
             _cpu = cpu;
-            _ControlBus = new(this, cpu._MMU);
+            _IntBus1 = new Bus(32, [this, mmu.MAR, alu]);
+            _IntBus2 = new Bus(32, [this, alu]);
+            _IntBus3 = new Bus(32, [this, alu]);
             PC.Value = PC_PROGRAM_START;
         }
 

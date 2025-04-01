@@ -44,7 +44,7 @@ enum ArithmeticOperation
 // x,y -> [op] -> out
 public partial class CPU
 {
-    private class ALU
+    private class ALU : IBusAttachable
     {
         public uint X { get; set; }
         public uint Y { get; set; }
@@ -76,6 +76,56 @@ public partial class CPU
                 @out = ~@out;
         
             return @out;
+        }
+
+        // CPU internal bus related
+        public const uint IBUS_SUBCOMP_ALU_X = 0x20;
+        public const uint IBUS_SUBCOMP_ALU_Y = 0x21;
+        public const uint IBUS_SUBCOMP_ALU_CONFIG = 0x22;
+        public const uint IBUS_SUBCOMP_ALU_RESULT = 0x23;
+        private bool[] _CPUIntBusDataArray = [];
+        public void SetBusDataArray(bool[] busDataArray)
+        {
+            _CPUIntBusDataArray = busDataArray;
+        }
+        public void HandleBusUpdate()
+        {
+            uint subcompAddress = Bus.BoolArrayToUInt(_CPUIntBusDataArray, 0) >> 16;
+            bool isWriteRequest = _CPUIntBusDataArray[8];
+            uint data = Bus.BoolArrayToUInt(_CPUIntBusDataArray, 15);
+
+            if (subcompAddress == IBUS_SUBCOMP_ALU_X && !isWriteRequest)
+                _CPUIntBusDataArray = Bus.FillBoolArrayWithUInt(_CPUIntBusDataArray, X, 15);
+            else if (subcompAddress == IBUS_SUBCOMP_ALU_X && isWriteRequest)
+                X = data;
+            if (subcompAddress == IBUS_SUBCOMP_ALU_Y && !isWriteRequest)
+                _CPUIntBusDataArray = Bus.FillBoolArrayWithUInt(_CPUIntBusDataArray, Y, 15);
+            else if (subcompAddress == IBUS_SUBCOMP_ALU_Y && isWriteRequest)
+                Y = data;
+            if (subcompAddress == IBUS_SUBCOMP_ALU_CONFIG && !isWriteRequest)
+            {
+                _CPUIntBusDataArray[42] = Config.zx;
+                _CPUIntBusDataArray[43] = Config.nx;
+                _CPUIntBusDataArray[44] = Config.zy;
+                _CPUIntBusDataArray[45] = Config.ny;
+                _CPUIntBusDataArray[46] = Config.f;
+                _CPUIntBusDataArray[47] = Config.no;
+            }
+            else if (subcompAddress == IBUS_SUBCOMP_ALU_CONFIG && isWriteRequest)
+            {
+                Config = new OPConfig(
+                    _CPUIntBusDataArray[42],
+                    _CPUIntBusDataArray[43],
+                    _CPUIntBusDataArray[44],
+                    _CPUIntBusDataArray[45],
+                    _CPUIntBusDataArray[46],
+                    _CPUIntBusDataArray[47]
+                );
+            }
+            if (subcompAddress == IBUS_SUBCOMP_ALU_RESULT && !isWriteRequest)
+                _CPUIntBusDataArray = Bus.FillBoolArrayWithUInt(_CPUIntBusDataArray, Out, 15);
+            else if (subcompAddress == IBUS_SUBCOMP_ALU_RESULT && isWriteRequest)
+                Console.Error.WriteLine("Ignoring ALU Result override via internal bus.");
         }
 
         public static readonly Dictionary<ArithmeticOperation, OPConfig> ARITHMETIC_OP_LOOKUP = new()

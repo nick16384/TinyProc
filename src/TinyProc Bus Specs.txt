@@ -1,0 +1,19 @@
+CPU internal bus:
+Width: 48 bits
+Structure:
+8 bits: Addressed subcomponent
+9th bit: Read (0); Write (1)
+10th - 16th bit: Reserved for later use
+32 bits: Data
+
+Subcomponents:
+0x00 - CU PC
+0x01 - CU IRA
+0x02 - CU IRB
+0x10 - MMU MAR
+0x11 - MMU MDR
+0x20 - ALU X
+0x21 - ALU Y
+0x22 - ALU Config (Rightmost bits)
+0x23 - ALU Result (Acc)
+0xFF - <highest possible value>

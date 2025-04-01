@@ -22,7 +22,7 @@ public partial class CPU
     {
         _ALU = new ALU();
         _MMU = new MMU(memory);
-        _CU = new ControlUnit(this);
+        _CU = new ControlUnit(this, _MMU, _ALU);
 
         GP1 = new Register(false, RegisterRWAccess.ReadWrite);
         GP2 = new Register(false, RegisterRWAccess.ReadWrite);

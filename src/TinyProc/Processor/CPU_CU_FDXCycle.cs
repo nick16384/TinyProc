@@ -2,12 +2,16 @@ namespace TinyProc.Processor;
 
 public partial class CPU
 {
-    public partial class ControlUnit
+    private partial class ControlUnit
     {
         // Load first instruction word
         private void InstructionFetch1()
         {
             Console.WriteLine($"PC at {PC.Value:X8}");
+            _IntBus1DataArray = Bus.FillBoolArrayWithUInt(_IntBus1DataArray, MMU.IBUS_SUBCOMP_MMU_MAR, 0);
+            // FIXME: Won't work, write bit needs to be enabled first
+            _IntBus1DataArray[8] = true;
+
             _ControlBus.MAR = PC.Value;
             IRA.Value = _ControlBus.MDR;
         }

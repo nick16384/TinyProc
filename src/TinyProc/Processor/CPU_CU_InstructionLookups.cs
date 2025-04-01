@@ -4,7 +4,7 @@ namespace TinyProc.Processor;
 
 public partial class CPU
 {
-    public partial class ControlUnit
+    private partial class ControlUnit
     {
         public enum OpCode
         {

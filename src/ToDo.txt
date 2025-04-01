@@ -27,3 +27,5 @@ Write full microarch spec into separate ordered document
 Find out, how status register works
 
 Refactor RawMemory.Debug_DumpAll() to look more pleasing.
+
+Add ALU Accumulator register
