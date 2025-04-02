@@ -11,7 +11,7 @@ public partial class CPU
     {
         public static readonly uint PC_PROGRAM_START = 0x0u;
         // Program counter
-        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly) { Value = PC_PROGRAM_START };
         // Instruction register 1
         private readonly Register IRA = new(true, RegisterRWAccess.ReadOnly);
         // Instruction register 2
@@ -33,60 +33,61 @@ public partial class CPU
             // Internal bus 1 - 3 initialization
             B1_REGISTERS = new Dictionary<uint, Register>
             {
-                {PC_REGISTER_CODE, PC},
-                {GP1_REGISTER_CODE, _cpu.GP1},
-                {GP2_REGISTER_CODE, _cpu.GP2},
-                {GP3_REGISTER_CODE, _cpu.GP3},
-                {GP4_REGISTER_CODE, _cpu.GP4},
-                {GP5_REGISTER_CODE, _cpu.GP5},
-                {GP6_REGISTER_CODE, _cpu.GP6},
-                {GP7_REGISTER_CODE, _cpu.GP7},
-                {GP8_REGISTER_CODE, _cpu.GP8},
-                {MAR_SPECIAL_REGISTER_CODE, _mmu.MAR},
-                {IRA_SPECIAL_REGISTER_CODE, IRA},
-                {IRB_SPECIAL_REGISTER_CODE, IRB}
-                /*{SR_REGISTER_CODE, _alu.SR}*/
+                {RCODE_PC, PC},
+                {RCODE_GP1, _cpu.GP1},
+                {RCODE_GP2, _cpu.GP2},
+                {RCODE_GP3, _cpu.GP3},
+                {RCODE_GP4, _cpu.GP4},
+                {RCODE_GP5, _cpu.GP5},
+                {RCODE_GP6, _cpu.GP6},
+                {RCODE_GP7, _cpu.GP7},
+                {RCODE_GP8, _cpu.GP8},
+                {RCODE_SR, _alu.SR},
+                {RCODE_SPECIAL_MAR, _mmu.MAR},
+                {RCODE_SPECIAL_IRA, IRA},
+                {RCODE_SPECIAL_IRB, IRB}
             };
             B2_REGISTERS = new Dictionary<uint, Register>
             {
-                {GP1_REGISTER_CODE, _cpu.GP1},
-                {GP2_REGISTER_CODE, _cpu.GP2},
-                {GP3_REGISTER_CODE, _cpu.GP3},
-                {GP4_REGISTER_CODE, _cpu.GP4},
-                {GP5_REGISTER_CODE, _cpu.GP5},
-                {GP6_REGISTER_CODE, _cpu.GP6},
-                {GP7_REGISTER_CODE, _cpu.GP7},
-                {GP8_REGISTER_CODE, _cpu.GP8},
-                {MDR_SPECIAL_REGISTER_CODE, _mmu.MAR}
+                {RCODE_GP1, _cpu.GP1},
+                {RCODE_GP2, _cpu.GP2},
+                {RCODE_GP3, _cpu.GP3},
+                {RCODE_GP4, _cpu.GP4},
+                {RCODE_GP5, _cpu.GP5},
+                {RCODE_GP6, _cpu.GP6},
+                {RCODE_GP7, _cpu.GP7},
+                {RCODE_GP8, _cpu.GP8},
+                {RCODE_SPECIAL_MDR, _mmu.MDR},
+                {RCODE_SPECIAL_CV_P1, CV_P1_SPECIAL_REG},
+                {RCODE_SPECIAL_CV_N1, CV_N1_SPECIAL_REG},
+                {RCODE_SPECIAL_CV_P2, CV_P2_SPECIAL_REG}
             };
             B3_REGISTERS = new Dictionary<uint, Register>
             {
-                {PC_REGISTER_CODE, PC},
-                {GP1_REGISTER_CODE, _cpu.GP1},
-                {GP2_REGISTER_CODE, _cpu.GP2},
-                {GP3_REGISTER_CODE, _cpu.GP3},
-                {GP4_REGISTER_CODE, _cpu.GP4},
-                {GP5_REGISTER_CODE, _cpu.GP5},
-                {GP6_REGISTER_CODE, _cpu.GP6},
-                {GP7_REGISTER_CODE, _cpu.GP7},
-                {GP8_REGISTER_CODE, _cpu.GP8},
-                {MAR_SPECIAL_REGISTER_CODE, _mmu.MAR},
-                {MDR_SPECIAL_REGISTER_CODE, _mmu.MDR},
-                {IRA_SPECIAL_REGISTER_CODE, IRA},
-                {IRB_SPECIAL_REGISTER_CODE, IRB}
+                {RCODE_PC, PC},
+                {RCODE_GP1, _cpu.GP1},
+                {RCODE_GP2, _cpu.GP2},
+                {RCODE_GP3, _cpu.GP3},
+                {RCODE_GP4, _cpu.GP4},
+                {RCODE_GP5, _cpu.GP5},
+                {RCODE_GP6, _cpu.GP6},
+                {RCODE_GP7, _cpu.GP7},
+                {RCODE_GP8, _cpu.GP8},
+                {RCODE_SPECIAL_MAR, _mmu.MAR},
+                {RCODE_SPECIAL_MDR, _mmu.MDR},
+                {RCODE_SPECIAL_IRA, IRA},
+                {RCODE_SPECIAL_IRB, IRB}
             };
 
             _IntBus1Src = new MultiSrcSingleDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B1_UBID, B1_REGISTERS, PC_REGISTER_CODE, alu.A);
+                Register.SYSTEM_WORD_SIZE, INTBUS_B1_UBID, B1_REGISTERS, RCODE_GP1, alu.A);
             _IntBus2Src = new MultiSrcSingleDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B2_UBID, B2_REGISTERS, MDR_SPECIAL_REGISTER_CODE, alu.B);
+                Register.SYSTEM_WORD_SIZE, INTBUS_B2_UBID, B2_REGISTERS, RCODE_GP1, alu.B);
             _IntBus3Dst = new SingleSrcMultiDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B3_UBID, alu.R, B3_REGISTERS, PC_REGISTER_CODE);
-
-            PC.Value = PC_PROGRAM_START;
+                Register.SYSTEM_WORD_SIZE, INTBUS_B3_UBID, alu.R, B3_REGISTERS, RCODE_GP1);
         }
 
-        public enum ControlState
+        private enum ControlState
         {
             Fetch1,
             Fetch2,
@@ -100,14 +101,15 @@ public partial class CPU
             set
             {
                 _currentControlState = value;
-                switch (value)
-                {
-                    case ControlState.Fetch1:  InstructionFetch1();  break;
-                    case ControlState.Fetch2:  InstructionFetch2();  break;
-                    case ControlState.Decode:  InstructionDecode();  break;
-                    case ControlState.Execute: InstructionExecute(); break;
-                }
+                throw new NotImplementedException("Control state cannot be set: Not yet implemented");
             }
         }
+
+        // TODO: Add some kind of control bus, which is selected by the CPU
+        // depending on the clock cycle and determines the current phase.
+        public void Temp_InstructionFetch1() { InstructionFetch1(); }
+        public void Temp_InstructionFetch2() { InstructionFetch2(); }
+        public void Temp_InstructionDecode() { InstructionDecode(); }
+        public void Temp_InstructionExecute() { InstructionExecute(); }
     }
 }

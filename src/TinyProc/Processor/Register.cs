@@ -21,6 +21,7 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
         }
     }
     // When attached to a bus, controls how the register behaves on the bus.
+    // Enable register -> bus connection
     private bool _busReadEnable;
     public bool BusReadEnable
     {
@@ -28,10 +29,14 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
         set
         {
             _busReadEnable = value;
-            if (_busReadEnable && IsConnectedToBus && _busDataArrays.ContainsKey(CurrentUBID))
-                _busDataArrays[CurrentUBID] = Bus.UIntToBoolArray(Value);
+            if (_busReadEnable && IsConnectedToBus && _busses.ContainsKey(WriteTargetUBID))
+            {
+                Console.Error.WriteLine($"Write {Value:X8} to bus {WriteTargetUBID}");
+                _busses[WriteTargetUBID].Data = Bus.UIntToBoolArray(Value);
+            }
         }
     }
+    // Enable bus -> register connection
     private bool _busWriteEnable;
     public bool BusWriteEnable
     {
@@ -39,24 +44,32 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
         set { _busWriteEnable = value; }
     }
 
-    // Externally controls which of the attached busses to read / write to / from.
-    public uint CurrentUBID;
+    // Externally controls which of the attached busses to write to.
+    public uint WriteTargetUBID;
+    // Externally controls which of the attached busses to read from.
+    public uint ReadSourceUBID;
 
-    private readonly Dictionary<uint, bool[]> _busDataArrays = [];
-    private bool IsConnectedToBus { get => _busDataArrays.Values.ToArray().Length > 0; }
-    public void SetBusDataArray(bool[] busDataArray, uint ubid)
+    private readonly Dictionary<uint, Bus> _busses = [];
+    private bool IsConnectedToBus { get => _busses.Values.ToArray().Length > 0; }
+    public void AttachToBus(uint ubid, Bus bus)
     {
-        if (busDataArray.Length != SYSTEM_WORD_SIZE)
+        if (bus.Data.Length != SYSTEM_WORD_SIZE)
             throw new ArgumentException(
-                $"Bus cannot connect to register {this}, since it has a different width of {busDataArray.Length}.");
-        _busDataArrays.Add(ubid, busDataArray);
+                $"Bus cannot connect to register {this}, since it has a different width of {bus.Data.Length}.");
+        _busses.Add(ubid, bus);
     }
-    public void HandleBusUpdate(uint ubid)
+    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData)
     {
-        if (BusWriteEnable)
-            _value = Bus.BoolArrayToUInt(_busDataArrays[ubid], 0);
+        if (BusWriteEnable && ubid == 3)
+        {
+            Console.Error.WriteLine($"Read {Bus.BoolArrayToUInt(_busses[ubid].Data, 0):X8} from bus {ReadSourceUBID}");
+            _value = Bus.BoolArrayToUInt(_busses[ubid].Data, 0);
+        }
+        return newBusData;
     }
 }
+
+// TODO: Implement later
 public class RegisterFile(Dictionary<uint, Register> registers) /*: ISelectableBusAttachable*/
 {
     // Maps register addresses to their corresponding object

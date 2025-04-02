@@ -32,21 +32,21 @@ public partial class CPU
             private protected uint _busTargetRegisterAddress;
             public uint BusTargetRegisterAddress
             {
-                get => _busSourceRegisterAddress;
+                get => _busTargetRegisterAddress;
                 set => UpdateBusTransferRoute(BusSourceRegisterAddress, value);
             }
             private protected Register BusTargetRegister
             {
-                get => _sourceAddressRegisterMap[BusTargetRegisterAddress];
+                get => _targetAddressRegisterMap[BusTargetRegisterAddress];
             }
 
             private protected void UpdateBusTransferRoute(uint newSrcRegisterAddress, uint newDstRegisterAddress)
             {
                 if (!_sourceAddressRegisterMap.ContainsKey(newSrcRegisterAddress))
-                    throw new ArgumentException($"Illegal bus source address for selector {this}");
+                    throw new ArgumentException($"Illegal bus source address {newSrcRegisterAddress:X8}");
 
                 if (!_targetAddressRegisterMap.ContainsKey(newDstRegisterAddress))
-                    throw new ArgumentException($"Illegal bus target address for selector {this}");
+                    throw new ArgumentException($"Illegal bus target address {newDstRegisterAddress:X8}");
 
                 // Disable old transfer route so no garbage data remains on the bus.
                 BusSourceRegister.BusReadEnable = false;
@@ -55,8 +55,12 @@ public partial class CPU
                 _busSourceRegisterAddress = newSrcRegisterAddress;
                 _busTargetRegisterAddress = newDstRegisterAddress;
 
+                BusSourceRegister.WriteTargetUBID = _UBID;
+                BusTargetRegister.ReadSourceUBID = _UBID;
                 BusTargetRegister.BusWriteEnable = true;
                 BusSourceRegister.BusReadEnable = true;
+                Console.Error.WriteLine($"{BusSourceRegisterAddress:X8}:{BusSourceRegister.Value:X8}" +
+                $" -[{_UBID}]-> {BusTargetRegisterAddress:X8}:{BusTargetRegister.Value:X8}");
                 // Transfer from source to destination occurs via bus.
             }
 
@@ -77,8 +81,9 @@ public partial class CPU
                     reg.BusReadEnable = false;
                     reg.BusWriteEnable = false;
                 }
-                BusSourceRegisterAddress = selectedSrcRegister;
-                BusTargetRegisterAddress = selectedDstRegister;
+                _busSourceRegisterAddress = selectedSrcRegister;
+                _busTargetRegisterAddress = selectedDstRegister;
+                UpdateBusTransferRoute(_busSourceRegisterAddress, _busTargetRegisterAddress);
                 _transferBus = new Bus(busWidth, _UBID, [.. _sourceAddressRegisterMap.Values, .. _targetAddressRegisterMap.Values]);
             }
         }
@@ -86,12 +91,13 @@ public partial class CPU
                 Dictionary<uint, Register> sourceAddressRegisterMap, uint selectedSrcRegister,
                 Register fixedDstRegister)
                 : MultiSrcMultiDstRegisterSelector(busWidth, UBID, sourceAddressRegisterMap, selectedSrcRegister,
-                new Dictionary<uint, Register>{{0, fixedDstRegister}}, 0)
+                new Dictionary<uint, Register>{{uint.MaxValue, fixedDstRegister}}, uint.MaxValue)
         {}
         private class SingleSrcMultiDstRegisterSelector(int busWidth, uint UBID,
                 Register fixedSrcRegister,
                 Dictionary<uint, Register> targetAddressRegisterMap, uint selectedDstRegister)
-                : MultiSrcMultiDstRegisterSelector(busWidth, UBID, new Dictionary<uint, Register>{{0, fixedSrcRegister}}, 0,
+                : MultiSrcMultiDstRegisterSelector(busWidth, UBID,
+                new Dictionary<uint, Register>{{uint.MaxValue, fixedSrcRegister}}, uint.MaxValue,
                 targetAddressRegisterMap, selectedDstRegister)
         {}
 

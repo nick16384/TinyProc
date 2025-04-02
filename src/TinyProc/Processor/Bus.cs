@@ -2,26 +2,25 @@ namespace TinyProc.Processor;
 
 public interface IBusAttachable
 {
-    public void SetBusDataArray(bool[] busDataArray, uint ubid);
-    // No need to pass new data, since a reference to the data should be kept after SetBusArrayData() has been called.
-    public void HandleBusUpdate(uint ubid);
+    public void AttachToBus(uint ubid, Bus bus);
+    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData);
 }
 
 public interface ISelectableBusAttachable : IBusAttachable
 {
-    public void HandleBusUpdateSelected(uint ubid);
+    public bool[] HandleBusUpdateSelected(uint ubid, bool[] newBusData);
 }
 
 // A bus is a set of parallel lines (bits) that connect to multiple components.
-// Only the bus master should have a reference to the bus object.
-// The bus master however, also is part of the attached components array.
-// All other bus members update the data array via a reference (similar to a callback)
+// Every bus member holds a reference to the bus object.
+// There should be at most one bus master, who controls data flow to mitigate garbled data from multiple sources.
+// All other bus members update the data array, when the HandleBusUpdate() method is called.
 // An externally managed bus with zero bus masters is also possible.
 public class Bus
 {
     private readonly IBusAttachable[] _registeredComponents;
     private bool[] _data;
-    private bool[] Data
+    public bool[] Data
     {
         get => _data;
         set
@@ -30,7 +29,7 @@ public class Bus
                 throw new ArgumentException($"Bus write data has different size {value.Length} than bus width {_data.Length}.");
             _data = value;
             foreach (IBusAttachable component in _registeredComponents)
-                component.HandleBusUpdate(_UBID);
+                _data = component.HandleBusUpdate(_UBID, Data);
         }
     }
     // Unique bus identifier
@@ -39,20 +38,21 @@ public class Bus
 
     public Bus(int busWidth, uint UBID, IBusAttachable[] registeredComponents)
     {
-        _UBID = UBID;
         _data = new bool[busWidth];
+        _UBID = UBID;
         _registeredComponents = registeredComponents;
         foreach (IBusAttachable component in _registeredComponents)
-            component.SetBusDataArray(Data, _UBID);
+            component.AttachToBus(_UBID, this);
     }
 
+    // TOOD: Please make these methods more pleasing to look at!
     public static uint BoolArrayToUInt(bool[] boolArray, int startIndex)
     {
         uint resultUInt = 0x0u;
         for (int i = startIndex; i < sizeof(uint)*8 && i < boolArray.Length; i++)
         {
             uint boolAsUInt = boolArray[i] ? 0x1u : 0x0u;
-            resultUInt |= boolAsUInt;
+            resultUInt |= boolAsUInt << (sizeof(uint)*8 - (i - startIndex + 1));
         }
         return resultUInt;
     }
@@ -61,7 +61,7 @@ public class Bus
         bool[] resultBoolArray = new bool[32];
         for (int i = 0; i < sizeof(uint)*8; i++)
         {
-            bool boolAtIdx = (uintIn >> (sizeof(uint)*8 - i)) == 0x1u;
+            bool boolAtIdx = (uintIn >> (sizeof(uint)*8 - i)) >= 0x1u;
             resultBoolArray[i] = boolAtIdx;
         }
         return resultBoolArray;
@@ -77,7 +77,7 @@ public class Bus
 }
 
 // TODO: Reduce duplicate code by inheriting from Bus class.
-public class SelectiveBus
+/*public class SelectiveBus
 {
     // Sets the selected bus component.
     // If no component should be selected, then this is null.
@@ -126,9 +126,4 @@ public class SelectiveBus
         foreach (ISelectableBusAttachable component in _registeredComponents)
             component.SetBusDataArray(Data, _UBID);
     }
-}
-
-public class AddressBus
-{
-
-}
+}*/

@@ -9,29 +9,27 @@ public partial class CPU
         {
             Console.WriteLine($"PC at {PC.Value:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
-            // Transfer PC to MAR
-            _IntBus1Src.BusSourceRegisterAddress = PC_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = MAR_SPECIAL_REGISTER_CODE;
-            // Transfer MDR to IRA
-            _IntBus1Src.BusSourceRegisterAddress = MDR_SPECIAL_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = IRA_SPECIAL_REGISTER_CODE;
+            // PC -> MAR
+            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
+            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
+            // MDR -> IRA
+            _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferB];
+            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_MDR;
+            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_IRA;
         }
         // Load second instruction word
         private void InstructionFetch2()
         {
-            // Increment program counter by one
+            // PC + 1 -> MAR
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned];
-            _IntBus1Src.BusSourceRegisterAddress = PC_REGISTER_CODE;
-            _IntBus2Src.BusSourceRegisterAddress = CONST_PLUSONE_SPECIAL_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = PC_REGISTER_CODE;
+            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
+            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_CV_P1;
+            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
 
-            _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
-            // Transfer PC to MAR
-            _IntBus1Src.BusSourceRegisterAddress = PC_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = MAR_SPECIAL_REGISTER_CODE;
-            // Transfer MDR to IRA
-            _IntBus1Src.BusSourceRegisterAddress = MDR_SPECIAL_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = IRB_SPECIAL_REGISTER_CODE;
+            // MDR -> IRB
+            _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferB];
+            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_MDR;
+            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_IRB;
             Console.WriteLine($"Loaded 2 instruction words: {IRA.Value:X8} {IRB.Value:X8}");
         }
 
@@ -40,11 +38,11 @@ public partial class CPU
         // Essentially prepares the Control Unit for the execute stage
         private void InstructionDecode()
         {
-            // Increment PC to next instruction
+            // PC + 2 -> PC
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned];
-            _IntBus1Src.BusSourceRegisterAddress = PC_REGISTER_CODE;
-            _IntBus2Src.BusSourceRegisterAddress = CONST_PLUSONE_SPECIAL_REGISTER_CODE;
-            _IntBus3Dst.BusTargetRegisterAddress = PC_REGISTER_CODE;
+            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
+            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_CV_P2;
+            _IntBus3Dst.BusTargetRegisterAddress = RCODE_PC;
 
             // Decode OpCode bits to OpCode type
             byte opCodeBits = Convert.ToByte((IRA.Value & 0b11111100_00000000_00000000_00000000) >> 26);

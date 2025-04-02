@@ -16,6 +16,7 @@ Connected to B2:
 - MDR out
 - Constant +1 signal
 - Constant -1 signal
+- Constant +2 signal
 - GP1-8 out
 
 B3 UBID: 0x00000003
@@ -39,3 +40,4 @@ Format: [Register] [32 bit Code]
 - IRB 0x70000003
 - CONST_PLUSONE 0x70000004
 - CONST_MINUSONE 0x70000005
+- CONST_PLUSTWO 0x70000006

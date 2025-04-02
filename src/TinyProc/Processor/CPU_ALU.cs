@@ -46,18 +46,55 @@ public partial class CPU
             Y_LogicalNOT
         }
 
-        public readonly Register A = new(true, RegisterRWAccess.ReadOnly);
-        public readonly Register B = new(true, RegisterRWAccess.ReadOnly);
-        public required ALU_OpCode OpCode = ARITHMETIC_OP_LOOKUP[ALU_Operation.TransferA];
+        public class ALUDataARegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
+        {
+            private readonly ALU _alu = alu;
+            public override uint Value
+            {
+                get => _alu.A.Value;
+                set
+                {
+                    _alu.A.Value = value;
+                    _alu._R.Value = _alu.ComputeResult();
+                }
+            }
+        }
+        public class ALUDataBRegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
+        {
+            private readonly ALU _alu = alu;
+            public override uint Value
+            {
+                get => _alu.B.Value;
+                set
+                {
+                    _alu.B.Value = value;
+                    _alu._R.Value = _alu.ComputeResult();
+                }
+            }
+        }
+
+        public readonly ALUDataARegister A;
+        public readonly ALUDataBRegister B;
+        public /*required*/ ALU_OpCode OpCode = ARITHMETIC_OP_LOOKUP[ALU_Operation.TransferA];
+        private readonly Register _R = new(true, RegisterRWAccess.ReadOnly);
         public Register R
         {
             get
             {
-                R.Value = ComputeResult();
-                return R;
+                _R.Value = ComputeResult();
+                Console.Error.WriteLine($"ALU res: {_R.Value}");
+                return _R;
             }
         }
-        public bool CarryBit { get; private set; }
+        // Status register
+        // TODO: Implement
+        public readonly Register SR = new(true, RegisterRWAccess.ReadOnly);
+
+        public ALU()
+        {
+            A = new ALUDataARegister(this);
+            B = new ALUDataBRegister(this);
+        }
 
         private uint ComputeResult()
         {

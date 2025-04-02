@@ -32,3 +32,7 @@ Add ALU Accumulator register
 
 Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
 -> Currently one continuous operation: Not realistic
+
+INC / DEC instructions, since they perform faster with special registers outputting these values
+
+ALU: Convert to pure logic, so that changes made to A, B, OpCode and SR propagate directly after set to R.
