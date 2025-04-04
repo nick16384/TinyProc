@@ -1,30 +1,11 @@
-Pulsing clock (divided further into CPU cycles -> fetch, exec)
-Clock modes:
-1. Manual (Clock pulses once when user presses enter in console)
-2. Auto (Clock pulses in predefined frequency)
-
-Divide memory into segments and return chunk when asking for address
-Stack? (push, pop)
-
-Read larger programs with file reader
-
-Implement ROM and special use memory regions
-(Mapped to one continuous address space by MMU)
-
 Future (optional) ideas:
 Simulate different access times
-Make assembler (Assembly -> Machine lang)
 Add muxers / demuxers
 External HW interfaces, Interrupts
 Caches, virtual memory -> MMU
 Change CU code to better resemble binary logic
 
 Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
-
-Write full microarch spec into separate ordered document
--> Either github markup or pdf document
-
-Find out, how status register works
 
 Refactor RawMemory.Debug_DumpAll() to look more pleasing.
 
