@@ -1,0 +1,48 @@
+CPU internal busses:
+Bus count: 3 (B1, B2, B3)
+
+B1 UBID: 0x00000001
+Connected to B1:
+- A in port of the ALU
+- PC out
+- MAR out
+- IRA out
+- IRB out
+- GP1-8 out
+- Constant 0 signal (void)
+
+B2 UBID: 0x00000002
+Connected to B2:
+- B in port of the ALU
+- MDR out
+- Constant +1 signal
+- Constant -1 signal
+- Constant +2 signal
+- Constant 0 signal (void)
+- GP1-8 out
+
+B3 UBID: 0x00000003
+Connected to B3:
+- R out port of the ALU
+- GP1-8 in
+- PC in
+- MAR in
+- IRA in
+- IRB in
+- MDR in
+- Constant 0 signal in (void)
+
+Register codes additional to the ones specified in the microarch specs:
+Note: Special registers start with 0x7 so they are within a different space than
+the other registers already specified in the microarch specifications.
+There should not be any overlap so the codes are usable interchangeably.
+Format: [Register] [32 bit Code]
+- MAR 0x70000000
+- MDR 0x70000001
+- IRA 0x70000002
+- IRB 0x70000003
+- CONST_PLUSONE 0x70000004
+- CONST_MINUSONE 0x70000005
+- CONST_PLUSTWO 0x70000006
+- CONST_ZERO / CONST_VOID 0x70000007
+- <RESERVED DEFAULT TARGET> 0xFFFFFFFF

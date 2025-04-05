@@ -3,7 +3,7 @@ using TinyProc.Processor;
 
 class Program
 {
-    public static readonly string TINYPROC_VERSION_STR = "0.0";
+    public static readonly string TINYPROC_VERSION_STR = "0.2025.02";
     static void Main(string[] args)
     {
         Console.WriteLine($"\nTinyProc ver. {TINYPROC_VERSION_STR}");
@@ -21,7 +21,7 @@ class Program
         mem1.DataBus = 0x39393939u;
 
         Console.WriteLine("Loading program into memory.");
-        LoadDataIntoMemory(MAIN_PROGRAM, mem1, CPU.ControlUnit.PC_PROGRAM_START);
+        LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x00000000u);
         mem1.Debug_DumpAll();
         Console.WriteLine("Done.");
 
@@ -60,10 +60,9 @@ class Program
 
     private static readonly (uint, uint)[] MAIN_PROGRAM_INSTRUCTION_TUPLES =
     [
-        CPU.ForgeInstruction(CPU.ControlUnit.OpCode.NOP),
-        CPU.ForgeInstruction(CPU.ControlUnit.OpCode.NOP),
-        CPU.ForgeInstruction(CPU.ControlUnit.OpCode.JMP, CPU.ControlUnit.Condition.ALWAYS, 0x00000000u),
-        (0x00000063u, 0x00000064u)
+        (0x00000000u, 0x00000000u),
+        (0x00000000u, 0x00000000u),
+        (0b000001_0000_0000000000000000000000, 0x0),
     ];
     private static readonly uint[] MAIN_PROGRAM = [.. MAIN_PROGRAM_INSTRUCTION_TUPLES.SelectMany(t => new uint[] { t.Item1, t.Item2 })];
 
