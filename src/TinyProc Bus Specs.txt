@@ -9,6 +9,7 @@ Connected to B1:
 - IRA out
 - IRB out
 - GP1-8 out
+- Constant 0 signal (void)
 
 B2 UBID: 0x00000002
 Connected to B2:
@@ -17,6 +18,7 @@ Connected to B2:
 - Constant +1 signal
 - Constant -1 signal
 - Constant +2 signal
+- Constant 0 signal (void)
 - GP1-8 out
 
 B3 UBID: 0x00000003
@@ -28,6 +30,7 @@ Connected to B3:
 - IRA in
 - IRB in
 - MDR in
+- Constant 0 signal in (void)
 
 Register codes additional to the ones specified in the microarch specs:
 Note: Special registers start with 0x7 so they are within a different space than
@@ -41,3 +44,5 @@ Format: [Register] [32 bit Code]
 - CONST_PLUSONE 0x70000004
 - CONST_MINUSONE 0x70000005
 - CONST_PLUSTWO 0x70000006
+- CONST_ZERO / CONST_VOID 0x70000007
+- <RESERVED DEFAULT TARGET> 0xFFFFFFFF

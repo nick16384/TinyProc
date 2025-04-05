@@ -1,6 +1,4 @@
-using System.Runtime.CompilerServices;
-
-namespace TinyProc.Processor;
+namespace TinyProc.Processor.CPU;
 
 public partial class CPU
 {
@@ -11,7 +9,7 @@ public partial class CPU
     {
         public static readonly uint PC_PROGRAM_START = 0x0u;
         // Program counter
-        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly) { Value = PC_PROGRAM_START };
+        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly) { ValueDirect = PC_PROGRAM_START };
         // Instruction register 1
         private readonly Register IRA = new(true, RegisterRWAccess.ReadOnly);
         // Instruction register 2
@@ -45,7 +43,8 @@ public partial class CPU
                 {RCODE_SR, _alu.SR},
                 {RCODE_SPECIAL_MAR, _mmu.MAR},
                 {RCODE_SPECIAL_IRA, IRA},
-                {RCODE_SPECIAL_IRB, IRB}
+                {RCODE_SPECIAL_IRB, IRB},
+                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
             };
             B2_REGISTERS = new Dictionary<uint, Register>
             {
@@ -60,7 +59,8 @@ public partial class CPU
                 {RCODE_SPECIAL_MDR, _mmu.MDR},
                 {RCODE_SPECIAL_CV_P1, CV_P1_SPECIAL_REG},
                 {RCODE_SPECIAL_CV_N1, CV_N1_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_P2, CV_P2_SPECIAL_REG}
+                {RCODE_SPECIAL_CV_P2, CV_P2_SPECIAL_REG},
+                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
             };
             B3_REGISTERS = new Dictionary<uint, Register>
             {
@@ -76,7 +76,8 @@ public partial class CPU
                 {RCODE_SPECIAL_MAR, _mmu.MAR},
                 {RCODE_SPECIAL_MDR, _mmu.MDR},
                 {RCODE_SPECIAL_IRA, IRA},
-                {RCODE_SPECIAL_IRB, IRB}
+                {RCODE_SPECIAL_IRB, IRB},
+                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
             };
 
             _IntBus1Src = new MultiSrcSingleDstRegisterSelector(

@@ -1,4 +1,4 @@
-namespace TinyProc.Processor;
+namespace TinyProc.Processor.CPU;
 
 /*
 Source of info for this ALU:
@@ -46,60 +46,54 @@ public partial class CPU
             Y_LogicalNOT
         }
 
-        public class ALUDataARegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
+        public class ALUDataRegister(ALU alu) : Register(true, RegisterRWAccess.ReadWrite)
         {
             private readonly ALU _alu = alu;
-            public override uint Value
+            private protected override uint Value
             {
-                get => _alu.A.Value;
+                get => _storedValue;
                 set
                 {
-                    _alu.A.Value = value;
-                    _alu._R.Value = _alu.ComputeResult();
-                }
-            }
-        }
-        public class ALUDataBRegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
-        {
-            private readonly ALU _alu = alu;
-            public override uint Value
-            {
-                get => _alu.B.Value;
-                set
-                {
-                    _alu.B.Value = value;
-                    _alu._R.Value = _alu.ComputeResult();
+                    _storedValue = value;
+                    // Update result register --> Trigger bus update
+                    uint? unassigned = _alu?.R?.ValueDirect;
                 }
             }
         }
 
-        public readonly ALUDataARegister A;
-        public readonly ALUDataBRegister B;
-        public /*required*/ ALU_OpCode OpCode = ARITHMETIC_OP_LOOKUP[ALU_Operation.TransferA];
-        private readonly Register _R = new(true, RegisterRWAccess.ReadOnly);
-        public Register R
+        public class ALUResultRegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
         {
-            get
+            private readonly ALU _alu = alu;
+            private protected override uint Value
             {
-                _R.Value = ComputeResult();
-                Console.Error.WriteLine($"ALU res: {_R.Value}");
-                return _R;
+                get
+                {
+                    _storedValue = _alu.ComputeResult();
+                    return _storedValue;
+                }
+                set => _storedValue = value;
             }
         }
+
+        public readonly ALUDataRegister A;
+        public readonly ALUDataRegister B;
+        public /*required*/ ALU_OpCode OpCode = new(false, false, false, false, false, false);
+        public readonly ALUResultRegister R;
         // Status register
         // TODO: Implement
         public readonly Register SR = new(true, RegisterRWAccess.ReadOnly);
 
         public ALU()
         {
-            A = new ALUDataARegister(this);
-            B = new ALUDataBRegister(this);
+            A = new ALUDataRegister(this);
+            B = new ALUDataRegister(this);
+            R = new ALUResultRegister(this);
         }
 
         private uint ComputeResult()
         {
-            uint x = A.Value;
-            uint y = B.Value;
+            uint x = A.ValueDirect;
+            uint y = B.ValueDirect;
 
             if (OpCode.zx)
                 x = 0x0u;
@@ -119,8 +113,6 @@ public partial class CPU
             if (OpCode.no)
                 @out = ~@out;
 
-            OpCode.f = true;
-        
             return @out;
         }
 

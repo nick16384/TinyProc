@@ -60,10 +60,9 @@ class Program
 
     private static readonly (uint, uint)[] MAIN_PROGRAM_INSTRUCTION_TUPLES =
     [
-        (0x77777777u, 0x00000000u),
         (0x00000000u, 0x00000000u),
-        (0x0, 0x0),
-        (0x00000063u, 0x00000064u)
+        (0x00000000u, 0x00000000u),
+        (0b000001_0000_0000000000000000000000, 0x0),
     ];
     private static readonly uint[] MAIN_PROGRAM = [.. MAIN_PROGRAM_INSTRUCTION_TUPLES.SelectMany(t => new uint[] { t.Item1, t.Item2 })];
 

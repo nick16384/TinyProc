@@ -1,6 +1,4 @@
-using System.Runtime.CompilerServices;
-
-namespace TinyProc.Processor;
+namespace TinyProc.Processor.CPU;
 
 public partial class CPU
 {
@@ -59,8 +57,6 @@ public partial class CPU
                 BusTargetRegister.ReadSourceUBID = _UBID;
                 BusTargetRegister.BusWriteEnable = true;
                 BusSourceRegister.BusReadEnable = true;
-                Console.Error.WriteLine($"{BusSourceRegisterAddress:X8}:{BusSourceRegister.Value:X8}" +
-                $" -[{_UBID}]-> {BusTargetRegisterAddress:X8}:{BusTargetRegister.Value:X8}");
                 // Transfer from source to destination occurs via bus.
             }
 
@@ -90,7 +86,8 @@ public partial class CPU
         private class MultiSrcSingleDstRegisterSelector(int busWidth, uint UBID,
                 Dictionary<uint, Register> sourceAddressRegisterMap, uint selectedSrcRegister,
                 Register fixedDstRegister)
-                : MultiSrcMultiDstRegisterSelector(busWidth, UBID, sourceAddressRegisterMap, selectedSrcRegister,
+                : MultiSrcMultiDstRegisterSelector(busWidth, UBID,
+                sourceAddressRegisterMap, selectedSrcRegister,
                 new Dictionary<uint, Register>{{uint.MaxValue, fixedDstRegister}}, uint.MaxValue)
         {}
         private class SingleSrcMultiDstRegisterSelector(int busWidth, uint UBID,

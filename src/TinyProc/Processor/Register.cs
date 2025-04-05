@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices.Marshalling;
-
 namespace TinyProc.Processor;
 
 // A register is a simple, yet fast storage of a single word.
@@ -9,15 +7,37 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
     public static readonly int SYSTEM_WORD_SIZE = 32;
     public readonly RegisterRWAccess Access = access;
     public readonly bool IsSpecial = isSpecial;
-    private uint _value;
-    public virtual uint Value
+    // The value actually stored in the register
+    private protected uint _storedValue;
+    // This is the only value that can be overridden by subclasses.
+    private protected virtual uint Value
     {
-        get => _value;
+        get => _storedValue;
+        set => _storedValue = value;
+    }
+    // Safeguard that cannot be overriden by subclasses
+    // Is used when bus operations handle register content.
+    private uint ValueBus
+    {
+        get => Value;
+        set
+        {
+            Value = value;
+            // Update bus
+            if (BusReadEnable)
+                _busses[ReadSourceUBID].Data = Bus.UIntToBoolArray(Value);
+        }
+    }
+    // Used to directly (not via bus) communicate with this register.
+    // Cannot be set when attached to bus, since it takes over control over register content.
+    public uint ValueDirect
+    {
+        get => Value;
         set
         {
             if (IsConnectedToBus)
                 throw new InvalidOperationException($"Register {this} attached to bus; Direct write operation illegal.");
-            _value = value;
+            Value = value;
         }
     }
     // When attached to a bus, controls how the register behaves on the bus.
@@ -30,10 +50,7 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
         {
             _busReadEnable = value;
             if (_busReadEnable && IsConnectedToBus && _busses.ContainsKey(WriteTargetUBID))
-            {
-                Console.Error.WriteLine($"Write {Value:X8} to bus {WriteTargetUBID}");
-                _busses[WriteTargetUBID].Data = Bus.UIntToBoolArray(Value);
-            }
+                _busses[WriteTargetUBID].Data = Bus.UIntToBoolArray(ValueBus);
         }
     }
     // Enable bus -> register connection
@@ -60,57 +77,15 @@ public class Register(bool isSpecial = false, RegisterRWAccess access = Register
     }
     public bool[] HandleBusUpdate(uint ubid, bool[] newBusData)
     {
-        if (BusWriteEnable && ubid == 3)
-        {
-            Console.Error.WriteLine($"Read {Bus.BoolArrayToUInt(_busses[ubid].Data, 0):X8} from bus {ReadSourceUBID}");
-            _value = Bus.BoolArrayToUInt(_busses[ubid].Data, 0);
-        }
+        if (BusWriteEnable)
+            Value = Bus.BoolArrayToUInt(_busses[ubid].Data, 0);
         return newBusData;
     }
 }
 
-// TODO: Implement later
-public class RegisterFile(Dictionary<uint, Register> registers) /*: ISelectableBusAttachable*/
+public class RegisterFile /*: IBusAttachable*/
 {
-    // Maps register addresses to their corresponding object
-    private readonly Dictionary<uint, Register> _registers = registers;
-    public bool WriteEnable { get; set; } = false;
-    public uint RegisterAddress { get; set; } = 0x0u;
-    public uint RegisterValue
-    {
-        get
-        {
-            try { return _registers[RegisterAddress].Value; }
-            catch (Exception)
-            {
-                Console.Error.WriteLine($"Register address {RegisterAddress:X} is not part of register file {this}.");
-                throw;
-            }
-        }
-        set
-        {
-            if (!WriteEnable)
-            {
-                Console.Error.WriteLine("Register value written without write enable. Discarding changes.");
-                return;
-            }
-            _registers[RegisterAddress].Value = value;
-        }
-    }
-
-    private bool[] _BusDataArray = [];
-    public void SetBusDataArray(bool[] busDataArray)
-    {
-        _BusDataArray = busDataArray;
-    }
-    public void HandleBusUpdate()
-    {
-        // Ignore everything unless selected
-    }
-    public void HandleBusUpdateSelected()
-    {
-        throw new NotImplementedException();
-    }
+    // TODO: Implement later
 }
 
 // Note that the access type does not prevent illegal access to any register with an associated type.

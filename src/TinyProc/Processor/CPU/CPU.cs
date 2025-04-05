@@ -1,7 +1,6 @@
-using System.Runtime.InteropServices;
 using TinyProc.Memory;
 
-namespace TinyProc.Processor;
+namespace TinyProc.Processor.CPU;
 
 public partial class CPU
 {
@@ -15,9 +14,19 @@ public partial class CPU
     private readonly Register GP8;
 
     // Special registers whose values cannot be changed and always output plus / negative one.
-    private static readonly Register CV_P1_SPECIAL_REG = new(true, RegisterRWAccess.ReadOnly){ Value = 1u };
-    private static readonly Register CV_N1_SPECIAL_REG = new(true, RegisterRWAccess.ReadOnly){ Value = SignedIntToUInt(-1) };
-    private static readonly Register CV_P2_SPECIAL_REG = new(true, RegisterRWAccess.ReadOnly){ Value = 2u };
+    // Can also act as "void" registers, since writes have no effect
+    private class ConstantValueRegister(uint constValue) : Register(true, RegisterRWAccess.ReadOnly)
+    {
+        private protected override uint Value
+        {
+            get => constValue;
+            set {}
+        }
+    }
+    private static readonly ConstantValueRegister CV_P1_SPECIAL_REG = new(1u);
+    private static readonly ConstantValueRegister CV_N1_SPECIAL_REG = new(SignedIntToUInt(-1));
+    private static readonly ConstantValueRegister CV_P2_SPECIAL_REG = new(2u);
+    private static readonly ConstantValueRegister CV_0_SPECIAL_REG = new(0u);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
     private const uint RCODE_GP1 = 0x01u;
@@ -43,6 +52,10 @@ public partial class CPU
     private const uint RCODE_SPECIAL_CV_N1 = 0x70000005;
     // +2
     private const uint RCODE_SPECIAL_CV_P2 = 0x70000006;
+    // 0
+    private const uint RCODE_SPECIAL_CV_0 = 0x70000007;
+    // Void register: Since writes to CV0 are discarded, this refers to it in another context.
+    private const uint RCODE_SPECIAL_VOID = 0x70000007;
 
     private readonly ControlUnit _CU;
     private readonly ALU _ALU;
@@ -83,10 +96,9 @@ public partial class CPU
         Console.WriteLine("Clock edge rising");
 
         _CU.Temp_InstructionFetch1();
-        Console.Error.WriteLine("Debug: Skipping fetch2, decode, exec.");
-        //_CU.Temp_InstructionFetch2();
-        //_CU.Temp_InstructionDecode();
-        //_CU.Temp_InstructionExecute();
+        _CU.Temp_InstructionFetch2();
+        _CU.Temp_InstructionDecode();
+        _CU.Temp_InstructionExecute();
 
         Console.WriteLine();
 

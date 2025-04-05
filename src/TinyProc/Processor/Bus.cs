@@ -61,16 +61,16 @@ public class Bus
         bool[] resultBoolArray = new bool[32];
         for (int i = 0; i < sizeof(uint)*8; i++)
         {
-            bool boolAtIdx = (uintIn >> (sizeof(uint)*8 - i)) >= 0x1u;
+            bool boolAtIdx = (uintIn & (0b10000000_00000000_00000000_00000000u >> i)) >= 0x1u;
             resultBoolArray[i] = boolAtIdx;
         }
         return resultBoolArray;
     }
     public static bool[] FillBoolArrayWithUInt(bool[] boolArray, uint uintIn, int startIndex)
     {
-        for (int i = startIndex; i < sizeof(uint)*8; i++)
+        for (int i = startIndex; i < sizeof(uint)*8 + startIndex; i++)
         {
-            boolArray[i] = (uintIn & (0x1u << i)) != 0x0u;
+            boolArray[i] = (uintIn & (0b10000000_00000000_00000000_00000000u >> (i - startIndex))) >= 0x1u;
         }
         return boolArray;
     }
