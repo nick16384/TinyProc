@@ -34,7 +34,7 @@ public partial class CPU
             Console.WriteLine(
                 "Add registers " +
                 $"Src:{CurrentRInstr.SrcRegCode:X8} + " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentRInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentRInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
@@ -47,7 +47,7 @@ public partial class CPU
             Console.WriteLine(
                 "Subtract registers " +
                 $"Dst:{CurrentRInstr.DestRegCode:X8} - " +
-                $"Src:{CurrentRInstr.SrcRegCode:X8} ->" +
+                $"Src:{CurrentRInstr.SrcRegCode:X8} -> " +
                 $"Dst:{CurrentRInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AB_SubtractionSigned];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.DestRegCode;
@@ -64,7 +64,7 @@ public partial class CPU
             Console.WriteLine(
                 "Logical AND registers " +
                 $"Src:{CurrentRInstr.SrcRegCode:X8} & " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentRInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentRInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
@@ -77,7 +77,7 @@ public partial class CPU
             Console.WriteLine(
                 "Logical OR registers " +
                 $"Src:{CurrentRInstr.SrcRegCode:X8} | " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentRInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentRInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
@@ -156,7 +156,7 @@ public partial class CPU
             Console.WriteLine(
                 "Add immediate value " +
                 $"#{CurrentIInstr.Immediate:X8} + " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentIInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentIInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
@@ -169,7 +169,7 @@ public partial class CPU
             Console.WriteLine(
                 "Subtract immediate value " +
                 $"Dst:{CurrentIInstr.DestRegCode:X8} - " +
-                $"#{CurrentIInstr.Immediate:X8} ->" +
+                $"#{CurrentIInstr.Immediate:X8} -> " +
                 $"Dst:{CurrentIInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.BA_SubtractionSigned];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
@@ -186,7 +186,7 @@ public partial class CPU
             Console.WriteLine(
                 "Logical AND with immediate value " +
                 $"#{CurrentIInstr.Immediate:X8} & " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentIInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentIInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
@@ -199,7 +199,7 @@ public partial class CPU
             Console.WriteLine(
                 "Logical OR with immediate value " +
                 $"#{CurrentIInstr.Immediate:X8} + " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} ->" +
+                $"Dst:{CurrentIInstr.DestRegCode:X8} -> " +
                 $"Dst:{CurrentIInstr.DestRegCode:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;

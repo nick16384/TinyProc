@@ -76,24 +76,24 @@ public partial class CPU
                     _currentJInstr = null;
                     _currentRInstr = ParseInstructionAsRType(IRA.ValueDirect, IRB.ValueDirect);
                     Console.WriteLine(
-                        $"OpCode: {(uint)CurrentRInstr.OpCode:X2}->{CurrentRInstr.OpCode};" +
-                        $"Cond: {(uint)CurrentRInstr.Conditional:X2}->{CurrentRInstr.Conditional};");
+                        $"OpCode: {(uint)CurrentRInstr.OpCode:X2}->{CurrentRInstr.OpCode}; " +
+                        $"Condition: {(uint)CurrentRInstr.Conditional:X2}->{CurrentRInstr.Conditional};");
                     break;
                 case InstructionType.Immediate:
                     _currentRInstr = null;
                     _currentJInstr = null;
                     _currentIInstr = ParseInstructionAsIType(IRA.ValueDirect, IRB.ValueDirect);
                     Console.WriteLine(
-                        $"OpCode: {(uint)CurrentIInstr.OpCode:X2}->{CurrentIInstr.OpCode};" +
-                        $"Cond: {(uint)CurrentIInstr.Conditional:X2}->{CurrentIInstr.Conditional};");
+                        $"OpCode: {(uint)CurrentIInstr.OpCode:X2}->{CurrentIInstr.OpCode}; " +
+                        $"Condition: {(uint)CurrentIInstr.Conditional:X2}->{CurrentIInstr.Conditional};");
                     break;
                 case InstructionType.Jump:
                     _currentRInstr = null;
                     _currentIInstr = null;
                     _currentJInstr = ParseInstructionAsJType(IRA.ValueDirect, IRB.ValueDirect);
                     Console.WriteLine(
-                        $"OpCode: {(uint)CurrentJInstr.OpCode:X2}->{CurrentJInstr.OpCode};" +
-                        $"Cond: {(uint)CurrentJInstr.Conditional:X2}->{CurrentJInstr.Conditional};");
+                        $"OpCode: {(uint)CurrentJInstr.OpCode:X2}->{CurrentJInstr.OpCode}; " +
+                        $"Condition: {(uint)CurrentJInstr.Conditional:X2}->{CurrentJInstr.Conditional};");
                     break;
             }
         }

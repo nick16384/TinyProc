@@ -93,15 +93,14 @@ public partial class CPU
 
     private void NextClock()
     {
-        Console.WriteLine("Clock edge rising");
+        Console.WriteLine("====================================================================");
 
         _CU.Temp_InstructionFetch1();
         _CU.Temp_InstructionFetch2();
         _CU.Temp_InstructionDecode();
         _CU.Temp_InstructionExecute();
 
-        Console.WriteLine();
-
+        Console.WriteLine("\n====================================================================");
         Console.WriteLine("Cycle finished. Waiting for next clock pulse.");
     }
 
