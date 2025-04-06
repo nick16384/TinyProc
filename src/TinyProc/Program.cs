@@ -46,10 +46,7 @@ class Program
                     // Wait until the user presses enter for the next time
                     Console.ReadLine();
                 cycles++;
-                Console.WriteLine(
-                    "\n====================================================================\n" +
-                    $"CPU cycle {cycles}"
-                );
+                Console.WriteLine($"\n\nCPU cycle {cycles}");
             }
             // CPU clock level oscillates between low (false) and high (true)
             cpu.ClockLevel = !cpu.ClockLevel;
@@ -60,6 +57,7 @@ class Program
 
     private static readonly (uint, uint)[] MAIN_PROGRAM_INSTRUCTION_TUPLES =
     [
+        // TODO: Next step: Assembler
         (0b110000_0000_00001_00000000000000000u, 0x00000078u), // LOAD GP1, 00000078
         (0b010000_0000_00001_00000000000000000u, 0x00000001u), // ADD GP1, 00000001
         (0b110010_0000_00001_00000000000000000u, 0x00000078u), // STORE GP1, 00000078
