@@ -9,7 +9,7 @@ https://www.youtube.com/watch?v=PEs855FNCOw&list=PLrDd_kMiAuNmSb-CKWQqq9oBFN_KNM
 // x,y -> [op] -> out
 public partial class CPU
 {
-    private class ALU
+    public class ALU
     {
         public class ALU_OpCode(bool zx, bool nx, bool zy, bool ny, bool f, bool no)
         {

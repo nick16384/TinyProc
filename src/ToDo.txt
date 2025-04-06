@@ -26,3 +26,6 @@ When printing register codes, also print names for better debugging info (e.g. 0
 
 New meta instructions:
 STORI (Store immediate value at address in register)
+
+Question: ALU Opcode bits required in instruction structure, when already determined by opcode?
+--> If not, remove ALU Opcode bits.
