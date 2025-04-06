@@ -21,8 +21,9 @@ Branching:
 02 - B? [Target address] : Branch on condition
 
 Inter-register non-arithmetic operations:
-03 - MOV [Destination register] [Source register] : Copy register to another register
-04 - TST : Test command; Sets all flags
+03 - MOVR [Destination register] [Source register] : Copy register to another register
+04 - MOV [Destination register] [Immediate] : Copy immediate value to register
+05 - TST : Test command; Sets all flags
 
 Flags:
 07 - CLZ : Clear zero flag
@@ -88,7 +89,7 @@ RD: Destination register
 RS: Source register
 
 I-Type (Immediate type):
-[ 6 OpCode | 4 Conditional | 5 RD | 16 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+[ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 10 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
 
 J-Type (Jump type):
 [ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]

@@ -1,5 +1,5 @@
 ﻿using TinyProc.Memory;
-using TinyProc.Processor;
+using TinyProc.Processor.CPU;
 
 class Program
 {
@@ -60,9 +60,10 @@ class Program
 
     private static readonly (uint, uint)[] MAIN_PROGRAM_INSTRUCTION_TUPLES =
     [
-        (0x00000000u, 0x00000000u),
-        (0x00000000u, 0x00000000u),
-        (0b000001_0000_0000000000000000000000, 0x0),
+        (0b110000_0000_00001_00000000000000000u, 0x00000078u), // LOAD GP1, 00000078
+        (0b010000_0000_00001_00000000000000000u, 0x00000001u), // ADD GP1, 00000001
+        (0b110010_0000_00001_00000000000000000u, 0x00000078u), // STORE GP1, 00000078
+        (0b000001_0000_0000000000000000000000u, 0x00000000u) // JMP 00000000
     ];
     private static readonly uint[] MAIN_PROGRAM = [.. MAIN_PROGRAM_INSTRUCTION_TUPLES.SelectMany(t => new uint[] { t.Item1, t.Item2 })];
 

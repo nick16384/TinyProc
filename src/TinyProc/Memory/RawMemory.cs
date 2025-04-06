@@ -74,6 +74,10 @@ public class RawMemory
             bool isBitSet = valueMasked > 0;
             _data[x, addr] = isBitSet;
         }
+        if (addr == 0x00000078u)
+        {
+            Console.WriteLine($"Value at special address 0x00000078: {value:X8}");
+        }
     }
 
     // TODO: Refactor this method to look more pleasing.
@@ -129,6 +133,6 @@ public class RawMemory
     private void CheckValidAddress(uint addr)
     {
         if (addr > _words - 1)
-            throw new ArgumentException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
+            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
     }
 }

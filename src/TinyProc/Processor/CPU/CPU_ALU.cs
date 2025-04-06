@@ -32,18 +32,18 @@ public partial class CPU
             TransferA,
             TransferB,
             AdditionSigned,
-            XY_SubtractionSigned,
-            YX_SubtractionSigned,
-            X_Negative,
-            Y_Negative,
-            X_Increment,
-            Y_Increment,
-            X_Decrement,
-            Y_Decrement,
+            AB_SubtractionSigned,
+            BA_SubtractionSigned,
+            A_Negative,
+            B_Negative,
+            A_Increment,
+            B_Increment,
+            A_Decrement,
+            B_Decrement,
             LogicalAND,
             LogicalOR,
-            X_LogicalNOT,
-            Y_LogicalNOT
+            A_LogicalNOT,
+            B_LogicalNOT
         }
 
         public class ALUDataRegister(ALU alu) : Register(true, RegisterRWAccess.ReadWrite)
@@ -121,18 +121,18 @@ public partial class CPU
             { ALU_Operation.TransferA,            new ALU_OpCode(false, false, true, true, false, false) },
             { ALU_Operation.TransferB,            new ALU_OpCode(true, true, false, false, false, false) },
             { ALU_Operation.AdditionSigned,       new ALU_OpCode(false, false, false, false, true, false) },
-            { ALU_Operation.XY_SubtractionSigned, new ALU_OpCode(false, true, false, false, true, true) },
-            { ALU_Operation.YX_SubtractionSigned, new ALU_OpCode(false, false, false, true, true, true) },
-            { ALU_Operation.X_Negative,           new ALU_OpCode(false, false, true, true, true, true) },
-            { ALU_Operation.Y_Negative,           new ALU_OpCode(true, true, false, false, true, true) },
-            { ALU_Operation.X_Increment,          new ALU_OpCode(false, true, true, true, true, true) },
-            { ALU_Operation.Y_Increment,          new ALU_OpCode(true, true, false, true, true, true) },
-            { ALU_Operation.X_Decrement,          new ALU_OpCode(false, false, true, true, true, false) },
-            { ALU_Operation.Y_Decrement,          new ALU_OpCode(true, true, false, false, true, false) },
+            { ALU_Operation.AB_SubtractionSigned, new ALU_OpCode(false, true, false, false, true, true) },
+            { ALU_Operation.BA_SubtractionSigned, new ALU_OpCode(false, false, false, true, true, true) },
+            { ALU_Operation.A_Negative,           new ALU_OpCode(false, false, true, true, true, true) },
+            { ALU_Operation.B_Negative,           new ALU_OpCode(true, true, false, false, true, true) },
+            { ALU_Operation.A_Increment,          new ALU_OpCode(false, true, true, true, true, true) },
+            { ALU_Operation.B_Increment,          new ALU_OpCode(true, true, false, true, true, true) },
+            { ALU_Operation.A_Decrement,          new ALU_OpCode(false, false, true, true, true, false) },
+            { ALU_Operation.B_Decrement,          new ALU_OpCode(true, true, false, false, true, false) },
             { ALU_Operation.LogicalAND,           new ALU_OpCode(false, false, false, false, false, false) },
             { ALU_Operation.LogicalOR,            new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.X_LogicalNOT,         new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.Y_LogicalNOT,         new ALU_OpCode(false, true, false, true, false, true) }
+            { ALU_Operation.A_LogicalNOT,         new ALU_OpCode(false, false, false, false, false, false) },
+            { ALU_Operation.B_LogicalNOT,         new ALU_OpCode(false, true, false, true, false, true) }
         };
     }
 }
