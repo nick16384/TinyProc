@@ -21,8 +21,6 @@ Branching:
 02 - B? [Target address] : Branch on condition
 
 Inter-register non-arithmetic operations:
-03 - MOVR [Destination register] [Source register] : Copy register to another register
-04 - MOV [Destination register] [Immediate] : Copy immediate value to register
 05 - TST : Test command; Sets all flags
 
 Flags:
@@ -30,29 +28,20 @@ Flags:
 08 - CLOF : Clear overflow flag
 09 - CLNG : Clear negative flag
 
-Inter-register arithmetic operations:
-10 - ADD? [Destination register] [Immediate] : Add value to register
-11 - ADDR? [Destination register] [Source register]: Adds the second register value to the first one
-12 - SUB? [Destination register] [Immediate] : Subtract value from register
-13 - SUBR? [Destination register] [Source register] : Subtract the second register value from the first one
-14 - MUL?
-15 - MULR?
-16 - AND?
-17 - ANDR?
-18 - OR?
-19 - ORR?
-1A - XOR?
-1B - XORR?
-1C - LS?
-1D - LSR?
-1E - RS?
-1F - RSR?
-20 - SRS? : Signed right shift (keeps leftmost bit always the same)
-21 - SRSR?
-22 - ROL?
-23 - ROLR?
-24 - ROR?
-25 - RORR?
+Arithmetic operations:
+10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
+11 - AOPI [Destination register] [Immediate] : Arithmetic operation between
+
+ALU Opcodes for arithmetic instructions:
+001100 - MOV
+000010 - ADD
+010011 - SUB
+011111 - INC
+001110 - DEC
+000000 - AND
+010101 - OR
+To be implemented:
+MUL, XOR, LS, RS, SRS, ROL, ROR
 
 Add documentation for which flags get set by instructions
 

@@ -125,38 +125,16 @@ public partial class CPU
             switch (_currentInstructionType)
             {
                 case Instructions.InstructionType.Register:
-                    if      (CurrentRInstr.OpCode == Instructions.OpCode.MOVR)  { INSTRUCTION_R_MOVR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.CLZ)   { INSTRUCTION_R_CLZ(); }
+                    if      (CurrentRInstr.OpCode == Instructions.OpCode.CLZ)   { INSTRUCTION_R_CLZ(); }
                     else if (CurrentRInstr.OpCode == Instructions.OpCode.CLOF)  { INSTRUCTION_R_CLOF(); }
                     else if (CurrentRInstr.OpCode == Instructions.OpCode.CLNG)  { INSTRUCTION_R_CLNG(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.ADDR)  { INSTRUCTION_R_ADDR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.SUBR)  { INSTRUCTION_R_SUBR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.MULR)  { INSTRUCTION_R_MULR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.ANDR)  { INSTRUCTION_R_ANDR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.ORR)   { INSTRUCTION_R_ORR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.XORR)  { INSTRUCTION_R_XORR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.LSR)   { INSTRUCTION_R_LSR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.RSR)   { INSTRUCTION_R_RSR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.SRSR)  { INSTRUCTION_R_SRSR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.ROLR)  { INSTRUCTION_R_ROLR(); }
-                    else if (CurrentRInstr.OpCode == Instructions.OpCode.RORR)  { INSTRUCTION_R_RORR(); }
+                    else if (CurrentRInstr.OpCode == Instructions.OpCode.AOPR)  { INSTRUCTION_R_AOPR(); }
                     else if (CurrentRInstr.OpCode == Instructions.OpCode.LOADR) { INSTRUCTION_R_LOADR(); }
                     else if (CurrentRInstr.OpCode == Instructions.OpCode.STORR) { INSTRUCTION_R_STORR(); }
                     break;
 
                 case Instructions.InstructionType.Immediate:
-                    if      (CurrentIInstr.OpCode == Instructions.OpCode.MOV)   { INSTRUCTION_I_MOV(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.ADD)   { INSTRUCTION_I_ADD(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.SUB)   { INSTRUCTION_I_SUB(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.MUL)   { INSTRUCTION_I_MUL(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.AND)   { INSTRUCTION_I_AND(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.OR)    { INSTRUCTION_I_OR(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.XOR)   { INSTRUCTION_I_XOR(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.LS)    { INSTRUCTION_I_LS(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.RS)    { INSTRUCTION_I_RS(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.SRS)   { INSTRUCTION_I_SRS(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.ROL)   { INSTRUCTION_I_ROL(); }
-                    else if (CurrentIInstr.OpCode == Instructions.OpCode.ROR)   { INSTRUCTION_I_ROR(); }
+                    if      (CurrentIInstr.OpCode == Instructions.OpCode.AOPI)  { INSTRUCTION_I_AOPI(); }
                     else if (CurrentIInstr.OpCode == Instructions.OpCode.LOAD)  { INSTRUCTION_I_LOAD(); }
                     else if (CurrentIInstr.OpCode == Instructions.OpCode.STORE) { INSTRUCTION_I_STORE(); }
                     break;

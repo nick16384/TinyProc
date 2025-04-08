@@ -25,6 +25,17 @@ public partial class CPU
             public bool f = f;
             // If true, out = !out
             public bool no = no;
+
+            public override string ToString()
+            {
+                return
+                    (zx ? "1" : "0") +
+                    (nx ? "1" : "0") +
+                    (zy ? "1" : "0") +
+                    (ny ? "1" : "0") +
+                    (f  ? "1" : "0") +
+                    (no ? "1" : "0");
+            }
         }
 
         public enum ALU_Operation
@@ -130,9 +141,9 @@ public partial class CPU
             { ALU_Operation.A_Decrement,          new ALU_OpCode(false, false, true, true, true, false) },
             { ALU_Operation.B_Decrement,          new ALU_OpCode(true, true, false, false, true, false) },
             { ALU_Operation.LogicalAND,           new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.LogicalOR,            new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.A_LogicalNOT,         new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.B_LogicalNOT,         new ALU_OpCode(false, true, false, true, false, true) }
+            { ALU_Operation.LogicalOR,            new ALU_OpCode(false, true, false, true, false, true) },
+            { ALU_Operation.A_LogicalNOT,         new ALU_OpCode(false, false, true, true, false, true) },
+            { ALU_Operation.B_LogicalNOT,         new ALU_OpCode(true, true, false, false, false, true) }
         };
     }
 }

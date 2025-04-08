@@ -1,3 +1,4 @@
+using System.Reflection.Emit;
 using TinyProc.Processor;
 using static TinyProc.Processor.CPU.CPU;
 
@@ -24,7 +25,6 @@ public class Assembler()
             Console.WriteLine($"Attempting to parse assembly line: {line}");
             string[] words = line.Split([" ", ","], StringSplitOptions.RemoveEmptyEntries);
             string mnemonic = words[0].ToUpper();
-            Instructions.OpCode opCode = (Instructions.OpCode)mnemonic;
 
             Instructions.Condition conditional = Instructions.Condition.ALWAYS;
             if (mnemonic.Length >= 3)
@@ -34,7 +34,33 @@ public class Assembler()
                 catch (KeyNotFoundException) { Console.WriteLine($"Mnemonic {mnemonic} has no condition code."); }
             }
 
-            Instructions.InstructionType type = Instructions.DetermineInstructionType(opCode);
+            Instructions.InstructionType type;
+            if (words.Length <= 2)
+            {
+                if (mnemonic != "INC" && mnemonic != "DEC")
+                    type = Instructions.InstructionType.Jump;
+                else
+                {
+                    // Dirty workaround
+                    // TODO: Clean up
+                    // TODO: Fix INC / DEC instructions to 1. work and 2. use the ALUs capability to directly increment / decrement
+                    // or maybe use internal +1 -r -1 registers
+                    type = Instructions.InstructionType.Immediate;
+                    words = [.. words, "0x0"];
+                }
+            }
+            else
+            {
+                bool parseOp2AsUIntError = false;
+                try { ConvertStringToUInt(words[2]); }
+                catch (FormatException) { parseOp2AsUIntError = true; }
+                if (parseOp2AsUIntError)
+                    type = Instructions.InstructionType.Register;
+                else
+                    type = Instructions.InstructionType.Immediate;
+            }
+            Instructions.OpCode opCode = GetOpCodeFromMnemonic(mnemonic, type);
+
             Console.Error.WriteLine($"Type: {type}");
             switch (type)
             {
@@ -45,9 +71,7 @@ public class Assembler()
                     string operand2 = words[2].ToUpper();
                     Instructions.AddressableRegisterCode destRegCode = (Instructions.AddressableRegisterCode)operand1;
                     Instructions.AddressableRegisterCode srcRegCode = (Instructions.AddressableRegisterCode)operand2;
-                    ALU.ALU_OpCode aluOpCode = new(false, false, false, false, false, false);
-                    try { GetALUOpCodeFromInstructionOpCode(opCode); }
-                    catch (ArgumentException) {}
+                    ALU.ALU_OpCode aluOpCode = GetALUOpCodeFromInstructionMnemonic(mnemonic);
 
                     Instructions.InstructionTypeR instruction = new(opCode, conditional, destRegCode, srcRegCode, aluOpCode);
                     (uint, uint) instructionBinaryTuple = Instructions.ForgeBinaryInstruction(instruction);
@@ -62,9 +86,7 @@ public class Assembler()
                     string immediateStr = words[2];
                     Instructions.AddressableRegisterCode destRegCode = (Instructions.AddressableRegisterCode)operand1;
                     uint immediate = ConvertStringToUInt(immediateStr);
-                    ALU.ALU_OpCode aluOpCode = new(false, false, false, false, false, false);
-                    try { GetALUOpCodeFromInstructionOpCode(opCode); }
-                    catch (ArgumentException) {}
+                    ALU.ALU_OpCode aluOpCode = GetALUOpCodeFromInstructionMnemonic(mnemonic);
 
                     Instructions.InstructionTypeI instruction = new(opCode, conditional, destRegCode, aluOpCode, immediate);
                     (uint, uint) instructionBinaryTuple = Instructions.ForgeBinaryInstruction(instruction);
@@ -95,18 +117,50 @@ public class Assembler()
         return [.. assembledMachineCode];
     }
 
-    private static ALU.ALU_OpCode GetALUOpCodeFromInstructionOpCode(Instructions.OpCode opCode)
+    private static Instructions.OpCode GetOpCodeFromMnemonic(string mnemonic, Instructions.InstructionType instructionType)
     {
-        if      (opCode == Instructions.OpCode.ADD || opCode == Instructions.OpCode.ADDR)
-            return ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned];
-        else if (opCode == Instructions.OpCode.SUB || opCode == Instructions.OpCode.SUBR)
-            return ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AB_SubtractionSigned];
-        else if (opCode == Instructions.OpCode.AND || opCode == Instructions.OpCode.ANDR)
-            return ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND];
-        else if (opCode == Instructions.OpCode.OR || opCode == Instructions.OpCode.ORR)
-            return ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR];
-        else
-            throw new ArgumentException($"OpCode {opCode} has no associated ALU OpCode.");
+        if (
+            mnemonic == "MOV" ||
+            mnemonic == "ADD" ||
+            mnemonic == "SUB" ||
+            mnemonic == "INC" ||
+            mnemonic == "DEC" ||
+            mnemonic == "AND" ||
+            mnemonic == "OR")
+        {
+            if (instructionType == Instructions.InstructionType.Immediate)
+                return Instructions.OpCode.AOPI;
+            else
+                return Instructions.OpCode.AOPR;
+        }
+
+        if (mnemonic == "STORE") { return Instructions.OpCode.STORE; }
+        if (mnemonic == "STORR") { return Instructions.OpCode.STORR; }
+        if (mnemonic == "LOAD")  { return Instructions.OpCode.LOAD; }
+        if (mnemonic == "LOADR") { return Instructions.OpCode.LOADR; }
+
+        if (mnemonic == "NOP")   { return Instructions.OpCode.NOP; }
+        if (mnemonic == "JMP")   { return Instructions.OpCode.JMP; }
+        if (mnemonic == "B")     { return Instructions.OpCode.B; }
+
+        throw new ArgumentException($"Mnemonic {mnemonic} has no associated Opcode.");
+    }
+
+    private static ALU.ALU_OpCode GetALUOpCodeFromInstructionMnemonic(string mnemonic)
+    {
+        if (mnemonic == "STORE" || mnemonic == "STORR" || mnemonic == "LOAD" || mnemonic == "LOADR")
+            return new ALU.ALU_OpCode(false, false, false, false, false, false);
+        return mnemonic switch
+        {
+            "MOV" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA],
+            "ADD" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned],
+            "SUB" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AB_SubtractionSigned],
+            "INC" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.A_Increment],
+            "DEC" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.A_Decrement],
+            "AND" => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND],
+            "OR"  => ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR],
+            _ => throw new ArgumentException($"Mnemonic {mnemonic} has no associated ALU Opcode."),
+        };
     }
 
     // Converts a number string from

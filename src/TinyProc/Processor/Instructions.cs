@@ -41,33 +41,11 @@ public sealed class Instructions
         if      (opCode == OpCode.NOP)   { return InstructionType.Jump; }
         else if (opCode == OpCode.JMP)   { return InstructionType.Jump; }
         else if (opCode == OpCode.B)     { return InstructionType.Jump; }
-        else if (opCode == OpCode.MOV)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.MOVR)  { return InstructionType.Register; }
+        else if (opCode == OpCode.AOPI)  { return InstructionType.Immediate; }
+        else if (opCode == OpCode.AOPR)  { return InstructionType.Register; }
         else if (opCode == OpCode.CLZ)   { return InstructionType.Register; }
         else if (opCode == OpCode.CLOF)  { return InstructionType.Register; }
         else if (opCode == OpCode.CLNG)  { return InstructionType.Register; }
-        else if (opCode == OpCode.ADD)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.ADDR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.SUB)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.SUBR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.MUL)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.MULR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.AND)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.ANDR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.OR)    { return InstructionType.Immediate; }
-        else if (opCode == OpCode.ORR)   { return InstructionType.Register; }
-        else if (opCode == OpCode.XOR)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.XORR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.LS)    { return InstructionType.Immediate; }
-        else if (opCode == OpCode.LSR)   { return InstructionType.Register; }
-        else if (opCode == OpCode.RS)    { return InstructionType.Immediate; }
-        else if (opCode == OpCode.RSR)   { return InstructionType.Register; }
-        else if (opCode == OpCode.SRS)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.SRSR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.ROL)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.ROLR)  { return InstructionType.Register; }
-        else if (opCode == OpCode.ROR)   { return InstructionType.Immediate; }
-        else if (opCode == OpCode.RORR)  { return InstructionType.Register; }
         else if (opCode == OpCode.LOAD)  { return InstructionType.Immediate; }
         else if (opCode == OpCode.LOADR) { return InstructionType.Register; }
         else if (opCode == OpCode.STORE) { return InstructionType.Immediate; }
@@ -206,35 +184,12 @@ public sealed class Instructions
         public static readonly OpCode JMP   = new(0x01, "JMP");
         public static readonly OpCode B     = new(0x02, "B");
 
-        public static readonly OpCode MOV   = new(0x03, "MOV");
-        public static readonly OpCode MOVR  = new(0x04, "MOVR");
+        public static readonly OpCode AOPR  = new(0x10, "AOPR");
+        public static readonly OpCode AOPI  = new(0x11, "AOPI");
 
         public static readonly OpCode CLZ   = new(0x07, "CLZ");
         public static readonly OpCode CLOF  = new(0x08, "CLOF");
         public static readonly OpCode CLNG  = new(0x09, "CLNG");
-
-        public static readonly OpCode ADD   = new(0x10, "ADD");
-        public static readonly OpCode ADDR  = new(0x11, "ADDR");
-        public static readonly OpCode SUB   = new(0x12, "SUB");
-        public static readonly OpCode SUBR  = new(0x13, "SUBR");
-        public static readonly OpCode MUL   = new(0x14, "MUL");
-        public static readonly OpCode MULR  = new(0x15, "MULR");
-        public static readonly OpCode AND   = new(0x16, "AND");
-        public static readonly OpCode ANDR  = new(0x17, "ANDR");
-        public static readonly OpCode OR    = new(0x18, "OR");
-        public static readonly OpCode ORR   = new(0x19, "ORR");
-        public static readonly OpCode XOR   = new(0x1A, "XOR");
-        public static readonly OpCode XORR  = new(0x1B, "XORR");
-        public static readonly OpCode LS    = new(0x1C, "LS");
-        public static readonly OpCode LSR   = new(0x1D, "LSR");
-        public static readonly OpCode RS    = new(0x1E, "RS");
-        public static readonly OpCode RSR   = new(0x1F, "RSR");
-        public static readonly OpCode SRS   = new(0x20, "SRS");
-        public static readonly OpCode SRSR  = new(0x21, "SRSR");
-        public static readonly OpCode ROL   = new(0x22, "ROL");
-        public static readonly OpCode ROLR  = new(0x23, "ROLR");
-        public static readonly OpCode ROR   = new(0x24, "ROR");
-        public static readonly OpCode RORR  = new(0x25, "RORR");
 
         public static readonly OpCode LOAD  = new(0x30, "LOAD");
         public static readonly OpCode LOADR = new(0x31, "LOADR");
