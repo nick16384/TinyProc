@@ -1,0 +1,31 @@
+Future (optional) ideas:
+Simulate different access times
+Add muxers / demuxers
+External HW interfaces, Interrupts
+Caches, virtual memory -> MMU
+Change CU code to better resemble binary logic
+
+Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
+
+Refactor RawMemory.Debug_DumpAll() to look more pleasing.
+
+Add ALU Accumulator register
+
+Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
+-> Currently one continuous operation: Not realistic
+
+INC / INC2 / DEC instructions, since they perform faster with special registers outputting these values
+
+ALU: Convert to pure logic, so that changes made to A, B, OpCode and SR propagate directly after set to R.
+
+Fix ALU A and B registers not receiving updates, but R register results are stored corretly.
+
+Warning: When changing ALU opcode changes to update bus data, respect order of operations in control unit!
+
+When printing register codes, also print names for better debugging info (e.g. 0x00000001 --> "GP1")
+
+New meta instructions:
+STORI (Store immediate value at address in register)
+
+Question: ALU Opcode bits required in instruction structure, when already determined by opcode?
+--> If not, remove ALU Opcode bits.
