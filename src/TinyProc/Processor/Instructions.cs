@@ -41,7 +41,8 @@ public sealed class Instructions
         if      (opCode == OpCode.NOP)   { return InstructionType.Jump; }
         else if (opCode == OpCode.JMP)   { return InstructionType.Jump; }
         else if (opCode == OpCode.B)     { return InstructionType.Jump; }
-        else if (opCode == OpCode.MOV)   { return InstructionType.Register; }
+        else if (opCode == OpCode.MOV)   { return InstructionType.Immediate; }
+        else if (opCode == OpCode.MOVR)  { return InstructionType.Register; }
         else if (opCode == OpCode.CLZ)   { return InstructionType.Register; }
         else if (opCode == OpCode.CLOF)  { return InstructionType.Register; }
         else if (opCode == OpCode.CLNG)  { return InstructionType.Register; }
@@ -72,6 +73,10 @@ public sealed class Instructions
         else if (opCode == OpCode.STORE) { return InstructionType.Immediate; }
         else if (opCode == OpCode.STORR) { return InstructionType.Register; }
         throw new NotImplementedException($"Instruction opcode {opCode:X8} not linked to instruction type (R/I/J).");
+    }
+    public static InstructionType DetermineInstructionType(OpCode opCode)
+    {
+        return DetermineInstructionType(opCode << 26);
     }
 
     private static ALU.ALU_OpCode GetALUOpCodeFromUInt(uint opCodeBits)
