@@ -3,13 +3,10 @@ Simulate different access times
 Add muxers / demuxers
 External HW interfaces, Interrupts
 Caches, virtual memory -> MMU
-Change CU code to better resemble binary logic
 
 Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
 
 Refactor RawMemory.Debug_DumpAll() to look more pleasing.
-
-Add ALU Accumulator register
 
 Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
 -> Currently one continuous operation: Not realistic
@@ -24,3 +21,11 @@ New meta instructions:
 STORI (Store immediate value at address in register)
 
 Add bus and register for ALU Opcode instead of directly setting from CU.
+
+In assembly, define memory start and end regions (for different kinds of memory)
+Example:
+#MEMREGION ROM 0x0 0xFF ; ROM
+#MEMREGION TEXT 0x100 0x1FF ; Text memory / Console output
+#MEMREGION RAM 0x200 0x3FF ; Main memory
+
+Add assembly labels (e.g. _start:)

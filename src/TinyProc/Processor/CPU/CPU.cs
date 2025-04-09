@@ -61,7 +61,7 @@ public partial class CPU
     private readonly ALU _ALU;
     private readonly MMU _MMU;
 
-    public CPU(RawMemory memory)
+    public CPU(RawMemory[] rams)
     {
         GP1 = new Register(false, RegisterRWAccess.ReadWrite);
         GP2 = new Register(false, RegisterRWAccess.ReadWrite);
@@ -73,7 +73,7 @@ public partial class CPU
         GP8 = new Register(false, RegisterRWAccess.ReadWrite);
 
         _ALU = new ALU();
-        _MMU = new MMU(memory);
+        _MMU = new MMU(null, rams);
         _CU = new ControlUnit(this, _ALU, _MMU);
     }
 

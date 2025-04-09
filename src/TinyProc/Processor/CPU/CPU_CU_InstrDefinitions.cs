@@ -21,23 +21,27 @@ public partial class CPU
 
         private void INSTRUCTION_R_AOPR()
         {
-            Console.WriteLine(
+            Console.Write(
                 "Arithmetic register operation: " +
-                $"Src:{CurrentRInstr.SrcRegCode:X8} [{CurrentRInstr.ALUOpCode}] " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} --> Dst:{CurrentRInstr.DestRegCode:X8}");
-                _alu.OpCode = CurrentRInstr.ALUOpCode;
-                _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
-                _IntBus2Src.BusSourceRegisterAddress = CurrentRInstr.DestRegCode;
-                _IntBus3Dst.BusTargetRegisterAddress = CurrentRInstr.DestRegCode;
-                ResetBus3();
+                $"Dst:{CurrentRInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.DestRegCode].ValueDirect:X8}] " +
+                $"[{CurrentRInstr.ALUOpCode}] " +
+                $"Src:{CurrentRInstr.SrcRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.SrcRegCode].ValueDirect:X8}]");
+            _alu.OpCode = CurrentRInstr.ALUOpCode;
+            _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.DestRegCode;
+            _IntBus2Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
+            _IntBus3Dst.BusTargetRegisterAddress = CurrentRInstr.DestRegCode;
+            ResetBus3();
+            Console.WriteLine(
+                $" --> Dst:{CurrentRInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.DestRegCode].ValueDirect:X8}]");
         }
         
         private void INSTRUCTION_R_LOADR()
         {
             Console.WriteLine(
                 "Load from memory to register " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} at address contained in register " +
-                $"Src:{CurrentRInstr.SrcRegCode:X8}");
+                $"Dst:{CurrentRInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.DestRegCode].ValueDirect:X8}] " +
+                "at address contained in register " +
+                $"Src:{CurrentRInstr.SrcRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.SrcRegCode].ValueDirect:X8}]");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
             _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
@@ -51,8 +55,9 @@ public partial class CPU
         {
             Console.WriteLine(
                 "Store to memory from register " +
-                $"Dst:{CurrentRInstr.DestRegCode:X8} at address contained in register " +
-                $"Src:{CurrentRInstr.SrcRegCode:X8}");
+                $"Dst:{CurrentRInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.DestRegCode].ValueDirect:X8}] " +
+                "at address contained in register " +
+                $"Src:{CurrentRInstr.SrcRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.SrcRegCode].ValueDirect:X8}]");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
             _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
@@ -65,22 +70,25 @@ public partial class CPU
 
         private void INSTRUCTION_I_AOPI()
         {
-            Console.WriteLine(
+            Console.Write(
                 "Arithmetic immediate operation: " +
                 $"#{CurrentIInstr.Immediate:X8} [{CurrentIInstr.ALUOpCode}] " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} --> Dst:{CurrentIInstr.DestRegCode:X8}");
+                $"Dst:{CurrentIInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentIInstr.DestRegCode].ValueDirect:X8}]");
             _alu.OpCode = CurrentIInstr.ALUOpCode;
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
             _IntBus2Src.BusSourceRegisterAddress = CurrentIInstr.DestRegCode;
             _IntBus3Dst.BusTargetRegisterAddress = CurrentIInstr.DestRegCode;
             ResetBus3();
+            Console.WriteLine(
+                $" --> Dst:{CurrentIInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentIInstr.DestRegCode].ValueDirect:X8}]");
         }
 
         private void INSTRUCTION_I_LOAD()
         {
             Console.WriteLine(
                 "Load from memory to register " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} at immediate address " +
+                $"Dst:{CurrentIInstr.DestRegCode:X8} " +
+                "at immediate address " +
                 $"#{CurrentIInstr.Immediate:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
@@ -95,7 +103,8 @@ public partial class CPU
         {
             Console.WriteLine(
                 "Store to memory from register " +
-                $"Dst:{CurrentIInstr.DestRegCode:X8} at immediate address " +
+                $"Dst:{CurrentIInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentIInstr.DestRegCode].ValueDirect:X8}] " +
+                "at immediate address " +
                 $"#{CurrentIInstr.Immediate:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;

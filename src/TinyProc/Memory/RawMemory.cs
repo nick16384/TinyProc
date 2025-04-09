@@ -49,7 +49,7 @@ public class RawMemory
 
     private static readonly uint MASK_LEFT_BIT_SINGLE = 0x8000_0000u;
     // Reads block of 64 bits
-    private uint Read(uint addr)
+    private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
         uint readWord = 0x0;
@@ -61,71 +61,50 @@ public class RawMemory
         }
         return readWord;
     }
-    private void Write(uint addr, uint value)
+    private protected virtual void Write(uint addr, uint value)
     {
         if (addr == 0x00000039u)
             Console.WriteLine("Miku says thank you!");
         CheckValidAddress(addr);
-        Console.WriteLine($"Write 0x{value:X} at 0x{addr:X}");
+        Console.WriteLine($"[Mem] Write 0x{value:X8} at 0x{addr:X8}");
         for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
         {
             uint valueMasked = value & (MASK_LEFT_BIT_SINGLE >> x);
-            valueMasked >>= (int)(Register.SYSTEM_WORD_SIZE - 1 - x);
+            valueMasked >>= Register.SYSTEM_WORD_SIZE - 1 - x;
             bool isBitSet = valueMasked > 0;
             _data[x, addr] = isBitSet;
         }
-        if (addr == 0x00000078u)
-        {
-            Console.WriteLine($"Value at special address 0x00000078: {value:X8}");
-        }
     }
 
-    // TODO: Refactor this method to look more pleasing.
     public void Debug_DumpAll()
     {
-        Console.WriteLine("Dumping full memory contents");
-        // Print 4 addresses per line
-        bool printingAscii = false;
-        int printColumn = 1;
-        for (uint y = 0; y < _words; y++)
+        Console.WriteLine("[Mem] Dumping full memory contents (Big endian)");
+        int addressesPerLine = 4;
+        for (uint baseAddr = 0; baseAddr < _words; baseAddr += 4)
         {
-            if (printColumn == 1 && !printingAscii)
-                Console.Write($"{y:X8}:");
-            if (printColumn < 4)
+            Console.Write($"{baseAddr:X8}:");
+            // Print address values as hexadecimal
+            for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
-                if (!printingAscii)
-                    Console.Write($" {Read(y):X8}");
-                else
-                {
-                    string str = Encoding.UTF8.GetString([(byte)Read(y)]);
-                    if (string.IsNullOrWhiteSpace(str) || str == ((char)0).ToString())
-                        Console.Write(".");
-                    else
-                        Console.Write(str);
-                }
-                printColumn++;
+                uint addr = baseAddr + subAddr;
+                Console.Write($" {Read(addr):X8}");
             }
-            else
+            Console.Write("   ");
+            // Print address values decoded as ASCII
+            for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
-                if (!printingAscii)
-                    Console.Write($" {Read(y):X8} \t ");
-                else
-                {
-                    string str = Encoding.UTF8.GetString([(byte)Read(y)]);
-                    if (string.IsNullOrWhiteSpace(str) || str == ((char)0).ToString())
-                        Console.WriteLine(".");
-                    else
-                        Console.WriteLine(str);
-                }
-                printColumn = 1;
-                if (!printingAscii)
-                {
-                    printingAscii = true;
-                    y -= 4;
-                }
-                else
-                    printingAscii = false;
+                uint addr = baseAddr + subAddr;
+                uint data = Read(addr);
+                char c1 = (char)(data >> 24);
+                char c2 = (char)(data >> 16);
+                char c3 = (char)(data >> 8);
+                char c4 = (char)(data >> 0);
+                if (c1 >= 0x20 && c1 <= 0x7E) { Console.Write($" {c1} "); } else { Console.Write(" . "); }
+                if (c2 >= 0x20 && c2 <= 0x7E) { Console.Write($" {c2} "); } else { Console.Write(" . "); }
+                if (c3 >= 0x20 && c3 <= 0x7E) { Console.Write($" {c3} "); } else { Console.Write(" . "); }
+                if (c4 >= 0x20 && c4 <= 0x7E) { Console.Write($" {c4} "); } else { Console.Write(" . "); }
             }
+            Console.WriteLine();
         }
     }
 

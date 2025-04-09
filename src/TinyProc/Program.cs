@@ -25,7 +25,7 @@ class Program
         {
             string sourceFilePath = args[1];
             Console.WriteLine($"Assembling source file {sourceFilePath}");
-            if (sourceFilePath.EndsWith(".lltp-x25-32.asm"))
+            if (sourceFilePath.Trim().EndsWith(".lltp-x25-32.asm"))
                 Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp-x25-32.asm\".");
             
             string assemblyCode = File.ReadAllText(sourceFilePath);
@@ -48,7 +48,7 @@ class Program
         {
             string executableFilePath = args[1];
             Console.WriteLine($"Attempting to load and run binary executable {executableFilePath}");
-            if (executableFilePath.EndsWith(".lltp-x25-32.bin"))
+            if (executableFilePath.Trim().EndsWith(".lltp-x25-32.bin"))
                 Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp-x25-32.bin\".");
 
             Console.WriteLine("Reading binary file");
@@ -59,9 +59,11 @@ class Program
             Console.WriteLine("Creating virtual hardware");
             uint requiredMemoryWords = (uint)MAIN_PROGRAM.Length;
             Console.WriteLine("Creating memory object");
-            RawMemory mem1 = new(requiredMemoryWords + 128);
+            RawMemory mem1 = new(requiredMemoryWords);
+            Console.WriteLine("Creating text memory object");
+            ConsoleMemory tmem1 = new(20);
             Console.WriteLine("Creating CPU object");
-            CPU cpu = new(mem1)
+            CPU cpu = new([mem1, tmem1])
             {
                 ClockLevel = false
             };

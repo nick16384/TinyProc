@@ -53,7 +53,7 @@ Memory:
 
 3F - <Highest possible value for opcode>
 
-Virtual instructions:
+Pseudo instructions:
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
 - NOT (XOR X 0xffffffff)
 - COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
@@ -76,9 +76,11 @@ R-Type (Register type)
 [ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 5 Reserved* | 1 Word Extension** ] [ 32 Zero* ]
 RD: Destination register
 RS: Source register
+ALU: A(RD) [Op] B(RS) --> R(RD)
 
 I-Type (Immediate type):
 [ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 10 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+ALU: A(I) [Op] B(RD) --> R(RD)
 
 J-Type (Jump type):
 [ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]

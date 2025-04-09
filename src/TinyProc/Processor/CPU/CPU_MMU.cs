@@ -30,28 +30,61 @@ public partial class CPU
             {
                 get
                 {
-                    _mmu._RAM.ReadEnable = true;
-                    _mmu._RAM.AddressBus = _mmu.MAR.ValueDirect;
-                    _storedValue = _mmu._RAM.DataBus;
+                    _mmu.RAM.ReadEnable = true;
+                    _mmu.RAM.AddressBus = _mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM);
+                    _storedValue = _mmu.RAM.DataBus;
                     return _storedValue;
                 }
                 set
                 {
-                    _mmu._RAM.WriteEnable = true;
-                    _mmu._RAM.DataBus = value;
+                    _mmu.RAM.WriteEnable = true;
+                    _mmu.RAM.DataBus = value;
                     _storedValue = value;
                 }
             }
         }
 
-        public MMU(RawMemory ram)
+        // Facilitates and encapsulates mechanisms to read from and write to arbitrary memory.
+        // Combines attached memory objects' address spaces into one continuous address space.
+        public MMU(ROM rom, RawMemory[] rams)
         {
-            _RAM = ram;
+            _RAMs = rams;
+            _MemorySpaces = [];
+            uint addressCurrent = 0x0u;
+            foreach (RawMemory ram in _RAMs)
+            {
+                _MemorySpaces.Add(ram, (addressCurrent, addressCurrent + ram._words));
+                addressCurrent += ram._words;
+            }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
         }
 
-        public readonly RawMemory _RAM;
+        private RawMemory GetRAMAtVirtualAddress(uint addr)
+        {
+            foreach (RawMemory ram in _RAMs)
+            {
+                uint minAddr = _MemorySpaces[ram].Item1;
+                uint maxAddr = _MemorySpaces[ram].Item2;
+                if (addr >= minAddr && addr < maxAddr)
+                    return ram;
+            }
+            throw new ArgumentOutOfRangeException(
+                $"Cannot determine memory from absolute address {addr:X8}. Max. address is {_MemorySpaces[_RAMs.Last()].Item2:X8}");
+        }
+
+        private RawMemory RAM
+        {
+            get => GetRAMAtVirtualAddress(MAR.ValueDirect);
+        }
+
+        private uint GetRelativeAddress(uint absoluteAddr, RawMemory ram)
+        {
+            return absoluteAddr - _MemorySpaces[ram].Item1;
+        }
+
+        public readonly RawMemory[] _RAMs;
+        private readonly Dictionary<RawMemory, (uint, uint)> _MemorySpaces;
         // Memory address register: Sets an address to read from / write to in memory logic.
         public readonly MemoryAddressRegister MAR;
         // Memory data register:

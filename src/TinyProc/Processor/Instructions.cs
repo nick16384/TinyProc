@@ -211,6 +211,7 @@ public sealed class Instructions
         }
         public static explicit operator OpCode(string mnemonic)
         {
+            mnemonic = mnemonic.ToUpper();
             foreach (OpCode opCode in _values.Values)
                 if (opCode._name.Equals(mnemonic))
                     return opCode;
@@ -250,6 +251,7 @@ public sealed class Instructions
         }
         public static explicit operator Condition(string conditionCode)
         {
+            conditionCode = conditionCode.ToUpper();
             foreach (Condition conditional in _values.Values)
                 if (conditional._name.Equals(conditionCode))
                     return conditional;
@@ -294,6 +296,7 @@ public sealed class Instructions
         }
         public static explicit operator AddressableRegisterCode(string registerCode)
         {
+            registerCode = registerCode.ToUpper();
             foreach (AddressableRegisterCode addressableRegister in _values.Values)
                 if (addressableRegister._name.Equals(registerCode))
                     return addressableRegister;
