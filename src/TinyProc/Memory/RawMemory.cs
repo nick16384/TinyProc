@@ -95,10 +95,10 @@ public class RawMemory
             {
                 uint addr = baseAddr + subAddr;
                 uint data = Read(addr);
-                char c1 = (char)(data >> 24);
-                char c2 = (char)(data >> 16);
-                char c3 = (char)(data >> 8);
-                char c4 = (char)(data >> 0);
+                char c1 = (char)((data & 0xFF000000) >> 24);
+                char c2 = (char)((data & 0x00FF0000) >> 16);
+                char c3 = (char)((data & 0x0000FF00) >> 8);
+                char c4 = (char)((data & 0x000000FF) >> 0);
                 if (c1 >= 0x20 && c1 <= 0x7E) { Console.Write($" {c1} "); } else { Console.Write(" . "); }
                 if (c2 >= 0x20 && c2 <= 0x7E) { Console.Write($" {c2} "); } else { Console.Write(" . "); }
                 if (c3 >= 0x20 && c3 <= 0x7E) { Console.Write($" {c3} "); } else { Console.Write(" . "); }
