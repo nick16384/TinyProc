@@ -1,12 +1,11 @@
-using TinyProc.Processor;
-using static TinyProc.Processor.CPU.CPU;
-
 namespace TinyProc.Assembler;
 
-public class Assembler()
+public partial class Assembler()
 {
+    public const string ASSEMBLER_VERSION = "2.0";
     public static uint[] AssembleToMachineCode(string assemblyCode)
     {
+        Console.WriteLine($"LLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
         List<string> assemblyLines = [.. assemblyCode.Split("\n")];
         // Filter out comments & Remove empty lines
         assemblyLines = [.. assemblyLines
@@ -17,243 +16,113 @@ public class Assembler()
         assemblyLines.ForEach(Console.WriteLine);
         Console.WriteLine("=====  Assembly end  =====");
 
+        (uint, uint) workingMemoryRegion = (uint.MaxValue, uint.MaxValue - 1);
+        (uint, uint) consoleMemoryRegion = (uint.MaxValue, uint.MaxValue - 1);
+        Dictionary<string, uint> labelAddressMap = [];
         List<uint> assembledMachineCode = [];
+        uint currentLine = 0;
+        uint currentAddress = 0x0;
+        string[] words = [];
 
-        foreach (string line in assemblyLines)
+        try
         {
-            Console.WriteLine($"Attempting to parse assembly line: {line}");
-            string[] words = line.Split([" ", ","], StringSplitOptions.RemoveEmptyEntries);
-            string mnemonic = words[0].ToUpper();
-
-            Instructions.Condition conditional = Instructions.Condition.ALWAYS;
-            if (mnemonic.Length >= 3)
+            foreach (string line in assemblyLines)
             {
-                string possibleConditionCode = mnemonic[^2..];
-                try { conditional = (Instructions.Condition)possibleConditionCode; }
-                catch (KeyNotFoundException) { Console.WriteLine($"Mnemonic {mnemonic} has no condition code."); }
-            }
+                currentLine++;
+                Console.WriteLine($"Attempting to parse assembly line: {line}");
+                words = line.Split([" ", ","], StringSplitOptions.RemoveEmptyEntries);
 
-            // Determine instruction type (R/I/J)
-            Instructions.InstructionType? type = null;
-            bool isWord2ParseableAsUInt = true;
-            try { ConvertStringToUInt(words[2]); } catch (Exception) { isWord2ParseableAsUInt = false; }
-            if      (mnemonic == "MOV" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "MOV" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "ADD" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "ADD" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "SUB" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "SUB" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "INC" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "DEC" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "AND" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "AND" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "OR" && isWord2ParseableAsUInt)   { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "OR" && !isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "LOAD")  { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "LOADR") { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "STORE") { type = Instructions.InstructionType.Immediate; }
-            else if (mnemonic == "STORR") { type = Instructions.InstructionType.Register; }
-            else if (mnemonic == "NOP")   { type = Instructions.InstructionType.Jump; }
-            else if (mnemonic == "JMP")   { type = Instructions.InstructionType.Jump; }
-            else if (mnemonic == "B")     { type = Instructions.InstructionType.Jump; }
-
-            Console.Error.WriteLine($"Type: {type}");
-            switch (type)
-            {
-                case Instructions.InstructionType.Register:
-                // Case statements with brackets to create separate scope for each case statement.
+                // Make sure the correct version of assembly code is used
+                if (currentLine == 1)
                 {
-                    Instructions.InstructionTypeR instruction = InstructionTypeRLookup(words, conditional);
-                    (uint, uint) instructionBinaryTuple = Instructions.ForgeBinaryInstruction(instruction);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item1);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item2);
-                    break;
+                    if (words[0] != "#VERSION")
+                        throw new ArgumentException("Cannot assemble program. No #VERSION directive specified.");
+                    if (words[1] != ASSEMBLER_VERSION)
+                        throw new NotSupportedException(
+                            $"Assembler version {ASSEMBLER_VERSION} does not match #VERSION directive with value {words[1]}");
+                    Console.WriteLine("Version check successful.");
                 }
+
+                // Resolve memory spaces, Replace relative addresses with absolute counterpart
+                // Example: If "#MEMREGION CON 0x10000000 0x20000000" was specified, then
+                // "STORE gp1, CON:3" becomes "STORE gp1, 0x10000003"
+                if (words[0] == "#MEMREGION")
+                {
+                    if (words[1] == "RAM")
+                    {
+                        uint regionStart = ConvertStringToUInt(words[2]);
+                        uint regionEnd = ConvertStringToUInt(words[3]);
+                        if (regionEnd < regionStart)
+                            throw new ArgumentOutOfRangeException(
+                                $"Working memory region end {regionEnd:X8} smaller than start {regionStart:X8}");
+                        workingMemoryRegion = (regionStart, regionEnd);
+                        Console.WriteLine($"Working memory region: {regionStart:X8} - {regionEnd:X8}");
+                        continue;
+                    }
+                    if (words[1] == "CON")
+                    {
+                        uint regionStart = ConvertStringToUInt(words[2]);
+                        uint regionEnd = ConvertStringToUInt(words[3]);
+                        if (regionEnd < regionStart)
+                            throw new ArgumentOutOfRangeException(
+                                $"Working memory region end {regionEnd:X8} smaller than start {regionStart:X8}");
+                        consoleMemoryRegion = (regionStart, regionEnd);
+                        Console.WriteLine($"Console memory region: {regionStart:X8} - {regionEnd:X8}");
+                        continue;
+                    }
+                    throw new ArgumentException($"Unknown memory region type {words[1]}");
+                }
+                if (workingMemoryRegion.Item2 < workingMemoryRegion.Item1)
+                    throw new ArgumentOutOfRangeException("Working memory region not specified. Directive #MEMREGION RAM missing");
+                if (consoleMemoryRegion.Item2 < consoleMemoryRegion.Item1)
+                    throw new ArgumentOutOfRangeException("Console memory region not specified. Directive #MEMREGION CON missing");
                 
-                case Instructions.InstructionType.Immediate:
+                // Checks current line for occurrences of relative addresses
+                for (int i = 0; i < words.Length; i++)
                 {
-                    Instructions.InstructionTypeI instruction = InstructionTypeILookup(words, conditional);
-                    (uint, uint) instructionBinaryTuple = Instructions.ForgeBinaryInstruction(instruction);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item1);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item2);
-                    break;
+                    if (words[i].StartsWith("RAM:"))
+                    {
+                        uint relAddr = ConvertStringToUInt(words[i].Split(":")[1].Trim());
+                        uint absAddr = workingMemoryRegion.Item1 + relAddr;
+                        words[i] = Convert.ToString(absAddr);
+                    }
+                    else if (words[i].StartsWith("CON:"))
+                    {
+                        uint relAddr = ConvertStringToUInt(words[i].Split(":")[1].Trim());
+                        uint absAddr = consoleMemoryRegion.Item1 + relAddr;
+                        words[i] = Convert.ToString(absAddr);
+                    }
                 }
 
-                case Instructions.InstructionType.Jump:
+                // Resolve labels, Replace label encounters with their corresponding absolute addresses
+                if (words[0].EndsWith(':'))
                 {
-                    Instructions.InstructionTypeJ instruction = InstructionTypeJLookup(words, conditional);
-                    (uint, uint) instructionBinaryTuple = Instructions.ForgeBinaryInstruction(instruction);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item1);
-                    assembledMachineCode.Add(instructionBinaryTuple.Item2);
-                    break;
+                    string label = words[0][..^1];
+                    labelAddressMap.Add(label, currentAddress);
+                    Console.WriteLine($"Found label declaration \"{label}\" at address {currentAddress:X8}");
                 }
+                for (int i = 0; i < words.Length; i++)
+                {
+                    if (words[i] matches one of labelAddressMap keys)
+                    {
+                        // do something
+                    }
+                }
+
+                // Parse line as an instruction
+                (uint, uint) instructionBinaryTuple = ParseAsInstruction(words);
+                assembledMachineCode.Add(instructionBinaryTuple.Item1);
+                assembledMachineCode.Add(instructionBinaryTuple.Item2);
+                currentAddress += 0x2;
             }
+        }
+        catch (Exception)
+        {
+            Console.Error.WriteLine($"Error on line {currentLine} \"{string.Concat(words)}\":");
+            throw;
         }
 
         return [.. assembledMachineCode];
-    }
-
-    private static Instructions.InstructionTypeR InstructionTypeRLookup(
-        string[] words, Instructions.Condition conditional)
-    {
-        string mnemonic = words[0].ToUpper();
-        return mnemonic switch
-        {
-            "MOV" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.AOPR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferB]),
-
-            "ADD" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.AOPR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned]),
-            
-            "SUB" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.AOPR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AB_SubtractionSigned]),
-
-            // No INC / DEC; They are exclusively immediate type instructions
-            
-            "AND" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.AOPR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND]),
-
-            "OR" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.AOPR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR]),
-
-            "LOADR" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.LOADR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    DEFAULT_EMPTY_ALU_OPCODE),
-            
-            "STORR" => new Instructions.InstructionTypeR(
-                    Instructions.OpCode.STORR,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    (Instructions.AddressableRegisterCode)words[2],
-                    DEFAULT_EMPTY_ALU_OPCODE),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated R-Type instruction.")
-        };
-    }
-
-    // Some immediate type instructions don't receive any immediate values. (e.g. INC)
-    // The default value passed in the instruction is ignored in this case.
-    private const uint IMMEDIATE_DEFAULT_VALUE = 0x0u;
-    // When an instruction changes the ALU Opcode multiple times during execution, setting this has no effect.
-    // This specifies the default value for such cases.
-    private static readonly ALU.ALU_OpCode DEFAULT_EMPTY_ALU_OPCODE = new(true, false, true, false, false, false);
-
-    private static Instructions.InstructionTypeI InstructionTypeILookup(
-        string[] words, Instructions.Condition conditional)
-    {
-        string mnemonic = words[0].ToUpper();
-        return mnemonic switch
-        {
-            "MOV" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA],
-                    ConvertStringToUInt(words[2])),
-
-            "ADD" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned],
-                    ConvertStringToUInt(words[2])),
-            
-            "SUB" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.BA_SubtractionSigned],
-                    ConvertStringToUInt(words[2])),
-
-            "INC" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.B_Increment],
-                    IMMEDIATE_DEFAULT_VALUE),
-            
-            "DEC" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.B_Decrement],
-                    IMMEDIATE_DEFAULT_VALUE),
-            
-            "AND" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND],
-                    ConvertStringToUInt(words[2])),
-
-            "OR" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.AOPI,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR],
-                    ConvertStringToUInt(words[2])),
-
-            "LOAD" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.LOAD,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
-                    ConvertStringToUInt(words[2])),
-
-            "STORE" => new Instructions.InstructionTypeI(
-                    Instructions.OpCode.STORE,
-                    conditional,
-                    (Instructions.AddressableRegisterCode)words[1],
-                    DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
-                    ConvertStringToUInt(words[2])),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated I-Type instruction.")
-        };
-    }
-
-    private static Instructions.InstructionTypeJ InstructionTypeJLookup(
-        string[] words, Instructions.Condition conditional)
-    {
-        string mnemonic = words[0].ToUpper();
-        return mnemonic switch
-        {
-            "NOP" => new Instructions.InstructionTypeJ(
-                    Instructions.OpCode.NOP,
-                    conditional,
-                    IMMEDIATE_DEFAULT_VALUE),
-
-            "JMP" => new Instructions.InstructionTypeJ(
-                    Instructions.OpCode.JMP,
-                    conditional,
-                    ConvertStringToUInt(words[1])),
-
-            "B" => new Instructions.InstructionTypeJ(
-                    Instructions.OpCode.B,
-                    conditional,
-                    ConvertStringToUInt(words[1])),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated J-Type instruction.")
-        };
     }
 
     // Converts a number string from

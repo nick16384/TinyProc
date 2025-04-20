@@ -25,8 +25,8 @@ class Program
         {
             string sourceFilePath = args[1];
             Console.WriteLine($"Assembling source file {sourceFilePath}");
-            if (sourceFilePath.Trim().EndsWith(".lltp-x25-32.asm"))
-                Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp-x25-32.asm\".");
+            if (sourceFilePath.Trim().EndsWith(".lltp32.asm"))
+                Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp32.asm\".");
             
             string assemblyCode = File.ReadAllText(sourceFilePath);
             uint[] MAIN_PROGRAM = Assembler.AssembleToMachineCode(assemblyCode);
@@ -48,8 +48,8 @@ class Program
         {
             string executableFilePath = args[1];
             Console.WriteLine($"Attempting to load and run binary executable {executableFilePath}");
-            if (executableFilePath.Trim().EndsWith(".lltp-x25-32.bin"))
-                Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp-x25-32.bin\".");
+            if (executableFilePath.Trim().EndsWith(".lltp32.bin"))
+                Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
 
             Console.WriteLine("Reading binary file");
             byte[] binFileContent = File.ReadAllBytes(executableFilePath);
