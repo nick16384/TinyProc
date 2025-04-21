@@ -114,3 +114,13 @@ Internal registers (Not addressable):
 - Bus 1, 2, 3 selectors
 - IRA / IRB
 - MAR / MDR
+
+Assembly binary file, First 8 words:
+1. Assembler version (byte 1: Major; byte 2: Minor)
+2. Absolute start address of RAM region
+3. Absolute end address of RAM region
+4. Absolute start address of CON region (0xFFFFFFFF if none)
+5. Absolute end address of CON region (0xFFFFFFFE if none, E is not a typo)
+6. Entry point (Absolute address)
+7. 0x0
+8. 0x0

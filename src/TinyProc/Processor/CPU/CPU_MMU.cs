@@ -46,15 +46,16 @@ public partial class CPU
 
         // Facilitates and encapsulates mechanisms to read from and write to arbitrary memory.
         // Combines attached memory objects' address spaces into one continuous address space.
-        public MMU(ROM rom, RawMemory[] rams)
+        public MMU(ROM rom, (uint, uint) romSpace, Dictionary<(uint, uint), RawMemory> rams)
         {
-            _RAMs = rams;
             _MemorySpaces = [];
-            uint addressCurrent = 0x0u;
-            foreach (RawMemory ram in _RAMs)
+            // TODO: Implement ROMs
+            Console.Error.WriteLine(
+                "Warning: ROM not implemented yet in MMU. Access to its space will result in a NullReferenceException.");
+            //_MemorySpaces.Add(null, romSpace);
+            foreach (((uint, uint) ramSpace, RawMemory ram) in rams)
             {
-                _MemorySpaces.Add(ram, (addressCurrent, addressCurrent + ram._words));
-                addressCurrent += ram._words;
+                _MemorySpaces.Add(ram, ramSpace);
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
@@ -62,15 +63,16 @@ public partial class CPU
 
         private RawMemory GetRAMAtVirtualAddress(uint addr)
         {
-            foreach (RawMemory ram in _RAMs)
+            foreach ((RawMemory ram, (uint, uint) ramSpace) in _MemorySpaces)
             {
-                uint minAddr = _MemorySpaces[ram].Item1;
-                uint maxAddr = _MemorySpaces[ram].Item2;
-                if (addr >= minAddr && addr < maxAddr)
-                    return ram;
+                // Not the correct RAM, if the address is above the the max. address of the current RAM
+                if (addr >= ramSpace.Item2)
+                    continue;
+                return ram;
             }
+            // If the foreach loop runs through before the return statement was called, then the address is out of range.
             throw new ArgumentOutOfRangeException(
-                $"Cannot determine memory from absolute address {addr:X8}. Max. address is {_MemorySpaces[_RAMs.Last()].Item2:X8}");
+                $"Cannot determine memory from absolute address {addr:X8}. Max. address is {_MemorySpaces.Values.Last().Item2:X8}");
         }
 
         private RawMemory RAM
@@ -83,7 +85,6 @@ public partial class CPU
             return absoluteAddr - _MemorySpaces[ram].Item1;
         }
 
-        public readonly RawMemory[] _RAMs;
         private readonly Dictionary<RawMemory, (uint, uint)> _MemorySpaces;
         // Memory address register: Sets an address to read from / write to in memory logic.
         public readonly MemoryAddressRegister MAR;

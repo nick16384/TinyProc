@@ -56,21 +56,50 @@ class Program
             uint[] MAIN_PROGRAM = ByteArrayToUIntArray(binFileContent);
             Console.WriteLine($"Decoded binary file into {MAIN_PROGRAM.Length} words.");
 
+            // Extract and process header information
+            uint header_AssemblerVersion = MAIN_PROGRAM[Assembler.HEADER_INDEX_VERSION];
+            uint header_RAMRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_START];
+            uint header_RAMRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_END];
+            uint header_CONRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_START];
+            uint header_CONRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_END];
+            uint header_EntryPoint       = MAIN_PROGRAM[Assembler.HEADER_INDEX_ENTRY_POINT];
+
+            // Remove header words from program
+            MAIN_PROGRAM = [.. MAIN_PROGRAM.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)];
+
+            if (header_AssemblerVersion != Assembler.ASSEMBLER_VERSION_ENCODED)
+            {
+                string asmVersionInFile = Assembler.GetVersionStringFromEncodedValue(header_AssemblerVersion);
+                string asmVersionRequired = Assembler.GetVersionStringFromEncodedValue(Assembler.ASSEMBLER_VERSION_ENCODED);
+                throw new NotSupportedException(
+                    $"Encoded assembler version mismatch " +
+                    $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
+            }
+            Console.WriteLine("Assembly version check successful!");
+
             Console.WriteLine("Creating virtual hardware");
-            uint requiredMemoryWords = (uint)MAIN_PROGRAM.Length;
-            Console.WriteLine("Creating memory object");
-            RawMemory mem1 = new(requiredMemoryWords);
-            Console.WriteLine("Creating text memory object");
-            ConsoleMemory tmem1 = new(20);
+            Console.WriteLine("Creating working memory & console memory objects");
+            uint RAMRegionSize = header_RAMRegionEnd - header_RAMRegionStart + 1;
+            uint CONRegionSize = header_CONRegionEnd - header_CONRegionStart + 1;
+            Console.WriteLine($"{RAMRegionSize}, {CONRegionSize}");
+            RawMemory mem1 = new(RAMRegionSize);
+            ConsoleMemory tmem1 = new(CONRegionSize);
             Console.WriteLine("Creating CPU object");
-            CPU cpu = new([mem1, tmem1])
+            CPU cpu = new(new Dictionary<(uint, uint), RawMemory>
+                {
+                    { (header_RAMRegionStart, header_RAMRegionEnd), mem1 },
+                    { (header_CONRegionStart, header_CONRegionEnd), tmem1 }
+                }, header_EntryPoint)
             {
                 ClockLevel = false
             };
 
             Console.WriteLine("Loading program into memory.");
-            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x00000000u);
-            mem1.Debug_DumpAll();
+            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x0u);
+            if (mem1._words < 4096)
+                mem1.Debug_DumpAll();
+            else
+                Console.WriteLine("Memory object too large to dump.");
             Console.WriteLine("Done.");
 
             Console.WriteLine("\nDecide, whether to use auto or manual clock.");
