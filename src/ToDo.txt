@@ -21,11 +21,3 @@ New meta instructions:
 STORI (Store immediate value at address in register)
 
 Add bus and register for ALU Opcode instead of directly setting from CU.
-
-In assembly, define memory start and end regions (for different kinds of memory)
-Example:
-#MEMREGION ROM 0x0 0xFF ; ROM
-#MEMREGION TEXT 0x100 0x1FF ; Text memory / Console output
-#MEMREGION RAM 0x200 0x3FF ; Main memory
-
-Add assembly labels (e.g. _start:)

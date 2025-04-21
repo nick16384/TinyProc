@@ -90,9 +90,33 @@ public partial class CPU
         public readonly ALUDataRegister B;
         public /*required*/ ALU_OpCode OpCode = new(false, false, false, false, false, false);
         public readonly ALUResultRegister R;
+
         // Status register
-        // TODO: Implement
         public readonly Register SR = new(true, RegisterRWAccess.ReadOnly);
+        private const uint SR_FLAG_MASK_OVERFLOW = 0b10000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_ZERO     = 0b01000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_NEGATIVE = 0b00100000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_CARRY    = 0b00010000_00000000_00000000_00000000u;
+        public bool Status_Overflow
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_OVERFLOW) >> 32 == 1;
+            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 32) | SR_FLAG_MASK_OVERFLOW;
+        }
+        public bool Status_Zero
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_ZERO) >> 31 == 1;
+            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 31) | SR_FLAG_MASK_ZERO;
+        }
+        public bool Status_Negative
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_NEGATIVE) >> 30 == 1;
+            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 30) | SR_FLAG_MASK_NEGATIVE;
+        }
+        public bool Status_Carry
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_CARRY) >> 29 == 1;
+            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 29) | SR_FLAG_MASK_CARRY;
+        }
 
         public ALU()
         {
@@ -123,6 +147,10 @@ public partial class CPU
         
             if (OpCode.no)
                 @out = ~@out;
+
+            if (@out == 0)
+                Status_Zero = true;
+            // TODO: implement Overflow, Negative and Carry flags
 
             return @out;
         }
