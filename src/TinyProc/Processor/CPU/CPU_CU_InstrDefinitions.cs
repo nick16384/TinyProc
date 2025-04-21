@@ -123,7 +123,7 @@ public partial class CPU
         }
         private void INSTRUCTION_J_JMP()
         {
-            Console.WriteLine($"Jump to address {IRB.ValueDirect}");
+            Console.WriteLine($"Jump to address {IRB.ValueDirect:X8}");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
             _IntBus3Dst.BusTargetRegisterAddress = RCODE_PC;

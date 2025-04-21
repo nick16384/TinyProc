@@ -61,7 +61,7 @@ public partial class CPU
     private readonly ALU _ALU;
     private readonly MMU _MMU;
 
-    public CPU(RawMemory[] rams)
+    public CPU(Dictionary<(uint, uint), RawMemory> rams, uint entryPoint)
     {
         GP1 = new Register(false, RegisterRWAccess.ReadWrite);
         GP2 = new Register(false, RegisterRWAccess.ReadWrite);
@@ -73,8 +73,8 @@ public partial class CPU
         GP8 = new Register(false, RegisterRWAccess.ReadWrite);
 
         _ALU = new ALU();
-        _MMU = new MMU(null, rams);
-        _CU = new ControlUnit(this, _ALU, _MMU);
+        _MMU = new MMU(null, (0x0, 0x0), rams);
+        _CU = new ControlUnit(this, entryPoint, _ALU, _MMU);
     }
 
     private bool _clockLevel;
@@ -103,21 +103,4 @@ public partial class CPU
         Console.WriteLine("\n====================================================================");
         Console.WriteLine("Cycle finished. Waiting for next clock pulse.");
     }
-
-    /*public static (uint, uint) ForgeInstruction(
-        ControlUnit.OpCode opCode, ControlUnit.Condition condition=ControlUnit.Condition.ALWAYS, uint operand2=0x00000000u)
-    {
-        byte opCodeBits =
-            ControlUnit.INSTRUCTION_SIXBIT_OPCODE_DICT.FirstOrDefault(opCodeX => opCodeX.Value == opCode).Key;
-        byte conditionalBits =
-            ControlUnit.INSTRUCTION_FOURBIT_CONDITIONAL_DICT.FirstOrDefault(condX => condX.Value == condition).Key;
-
-        uint instructionA = 0x0u;
-        instructionA |= (uint)(opCodeBits << 26);
-        instructionA |= (uint)(conditionalBits << 22);
-            
-        uint instructionB = operand2;
-
-        return (instructionA, instructionB);
-    }*/
 }

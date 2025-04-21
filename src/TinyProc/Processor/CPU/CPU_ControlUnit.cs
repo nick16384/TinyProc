@@ -7,9 +7,8 @@ public partial class CPU
     // its connected to, to execute the instruction.
     private partial class ControlUnit
     {
-        public static readonly uint PC_PROGRAM_START = 0x0u;
         // Program counter
-        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly) { ValueDirect = PC_PROGRAM_START };
+        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly);
         // Instruction register 1
         private readonly Register IRA = new(true, RegisterRWAccess.ReadOnly);
         // Instruction register 2
@@ -24,8 +23,9 @@ public partial class CPU
         private readonly ALU _alu;
         private readonly MMU _mmu;
 
-        internal ControlUnit(CPU cpu, ALU alu, MMU mmu)
+        internal ControlUnit(CPU cpu, uint entryPoint, ALU alu, MMU mmu)
         {
+            PC.ValueDirect = entryPoint;
             _cpu = cpu;
             _alu = alu;
             _mmu = mmu;
