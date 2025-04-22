@@ -64,7 +64,7 @@ public partial class CPU
                 {RCODE_GP6, _cpu.GP6},
                 {RCODE_GP7, _cpu.GP7},
                 {RCODE_GP8, _cpu.GP8},
-                {RCODE_SR, _alu.SR},
+                //{RCODE_SR, _alu.SR},
                 {RCODE_SPECIAL_MAR, _mmu.MAR},
                 {RCODE_SPECIAL_IRA, IRA},
                 {RCODE_SPECIAL_IRB, IRB},

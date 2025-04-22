@@ -91,10 +91,14 @@ Address: Absolute memory address to jump to
 
 Flags in Status Register (SR):
 Bits (from MSB to LSB)
-1. Overflow
-2. Zero
-3. Negative
-4. Carry
+1. Enable flags
+(if zero, the ALU does not change any flag values.
+This is necessary, since most CPU internal data flows through the ALU,
+although only part of it is relevant to instructions that are affected by flag values.)
+2. Overflow
+3. Zero
+4. Negative
+5. Carry
 
 Globally addressable Registers
 Format: [Register name] [Register code in instruction]

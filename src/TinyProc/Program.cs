@@ -95,7 +95,7 @@ class Program
             };
 
             Console.WriteLine("Loading program into memory.");
-            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x0u);
+            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x00000000u);
             if (mem1._words < 4096)
                 mem1.Debug_DumpAll();
             else

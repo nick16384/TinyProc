@@ -29,7 +29,9 @@ public partial class CPU
             _alu.OpCode = CurrentRInstr.ALUOpCode;
             _IntBus1Src.BusSourceRegisterAddress = CurrentRInstr.DestRegCode;
             _IntBus2Src.BusSourceRegisterAddress = CurrentRInstr.SrcRegCode;
+            _alu.Status_EnableFlags = true;
             _IntBus3Dst.BusTargetRegisterAddress = CurrentRInstr.DestRegCode;
+            _alu.Status_EnableFlags = false;
             ResetBus3();
             Console.WriteLine(
                 $" --> Dst:{CurrentRInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentRInstr.DestRegCode].ValueDirect:X8}]");
@@ -77,7 +79,9 @@ public partial class CPU
             _alu.OpCode = CurrentIInstr.ALUOpCode;
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
             _IntBus2Src.BusSourceRegisterAddress = CurrentIInstr.DestRegCode;
+            _alu.Status_EnableFlags = true;
             _IntBus3Dst.BusTargetRegisterAddress = CurrentIInstr.DestRegCode;
+            _alu.Status_EnableFlags = false;
             ResetBus3();
             Console.WriteLine(
                 $" --> Dst:{CurrentIInstr.DestRegCode:X8}[{CU_ADDRESSABLE_REGISTERS[CurrentIInstr.DestRegCode].ValueDirect:X8}]");
@@ -131,7 +135,8 @@ public partial class CPU
         }
         private void INSTRUCTION_J_B()
         {
-            Console.Error.WriteLine("Branch instruction: Conditionals not supported yet. Not branching.");
+            // Conditionals have already been handled at this point
+            INSTRUCTION_J_JMP();
         }
     }
 }

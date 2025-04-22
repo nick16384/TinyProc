@@ -92,30 +92,54 @@ public partial class CPU
         public readonly ALUResultRegister R;
 
         // Status register
+        // Currently independent of internal busses
         public readonly Register SR = new(true, RegisterRWAccess.ReadOnly);
-        private const uint SR_FLAG_MASK_OVERFLOW = 0b10000000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_ZERO     = 0b01000000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_NEGATIVE = 0b00100000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_CARRY    = 0b00010000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_ENABLE   = 0b10000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_OVERFLOW = 0b01000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_ZERO     = 0b00100000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_NEGATIVE = 0b00010000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_CARRY    = 0b00001000_00000000_00000000_00000000u;
+        public bool Status_EnableFlags
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_ENABLE) >> 31 == 1;
+            set
+            {
+                // Sets the corresponding bit in the SR
+                // If this magic code piece doesn't work, please blame ChatGPT before opening an issue
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_ENABLE) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_ENABLE);
+            }
+        }
         public bool Status_Overflow
         {
-            get => (SR.ValueDirect & SR_FLAG_MASK_OVERFLOW) >> 32 == 1;
-            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 32) | SR_FLAG_MASK_OVERFLOW;
+            get => (SR.ValueDirect & SR_FLAG_MASK_OVERFLOW) >> 30 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_OVERFLOW) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_OVERFLOW);
+            }
         }
         public bool Status_Zero
         {
-            get => (SR.ValueDirect & SR_FLAG_MASK_ZERO) >> 31 == 1;
-            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 31) | SR_FLAG_MASK_ZERO;
+            get => (SR.ValueDirect & SR_FLAG_MASK_ZERO) >> 29 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_ZERO) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_ZERO);
+            }
         }
         public bool Status_Negative
         {
-            get => (SR.ValueDirect & SR_FLAG_MASK_NEGATIVE) >> 30 == 1;
-            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 30) | SR_FLAG_MASK_NEGATIVE;
+            get => (SR.ValueDirect & SR_FLAG_MASK_NEGATIVE) >> 28 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_NEGATIVE) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_NEGATIVE);
+            }
         }
         public bool Status_Carry
         {
-            get => (SR.ValueDirect & SR_FLAG_MASK_CARRY) >> 29 == 1;
-            private set => SR.ValueDirect |= ((value ? 1u : 0u) << 29) | SR_FLAG_MASK_CARRY;
+            get => (SR.ValueDirect & SR_FLAG_MASK_CARRY) >> 27 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_CARRY) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_CARRY);
+            }
         }
 
         public ALU()
@@ -148,9 +172,14 @@ public partial class CPU
             if (OpCode.no)
                 @out = ~@out;
 
-            if (@out == 0)
-                Status_Zero = true;
-            // TODO: implement Overflow, Negative and Carry flags
+            // Only override current flags, if "enable flags" flag is set.
+            if (Status_EnableFlags)
+            {
+                Status_Overflow = OpCode.f && ((ulong)((uint)x + (uint)y) != (ulong)x + (ulong)y);
+                Status_Zero     = @out == 0;
+                Status_Negative = ((@out & 0x80000000) >> 31) == 1;
+                Status_Carry    = Status_Overflow;
+            }
 
             return @out;
         }

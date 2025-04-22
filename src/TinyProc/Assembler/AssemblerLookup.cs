@@ -13,7 +13,14 @@ public partial class Assembler
         if (mnemonic.Length >= 3)
         {
             string possibleConditionCode = mnemonic[^2..];
-            try { conditional = (Instructions.Condition)possibleConditionCode; }
+            try
+            {
+                conditional = (Instructions.Condition)possibleConditionCode;
+                // Mnemonic has conditional at this point
+                Console.WriteLine($"Mnemonic {mnemonic} has condition code {conditional}");
+                mnemonic = mnemonic[..^2];
+                words[0] = mnemonic;
+            }
             catch (KeyNotFoundException) { Console.WriteLine($"Mnemonic {mnemonic} has no condition code."); }
         }
 
@@ -27,8 +34,8 @@ public partial class Assembler
         else if (mnemonic == "ADD" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
         else if (mnemonic == "SUB" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
         else if (mnemonic == "SUB" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-        else if (mnemonic == "INC" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
-        else if (mnemonic == "DEC" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
+        else if (mnemonic == "INC")                            { type = Instructions.InstructionType.Immediate; }
+        else if (mnemonic == "DEC")                            { type = Instructions.InstructionType.Immediate; }
         else if (mnemonic == "AND" && isWord2ParseableAsUInt)  { type = Instructions.InstructionType.Immediate; }
         else if (mnemonic == "AND" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
         else if (mnemonic == "OR" && isWord2ParseableAsUInt)   { type = Instructions.InstructionType.Immediate; }
@@ -63,7 +70,7 @@ public partial class Assembler
                 return Instructions.ForgeBinaryInstruction(instruction);
             }
         }
-        throw new ArgumentException($"Line {string.Concat(words)} does not parse as an instruction.");
+        throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.");
     }
     private static Instructions.InstructionTypeR InstructionTypeRLookup(
         string[] words, Instructions.Condition conditional)
@@ -121,7 +128,7 @@ public partial class Assembler
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     DEFAULT_EMPTY_ALU_OPCODE),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated R-Type instruction.")
+            _ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated R-Type instruction.")
         };
     }
 
@@ -200,7 +207,7 @@ public partial class Assembler
                     (Instructions.AddressableRegisterCode)words[1],
                     DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
                     ConvertStringToUInt(words[2])),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated I-Type instruction.")
+            _ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated I-Type instruction.")
         };
     }
 
@@ -224,7 +231,7 @@ public partial class Assembler
                     Instructions.OpCode.B,
                     conditional,
                     ConvertStringToUInt(words[1])),
-            _ => throw new ArgumentException("Lookup for instruction mnemonic {mnemonic} failed. No associated J-Type instruction.")
+            _ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated J-Type instruction.")
         };
     }
 }
