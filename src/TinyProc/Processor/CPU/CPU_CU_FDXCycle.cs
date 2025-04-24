@@ -1,3 +1,5 @@
+using System.Collections;
+
 namespace TinyProc.Processor.CPU;
 
 public partial class CPU
@@ -14,7 +16,12 @@ public partial class CPU
         // Load first instruction word
         private void InstructionFetch1()
         {
-            Console.WriteLine($"PC at {PC.ValueDirect:X8}");
+            Console.WriteLine(
+                $"PC at {PC.ValueDirect:X8}; " +
+                $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
+                $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
+                $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
+                $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             // PC -> MAR
             _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
@@ -56,6 +63,19 @@ public partial class CPU
         private Instructions.InstructionTypeJ? _currentJInstr;
         private Instructions.InstructionTypeJ CurrentJInstr => _currentJInstr.Value;
         #pragma warning restore CS8629 // Nullable value type may be null.
+        private Instructions.Condition CurrentInstructionCondition
+        {
+            get
+            {
+                return _currentInstructionType switch
+                {
+                    Instructions.InstructionType.Register => CurrentRInstr.Conditional,
+                    Instructions.InstructionType.Immediate => CurrentIInstr.Conditional,
+                    Instructions.InstructionType.Jump => CurrentJInstr.Conditional
+                };
+            }
+        }
+
         // Essentially prepares the Control Unit for the execute stage
         private void InstructionDecode()
         {
@@ -102,19 +122,41 @@ public partial class CPU
         // Equivalent to the execute stage in a real CPU's Fetch-Decode-Execute cycle.
         private void InstructionExecute()
         {
-            if (_currentInstructionType == Instructions.InstructionType.Register
-            && CurrentRInstr.Conditional != Instructions.Condition.ALWAYS
-                || _currentInstructionType == Instructions.InstructionType.Immediate
-                && CurrentIInstr.Conditional != Instructions.Condition.ALWAYS
-                || _currentInstructionType == Instructions.InstructionType.Jump
-                && CurrentJInstr.Conditional != Instructions.Condition.ALWAYS)
+            bool execute = false;
+            if (CurrentInstructionCondition == Instructions.Condition.ALWAYS)
+                execute = true;
+            else if (CurrentInstructionCondition == Instructions.Condition.OF)
+                execute = _alu.Status_Overflow;
+            else if (CurrentInstructionCondition == Instructions.Condition.NO)
+                execute = !_alu.Status_Overflow;
+            else if (CurrentInstructionCondition == Instructions.Condition.ZR)
+                execute = _alu.Status_Zero;
+            else if (CurrentInstructionCondition == Instructions.Condition.NZ)
+                execute = !_alu.Status_Zero;
+            else if (CurrentInstructionCondition == Instructions.Condition.NG)
+                execute = _alu.Status_Negative;
+            else if (CurrentInstructionCondition == Instructions.Condition.NN)
+                execute = !_alu.Status_Negative;
+            else
+                throw new NotSupportedException($"Condition {CurrentInstructionCondition} not implemented yet.");
+            
+            if (!execute)
             {
-                Console.Error.WriteLine("Conditionals not implemented yet. Exiting early.");
+                Console.WriteLine($"Not executing: Conditional {CurrentInstructionCondition} not satisfied.");
                 return;
             }
 
             // TODO: Handle conditionals here
             ExecuteCurrentInstruction();
+
+            // Disable flag setting by ALU
+            _alu.Status_EnableFlags = false;
+
+            Console.WriteLine(
+                $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
+                $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
+                $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
+                $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
         }
 
         // Differs from InstructionExecute() in the fact that this method does not check for conditionals.

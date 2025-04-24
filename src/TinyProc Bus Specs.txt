@@ -46,3 +46,7 @@ Format: [Register] [32 bit Code]
 - CONST_PLUSTWO 0x70000006
 - CONST_ZERO / CONST_VOID 0x70000007
 - <RESERVED DEFAULT TARGET> 0xFFFFFFFF
+
+TODO:
+Add SR to bus
+-> Do further research how the SR is connected to the CU and how instructions can control / read SR content

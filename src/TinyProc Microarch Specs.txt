@@ -53,7 +53,7 @@ Memory:
 
 3F - <Highest possible value for opcode>
 
-Pseudo instructions:
+Pseudo instructions (to be implemented):
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
 - NOT (XOR X 0xffffffff)
 - COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
@@ -61,8 +61,8 @@ Instructions, that get mapped to (multiple) other instructions when compiling fr
 Conditional codes:
 [Conditional code] - [Description] - [Instruction suffix]
 0 - Always execute - <None>
-1 - When comparison equal flag set - EQ
-2 - When comparison equal flag not set - NE
+(Not currently used) 1 - When comparison equal flag set - EQ
+(Not currently used) 2 - When comparison equal flag not set - NE
 3 - When overflow flag set - OF
 4 - When overflow flag not set - NO
 5 - When zero flag set - ZR
@@ -89,12 +89,16 @@ Address: Absolute memory address to jump to
 * Reserved & Zero region: Zeroed out / Filled with 0x0 bytes
 ** Word Extension: Extend to 64 bit instruction (To be implemented later, currently always in use -> Always set to 1)
 
-Flags:
-- Overflow
-- Zero
-- Negative
-- Comparison
-- Carry
+Flags in Status Register (SR):
+Bits (from MSB to LSB)
+1. Enable flags
+(if zero, the ALU does not change any flag values.
+This is necessary, since most CPU internal data flows through the ALU,
+although only part of it is relevant to instructions that are affected by flag values.)
+2. Overflow
+3. Zero
+4. Negative
+5. Carry
 
 Globally addressable Registers
 Format: [Register name] [Register code in instruction]
