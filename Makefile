@@ -1,7 +1,11 @@
 DOTNET = dotnet
 
 SRC_CODE_DIR = src/TinyProc
-AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc
+ifeq ($(OS), Windows_NT)
+	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc.exe
+else
+	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc
+endif
 
 SOURCE_FILE_ASM = "Test Programs/ASMv2/Alphabet.lltp32.asm"
 TARGET_FILE_BIN = "Test Programs/ASMv2/Alphabet.lltp32.bin"
