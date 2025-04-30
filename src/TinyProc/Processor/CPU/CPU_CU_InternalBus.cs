@@ -83,6 +83,10 @@ public partial class CPU
                 _transferBus = new Bus(busWidth, _UBID, [.. _sourceAddressRegisterMap.Values, .. _targetAddressRegisterMap.Values]);
             }
         }
+
+        // TODO: Restructure these 3 classes, so that
+        // 1. Object inheritation is still used (e.g. MultiMulti -> MultiSingle)
+        // 2. Only Source/TargetRegisterAddress is accessible externally, to avoid confusion
         private class MultiSrcSingleDstRegisterSelector(int busWidth, uint UBID,
                 Dictionary<uint, Register> sourceAddressRegisterMap, uint selectedSrcRegister,
                 Register fixedDstRegister)

@@ -8,6 +8,7 @@ public partial class CPU
 
         private void INSTRUCTION_R_CLZ()
         {
+            // TODO: Implement CLZ, CLOF and CLNG, since these flags are implemented already
             throw new NotImplementedException("Clear zero flag: Flags not implemented yet.");
         }
         private void INSTRUCTION_R_CLOF()
@@ -131,7 +132,7 @@ public partial class CPU
             _alu.OpCode = ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA];
             _IntBus1Src.BusSourceRegisterAddress = RCODE_SPECIAL_IRB;
             _IntBus3Dst.BusTargetRegisterAddress = RCODE_PC;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_VOID;
+            ResetBus3();
         }
         private void INSTRUCTION_J_B()
         {

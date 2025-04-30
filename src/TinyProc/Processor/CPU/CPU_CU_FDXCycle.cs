@@ -1,5 +1,3 @@
-using System.Collections;
-
 namespace TinyProc.Processor.CPU;
 
 public partial class CPU
@@ -7,7 +5,7 @@ public partial class CPU
     private partial class ControlUnit
     {
         // Resets internal bus 3 so its destination is the void register.
-        // Otherwise, previous operations could interfere with operations happening after them.
+        // Otherwise, previously addressed registers could be overridden by new operations.
         private void ResetBus3()
         {
             _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_VOID;

@@ -128,7 +128,7 @@ class Program
                 // CPU clock level oscillates between low (false) and high (true)
                 cpu.ClockLevel = !cpu.ClockLevel;
 
-                Thread.Sleep(100);
+                //Thread.Sleep(100);
             }
         }
         // Miku = 39 = Sankyuu easter egg :)

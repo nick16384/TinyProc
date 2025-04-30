@@ -1,6 +1,7 @@
 DOTNET = dotnet
 
 SRC_CODE_DIR = src/TinyProc
+AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc
 
 SOURCE_FILE_ASM = "Test Programs/ASMv2/Alphabet.lltp32.asm"
 TARGET_FILE_BIN = "Test Programs/ASMv2/Alphabet.lltp32.bin"
@@ -10,3 +11,13 @@ assemble:
 
 run: assemble
 	$(DOTNET) run --project $(SRC_CODE_DIR) --run $(TARGET_FILE_BIN)
+
+build:
+	cd $(SRC_CODE_DIR) && $(DOTNET) build
+	cd $(SRC_CODE_DIR) && $(DOTNET) publish
+
+assemble-aot: build
+	$(AOT_COMPILED_EXECUTABLE) --assemble $(SOURCE_FILE_ASM)
+
+run-aot: build
+	$(AOT_COMPILED_EXECUTABLE) --run $(TARGET_FILE_BIN)
