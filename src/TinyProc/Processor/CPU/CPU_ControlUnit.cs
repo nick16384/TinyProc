@@ -8,13 +8,13 @@ public partial class CPU
     private partial class ControlUnit
     {
         // Program counter
-        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register PC = new(0, true);
         // Instruction register 1
-        private readonly Register IRA = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register IRA = new(0, true);
         // Instruction register 2
         // Two 32 bit instruction registers necessary, since an entire instruction
         // is double-word-aligned, meaning it occupies 64 bits.
-        private readonly Register IRB = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register IRB = new(0, true);
         
         private readonly Dictionary<uint, Register> CU_ADDRESSABLE_REGISTERS;
 

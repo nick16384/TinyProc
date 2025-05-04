@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace TinyProc.Processor.CPU;
 
 /*
@@ -11,53 +14,61 @@ public partial class CPU
 {
     public class ALU
     {
-        public class ALU_OpCode(bool zx, bool nx, bool zy, bool ny, bool f, bool no)
+        public readonly struct ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits, string name = "")
         {
+            private readonly (bool, bool, bool, bool, bool, bool) _opCodeBits = opCodeBits;
             // If true, set x = 0
-            public bool zx = zx;
+            public readonly bool zx = opCodeBits.Item1;
             // If true, set x = !x
-            public bool nx = nx;
+            public readonly bool nx = opCodeBits.Item2;
             // If true, set y = 0
-            public bool zy = zy;
+            public readonly bool zy = opCodeBits.Item3;
             // If true, set y = !y
-            public bool ny = ny;
+            public readonly bool ny = opCodeBits.Item4;
             // If true, out = x + y; If false, out = x & y
-            public bool f = f;
+            public readonly bool f = opCodeBits.Item5;
             // If true, out = !out
-            public bool no = no;
+            public readonly bool no = opCodeBits.Item6;
 
-            public override string ToString()
+            public readonly string _name = name;
+
+            public override readonly string ToString()
             {
-                return
+                string bitsString =
                     (zx ? "1" : "0") +
                     (nx ? "1" : "0") +
                     (zy ? "1" : "0") +
                     (ny ? "1" : "0") +
                     (f  ? "1" : "0") +
                     (no ? "1" : "0");
+                if (string.IsNullOrWhiteSpace(_name))
+                    return bitsString;
+                else
+                    return _name + " / " + bitsString;
             }
+
+            public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits) => new(opCodeBits);
+            public static implicit operator (bool, bool, bool, bool, bool, bool)(ALUOpcode opCode) => opCode._opCodeBits;
+
+            // List of all commonly used opcodes; Acts as a kind of enum or Dictionary<OpName, ALUOpcode>.
+            public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false), "TraA");
+            public static readonly ALUOpcode TransferB            = new((true, true, false, false, false, false), "TraB");
+            public static readonly ALUOpcode Addition             = new((false, false, false, false, true, false), "Add");
+            public static readonly ALUOpcode AB_SubtractionSigned = new((false, true, false, false, true, true), "AB_SubSig");
+            public static readonly ALUOpcode BA_SubtractionSigned = new((false, false, false, true, true, true), "BA_SubSig");
+            public static readonly ALUOpcode A_Negative           = new((false, false, true, true, true, true), "A_Neg");
+            public static readonly ALUOpcode B_Negative           = new((true, true, false, false, true, true), "B_Neg");
+            public static readonly ALUOpcode A_Increment          = new((false, true, true, true, true, true), "A_Inc");
+            public static readonly ALUOpcode B_Increment          = new((true, true, false, true, true, true), "B_Inc");
+            public static readonly ALUOpcode A_Decrement          = new((false, false, true, true, true, false), "A_Dec");
+            public static readonly ALUOpcode B_Decrement          = new((true, true, false, false, true, false), "B_Dec");
+            public static readonly ALUOpcode LogicalAND           = new((false, false, false, false, false, false), "AND");
+            public static readonly ALUOpcode LogicalOR            = new((false, true, false, true, false, true), "OR");
+            public static readonly ALUOpcode A_LogicalNOT         = new((false, false, true, true, false, true), "A_NOT");
+            public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true), "B_NOT");
         }
 
-        public enum ALU_Operation
-        {
-            TransferA,
-            TransferB,
-            AdditionSigned,
-            AB_SubtractionSigned,
-            BA_SubtractionSigned,
-            A_Negative,
-            B_Negative,
-            A_Increment,
-            B_Increment,
-            A_Decrement,
-            B_Decrement,
-            LogicalAND,
-            LogicalOR,
-            A_LogicalNOT,
-            B_LogicalNOT
-        }
-
-        public class ALUDataRegister(ALU alu) : Register(true, RegisterRWAccess.ReadWrite)
+        public class ALUInputRegister(ALU alu) : Register(true, RegisterRWAccess.ReadWrite)
         {
             private readonly ALU _alu = alu;
             private protected override uint Value
@@ -86,9 +97,9 @@ public partial class CPU
             }
         }
 
-        public readonly ALUDataRegister A;
-        public readonly ALUDataRegister B;
-        public /*required*/ ALU_OpCode OpCode = new(false, false, false, false, false, false);
+        public readonly ALUInputRegister A;
+        public readonly ALUInputRegister B;
+        public ALUOpcode CurrentOpCode = new((false, false, false, false, false, false));
         public readonly ALUResultRegister R;
 
         // Status register
@@ -144,8 +155,8 @@ public partial class CPU
 
         public ALU()
         {
-            A = new ALUDataRegister(this);
-            B = new ALUDataRegister(this);
+            A = new ALUInputRegister(this);
+            B = new ALUInputRegister(this);
             R = new ALUResultRegister(this);
         }
 
@@ -154,28 +165,28 @@ public partial class CPU
             uint x = A.ValueDirect;
             uint y = B.ValueDirect;
 
-            if (OpCode.zx)
+            if (CurrentOpCode.zx)
                 x = 0x0u;
-            if (OpCode.nx)
+            if (CurrentOpCode.nx)
                 x = ~x;
-            if (OpCode.zy)
+            if (CurrentOpCode.zy)
                 y = 0x0u;
-            if (OpCode.ny)
+            if (CurrentOpCode.ny)
                 y = ~y;
 
             uint @out;
-            if (OpCode.f)
+            if (CurrentOpCode.f)
                 @out = x + y;
             else
                 @out = x & y;
         
-            if (OpCode.no)
+            if (CurrentOpCode.no)
                 @out = ~@out;
 
             // Only override current flags, if "enable flags" flag is set.
             if (Status_EnableFlags)
             {
-                Status_Overflow = OpCode.f && ((ulong)((uint)x + (uint)y) != (ulong)x + (ulong)y);
+                Status_Overflow = CurrentOpCode.f && ((ulong)((uint)x + (uint)y) != (ulong)x + (ulong)y);
                 Status_Zero     = @out == 0;
                 Status_Negative = ((@out & 0x80000000) >> 31) == 1;
                 Status_Carry    = Status_Overflow;
@@ -183,24 +194,5 @@ public partial class CPU
 
             return @out;
         }
-
-        public static readonly Dictionary<ALU_Operation, ALU_OpCode> ARITHMETIC_OP_LOOKUP = new()
-        {
-            { ALU_Operation.TransferA,            new ALU_OpCode(false, false, true, true, false, false) },
-            { ALU_Operation.TransferB,            new ALU_OpCode(true, true, false, false, false, false) },
-            { ALU_Operation.AdditionSigned,       new ALU_OpCode(false, false, false, false, true, false) },
-            { ALU_Operation.AB_SubtractionSigned, new ALU_OpCode(false, true, false, false, true, true) },
-            { ALU_Operation.BA_SubtractionSigned, new ALU_OpCode(false, false, false, true, true, true) },
-            { ALU_Operation.A_Negative,           new ALU_OpCode(false, false, true, true, true, true) },
-            { ALU_Operation.B_Negative,           new ALU_OpCode(true, true, false, false, true, true) },
-            { ALU_Operation.A_Increment,          new ALU_OpCode(false, true, true, true, true, true) },
-            { ALU_Operation.B_Increment,          new ALU_OpCode(true, true, false, true, true, true) },
-            { ALU_Operation.A_Decrement,          new ALU_OpCode(false, false, true, true, true, false) },
-            { ALU_Operation.B_Decrement,          new ALU_OpCode(true, true, false, false, true, false) },
-            { ALU_Operation.LogicalAND,           new ALU_OpCode(false, false, false, false, false, false) },
-            { ALU_Operation.LogicalOR,            new ALU_OpCode(false, true, false, true, false, true) },
-            { ALU_Operation.A_LogicalNOT,         new ALU_OpCode(false, false, true, true, false, true) },
-            { ALU_Operation.B_LogicalNOT,         new ALU_OpCode(true, true, false, false, false, true) }
-        };
     }
 }

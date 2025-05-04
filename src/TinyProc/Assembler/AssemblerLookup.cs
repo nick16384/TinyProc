@@ -54,75 +54,75 @@ public partial class Assembler
             case Instructions.InstructionType.Register:
             // Case statements with brackets to create separate scope for each case statement.
             {
-                Instructions.InstructionTypeR instruction = InstructionTypeRLookup(words, conditional);
-                return Instructions.ForgeBinaryInstruction(instruction);
+                Instructions.RegRegInstruction instruction = RegRegInstructionLookup(words, conditional);
+                return ((uint, uint))instruction;
             }
                 
             case Instructions.InstructionType.Immediate:
             {
-                Instructions.InstructionTypeI instruction = InstructionTypeILookup(words, conditional);
-                return Instructions.ForgeBinaryInstruction(instruction);
+                Instructions.RegImmInstruction instruction = RegImmInstructionLookup(words, conditional);
+                return ((uint, uint))instruction;
             }
 
             case Instructions.InstructionType.Jump:
             {
-                Instructions.InstructionTypeJ instruction = InstructionTypeJLookup(words, conditional);
-                return Instructions.ForgeBinaryInstruction(instruction);
+                Instructions.JumpInstruction instruction = JumpInstructionLookup(words, conditional);
+                return ((uint, uint))instruction;
             }
         }
         throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.");
     }
-    private static Instructions.InstructionTypeR InstructionTypeRLookup(
+    private static Instructions.RegRegInstruction RegRegInstructionLookup(
         string[] words, Instructions.Condition conditional)
     {
         string mnemonic = words[0].ToUpper();
         return mnemonic switch
         {
-            "MOV" => new Instructions.InstructionTypeR(
+            "MOV" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferB]),
+                    ALU.ALUOpcode.TransferB),
 
-            "ADD" => new Instructions.InstructionTypeR(
+            "ADD" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned]),
+                    ALU.ALUOpcode.Addition),
             
-            "SUB" => new Instructions.InstructionTypeR(
+            "SUB" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AB_SubtractionSigned]),
+                    ALU.ALUOpcode.AB_SubtractionSigned),
 
             // No INC / DEC; They are exclusively immediate type instructions
             
-            "AND" => new Instructions.InstructionTypeR(
+            "AND" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND]),
+                    ALU.ALUOpcode.LogicalAND),
 
-            "OR" => new Instructions.InstructionTypeR(
+            "OR" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR]),
+                    ALU.ALUOpcode.LogicalOR),
 
-            "LOADR" => new Instructions.InstructionTypeR(
+            "LOADR" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.LOADR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     DEFAULT_EMPTY_ALU_OPCODE),
             
-            "STORR" => new Instructions.InstructionTypeR(
+            "STORR" => new Instructions.RegRegInstruction(
                     Instructions.OpCode.STORR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
@@ -137,71 +137,71 @@ public partial class Assembler
     private const uint IMMEDIATE_DEFAULT_VALUE = 0x0u;
     // When an instruction changes the ALU Opcode multiple times during execution, setting this has no effect.
     // This specifies the default value for such cases.
-    private static readonly ALU.ALU_OpCode DEFAULT_EMPTY_ALU_OPCODE = new(true, false, true, false, false, false);
+    private static readonly ALU.ALUOpcode DEFAULT_EMPTY_ALU_OPCODE = new((true, false, true, false, false, false));
 
-    private static Instructions.InstructionTypeI InstructionTypeILookup(
+    private static Instructions.RegImmInstruction RegImmInstructionLookup(
         string[] words, Instructions.Condition conditional)
     {
         string mnemonic = words[0].ToUpper();
         return mnemonic switch
         {
-            "MOV" => new Instructions.InstructionTypeI(
+            "MOV" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.TransferA],
+                    ALU.ALUOpcode.TransferA,
                     ConvertStringToUInt(words[2])),
 
-            "ADD" => new Instructions.InstructionTypeI(
+            "ADD" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.AdditionSigned],
+                    ALU.ALUOpcode.Addition,
                     ConvertStringToUInt(words[2])),
             
-            "SUB" => new Instructions.InstructionTypeI(
+            "SUB" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.BA_SubtractionSigned],
+                    ALU.ALUOpcode.BA_SubtractionSigned,
                     ConvertStringToUInt(words[2])),
 
-            "INC" => new Instructions.InstructionTypeI(
+            "INC" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.B_Increment],
+                    ALU.ALUOpcode.B_Increment,
                     IMMEDIATE_DEFAULT_VALUE),
             
-            "DEC" => new Instructions.InstructionTypeI(
+            "DEC" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.B_Decrement],
+                    ALU.ALUOpcode.B_Decrement,
                     IMMEDIATE_DEFAULT_VALUE),
             
-            "AND" => new Instructions.InstructionTypeI(
+            "AND" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalAND],
+                    ALU.ALUOpcode.LogicalAND,
                     ConvertStringToUInt(words[2])),
 
-            "OR" => new Instructions.InstructionTypeI(
+            "OR" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
-                    ALU.ARITHMETIC_OP_LOOKUP[ALU.ALU_Operation.LogicalOR],
+                    ALU.ALUOpcode.LogicalOR,
                     ConvertStringToUInt(words[2])),
 
-            "LOAD" => new Instructions.InstructionTypeI(
+            "LOAD" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.LOAD,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
                     ConvertStringToUInt(words[2])),
 
-            "STORE" => new Instructions.InstructionTypeI(
+            "STORE" => new Instructions.RegImmInstruction(
                     Instructions.OpCode.STORE,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
@@ -211,23 +211,23 @@ public partial class Assembler
         };
     }
 
-    private static Instructions.InstructionTypeJ InstructionTypeJLookup(
+    private static Instructions.JumpInstruction JumpInstructionLookup(
         string[] words, Instructions.Condition conditional)
     {
         string mnemonic = words[0].ToUpper();
         return mnemonic switch
         {
-            "NOP" => new Instructions.InstructionTypeJ(
+            "NOP" => new Instructions.JumpInstruction(
                     Instructions.OpCode.NOP,
                     conditional,
                     IMMEDIATE_DEFAULT_VALUE),
 
-            "JMP" => new Instructions.InstructionTypeJ(
+            "JMP" => new Instructions.JumpInstruction(
                     Instructions.OpCode.JMP,
                     conditional,
                     ConvertStringToUInt(words[1])),
 
-            "B" => new Instructions.InstructionTypeJ(
+            "B" => new Instructions.JumpInstruction(
                     Instructions.OpCode.B,
                     conditional,
                     ConvertStringToUInt(words[1])),

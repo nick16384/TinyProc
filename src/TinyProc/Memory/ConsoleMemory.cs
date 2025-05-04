@@ -10,7 +10,7 @@ public class ConsoleMemory(uint words) : RawMemory(words)
 
     private void PrintToConsole()
     {
-        Console.WriteLine("Current console memory:");
+        Console.WriteLine("CON memory received update; Current contents:");
         for (uint addr = 0; addr < _words; addr++)
         {
             uint data = Read(addr);

@@ -13,20 +13,10 @@ public partial class CPU
     private readonly Register GP7;
     private readonly Register GP8;
 
-    // Special registers whose values cannot be changed and always output plus / negative one.
-    // Can also act as "void" registers, since writes have no effect
-    private class ConstantValueRegister(uint constValue) : Register(true, RegisterRWAccess.ReadOnly)
-    {
-        private protected override uint Value
-        {
-            get => constValue;
-            set {}
-        }
-    }
-    private static readonly ConstantValueRegister CV_P1_SPECIAL_REG = new(1u);
-    private static readonly ConstantValueRegister CV_N1_SPECIAL_REG = new(SignedIntToUInt(-1));
-    private static readonly ConstantValueRegister CV_P2_SPECIAL_REG = new(2u);
-    private static readonly ConstantValueRegister CV_0_SPECIAL_REG = new(0u);
+    private static readonly Register CV_P1_SPECIAL_REG = new(1u, true, false, false, true, true);
+    private static readonly Register CV_N1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
+    private static readonly Register CV_P2_SPECIAL_REG = new(2u, true, false, false, true, true);
+    private static readonly Register CV_0_SPECIAL_REG = new(0u, true, false, false, true, true);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
     private const uint RCODE_GP1 = 0x01u;
@@ -63,14 +53,14 @@ public partial class CPU
 
     public CPU(Dictionary<(uint, uint), RawMemory> rams, uint entryPoint)
     {
-        GP1 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP2 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP3 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP4 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP5 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP6 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP7 = new Register(false, RegisterRWAccess.ReadWrite);
-        GP8 = new Register(false, RegisterRWAccess.ReadWrite);
+        GP1 = new Register();
+        GP2 = new Register();
+        GP3 = new Register();
+        GP4 = new Register();
+        GP5 = new Register();
+        GP6 = new Register();
+        GP7 = new Register();
+        GP8 = new Register();
 
         _ALU = new ALU();
         _MMU = new MMU(null, (0x0, 0x0), rams);

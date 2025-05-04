@@ -10,6 +10,9 @@ public class RawMemory
     // A 2D bool array simulating RAM structure
     private readonly bool[,] _data;
 
+    // TODO: Replace bool[] array with uint[] array
+    // TODO: Attach to true bus object
+
     // Logic that allows only either write or read line to be set:
     private bool _readEnable;
     public bool ReadEnable

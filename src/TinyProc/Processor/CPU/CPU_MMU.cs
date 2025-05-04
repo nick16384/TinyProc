@@ -9,7 +9,7 @@ public partial class CPU
     // memory flow in / out of the CPU
     private class MMU
     {
-        public class MemoryAddressRegister(MMU mmu) : Register(true, RegisterRWAccess.ReadWrite)
+        public class MemoryAddressRegister(MMU mmu) : Register(0, true)
         {
             private readonly MMU _mmu = mmu;
             private protected override uint Value
@@ -23,7 +23,7 @@ public partial class CPU
                 }
             }
         }
-        public class MemoryDataRegister(MMU mmu) : Register(true, RegisterRWAccess.ReadOnly)
+        public class MemoryDataRegister(MMU mmu) : Register(0, true)
         {
             private readonly MMU _mmu = mmu;
             private protected override uint Value
