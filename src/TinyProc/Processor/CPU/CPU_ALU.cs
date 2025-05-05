@@ -68,7 +68,7 @@ public partial class CPU
             public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true), "B_NOT");
         }
 
-        public class ALUInputRegister(ALU alu) : Register(true, RegisterRWAccess.ReadWrite)
+        public class ALUInputRegister(ALU alu) : Register(0, true)
         {
             private readonly ALU _alu = alu;
             private protected override uint Value
@@ -83,7 +83,7 @@ public partial class CPU
             }
         }
 
-        public class ALUResultRegister(ALU alu) : Register(true, RegisterRWAccess.ReadOnly)
+        public class ALUResultRegister(ALU alu) : Register(0, true)
         {
             private readonly ALU _alu = alu;
             private protected override uint Value
@@ -104,7 +104,7 @@ public partial class CPU
 
         // Status register
         // Currently independent of internal busses
-        public readonly Register SR = new(true, RegisterRWAccess.ReadOnly);
+        public readonly Register SR = new(0, true);
         private const uint SR_FLAG_MASK_ENABLE   = 0b10000000_00000000_00000000_00000000u;
         private const uint SR_FLAG_MASK_OVERFLOW = 0b01000000_00000000_00000000_00000000u;
         private const uint SR_FLAG_MASK_ZERO     = 0b00100000_00000000_00000000_00000000u;

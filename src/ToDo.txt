@@ -25,11 +25,12 @@ Add bus and register for ALU Opcode instead of directly setting from CU.
 Today:
 - Change ALU opcode struct to be more usable [done]
 - Add one abstract Instruction class, which all instruction type classes derive from [done]
-- Remove Register ReadWriteAccess enum; Add the following bools and actually handle their cases: [in progress]
+- Remove Register ReadWriteAccess enum; Add the following bools and actually handle their cases: [done]
 1. WriteAllowed (default true)
 2. ErrorOnIllegalWrite (default true)
 3. ReadAllowed (default true)
 4. ErrorOnIllegalRead (default true)
-- Change memory to use an uint[] array instead of a bool[] array
+- Change memory to use an uint[] array instead of a bool[] array [in progress]
 - Register codes: Pack into enum with "enum RegisterCode : uint" header
 - Rename e.g. CV_P1 register to more understandable Const_Pos1
+- Attach RawMemory and ConsoleMemory to Bus

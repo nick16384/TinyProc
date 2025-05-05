@@ -1,16 +1,14 @@
 namespace TinyProc.Memory;
 
-using System.Text;
 using TinyProc.Processor;
 
 public class RawMemory
 {
     public readonly uint _words;
-    public uint TotalSizeBits { get { return (uint)Register.SYSTEM_WORD_SIZE * _words; } }
+    public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
     // A 2D bool array simulating RAM structure
-    private readonly bool[,] _data;
+    private readonly uint[] _data;
 
-    // TODO: Replace bool[] array with uint[] array
     // TODO: Attach to true bus object
 
     // Logic that allows only either write or read line to be set:
@@ -40,43 +38,28 @@ public class RawMemory
 
     public RawMemory(uint words)
     {
-        if (words <= 1)
+        if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
         _words = words;
-        _data = new bool[Register.SYSTEM_WORD_SIZE, _words];
+        _data = new uint[_words];
         // Data is automatically initialized to all-zeroes
         Console.WriteLine(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
             $"WORDS:{_words}; Total space:{TotalSizeBits} bits");
     }
 
-    private static readonly uint MASK_LEFT_BIT_SINGLE = 0x8000_0000u;
-    // Reads block of 64 bits
+    // Reads block of 32 bits
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
-        uint readWord = 0x0;
-        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
-        {
-            bool dataBit = _data[x, addr];
-            uint dataBitAsuint = dataBit ? MASK_LEFT_BIT_SINGLE : 0x0u;
-            readWord |= dataBitAsuint >> x;
-        }
-        return readWord;
+        return _data[addr];
     }
     private protected virtual void Write(uint addr, uint value)
     {
-        if (addr == 0x00000039u)
+        if (addr == 0x39u || addr == 39)
             Console.WriteLine("Miku says thank you!");
         CheckValidAddress(addr);
-        Console.WriteLine($"[Mem] Write 0x{value:X8} at 0x{addr:X8}");
-        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
-        {
-            uint valueMasked = value & (MASK_LEFT_BIT_SINGLE >> x);
-            valueMasked >>= Register.SYSTEM_WORD_SIZE - 1 - x;
-            bool isBitSet = valueMasked > 0;
-            _data[x, addr] = isBitSet;
-        }
+        _data[addr] = value;
     }
 
     public void Debug_DumpAll()
