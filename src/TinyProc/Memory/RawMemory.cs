@@ -1,13 +1,18 @@
 namespace TinyProc.Memory;
 
+using System.Collections;
 using TinyProc.Processor;
 
 public class RawMemory
 {
     public readonly uint _words;
     public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
-    // A 2D bool array simulating RAM structure
-    private readonly uint[] _data;
+    // The data array can hold a maximum of ~4 billion elements, however an array can
+    // only hold up to ~2 billion elements in C#.
+    // This necessitates the usage of an array of uint arrays, that can hold up the required amount
+    // of uints in total.
+    // Externally, this appears as one continuous address space.
+    private readonly uint[][] _data;
 
     // TODO: Attach to true bus object
 
@@ -40,8 +45,14 @@ public class RawMemory
     {
         if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
+        if (words > 1_000_000)
+            Console.Error.WriteLine(
+                "Warning: *Attempting* to initialize very large memory (>1,000,000 words). Expect out-of-memory errors.");
         _words = words;
-        _data = new uint[_words];
+        if (_words > int.MaxValue)
+            _data = [new uint[int.MaxValue], [_words - int.MaxValue]];
+        else
+            _data = [new uint[_words]];
         // Data is automatically initialized to all-zeroes
         Console.WriteLine(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
@@ -52,14 +63,20 @@ public class RawMemory
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
-        return _data[addr];
+        if (addr > int.MaxValue)
+            return _data[1][addr - int.MaxValue + 1];
+        else
+            return _data[0][addr];
     }
     private protected virtual void Write(uint addr, uint value)
     {
         if (addr == 0x39u || addr == 39)
             Console.WriteLine("Miku says thank you!");
         CheckValidAddress(addr);
-        _data[addr] = value;
+        if (addr > int.MaxValue)
+            _data[1][addr - int.MaxValue + 1] = value;
+        else
+            _data[0][addr] = value;
     }
 
     public void Debug_DumpAll()
