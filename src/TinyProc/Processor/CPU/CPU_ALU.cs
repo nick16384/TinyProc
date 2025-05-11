@@ -14,7 +14,7 @@ public partial class CPU
 {
     public class ALU
     {
-        public readonly struct ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits, string name = "")
+        public readonly struct ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits)
         {
             private readonly (bool, bool, bool, bool, bool, bool) _opCodeBits = opCodeBits;
             // If true, set x = 0
@@ -30,10 +30,9 @@ public partial class CPU
             // If true, out = !out
             public readonly bool no = opCodeBits.Item6;
 
-            public readonly string _name = name;
-
             public override readonly string ToString()
             {
+                string? name = null;
                 string bitsString =
                     (zx ? "1" : "0") +
                     (nx ? "1" : "0") +
@@ -41,31 +40,47 @@ public partial class CPU
                     (ny ? "1" : "0") +
                     (f  ? "1" : "0") +
                     (no ? "1" : "0");
-                if (string.IsNullOrWhiteSpace(_name))
-                    return bitsString;
+
+                if      (_opCodeBits == TransferA._opCodeBits)            name = "TraA";
+                else if (_opCodeBits == TransferB._opCodeBits)            name = "TraB";
+                else if (_opCodeBits == AB_SubtractionSigned._opCodeBits) name = "AB_SubSigned";
+                else if (_opCodeBits == BA_SubtractionSigned._opCodeBits) name = "BA_SubSigned";
+                else if (_opCodeBits == A_Negative._opCodeBits)           name = "A_Neg";
+                else if (_opCodeBits == B_Negative._opCodeBits)           name = "B_Neg";
+                else if (_opCodeBits == A_Increment._opCodeBits)          name = "A_Inc";
+                else if (_opCodeBits == B_Increment._opCodeBits)          name = "B_Inc";
+                else if (_opCodeBits == A_Decrement._opCodeBits)          name = "A_Dec";
+                else if (_opCodeBits == B_Decrement._opCodeBits)          name = "B_Dec";
+                else if (_opCodeBits == LogicalAND._opCodeBits)           name = "AND";
+                else if (_opCodeBits == LogicalOR._opCodeBits)            name = "OR";
+                else if (_opCodeBits == A_LogicalNOT._opCodeBits)         name = "A_NOT";
+                else if (_opCodeBits == B_LogicalNOT._opCodeBits)         name = "B_NOT";
+
+                if (name == null)
+                    return "UnknownOp / " + bitsString;
                 else
-                    return _name + " / " + bitsString;
+                    return name + " / " + bitsString;
             }
 
             public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits) => new(opCodeBits);
             public static implicit operator (bool, bool, bool, bool, bool, bool)(ALUOpcode opCode) => opCode._opCodeBits;
 
             // List of all commonly used opcodes; Acts as a kind of enum or Dictionary<OpName, ALUOpcode>.
-            public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false), "TraA");
-            public static readonly ALUOpcode TransferB            = new((true, true, false, false, false, false), "TraB");
-            public static readonly ALUOpcode Addition             = new((false, false, false, false, true, false), "Add");
-            public static readonly ALUOpcode AB_SubtractionSigned = new((false, true, false, false, true, true), "AB_SubSig");
-            public static readonly ALUOpcode BA_SubtractionSigned = new((false, false, false, true, true, true), "BA_SubSig");
-            public static readonly ALUOpcode A_Negative           = new((false, false, true, true, true, true), "A_Neg");
-            public static readonly ALUOpcode B_Negative           = new((true, true, false, false, true, true), "B_Neg");
-            public static readonly ALUOpcode A_Increment          = new((false, true, true, true, true, true), "A_Inc");
-            public static readonly ALUOpcode B_Increment          = new((true, true, false, true, true, true), "B_Inc");
-            public static readonly ALUOpcode A_Decrement          = new((false, false, true, true, true, false), "A_Dec");
-            public static readonly ALUOpcode B_Decrement          = new((true, true, false, false, true, false), "B_Dec");
-            public static readonly ALUOpcode LogicalAND           = new((false, false, false, false, false, false), "AND");
-            public static readonly ALUOpcode LogicalOR            = new((false, true, false, true, false, true), "OR");
-            public static readonly ALUOpcode A_LogicalNOT         = new((false, false, true, true, false, true), "A_NOT");
-            public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true), "B_NOT");
+            public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false));
+            public static readonly ALUOpcode TransferB            = new((true, true, false, false, false, false));
+            public static readonly ALUOpcode Addition             = new((false, false, false, false, true, false));
+            public static readonly ALUOpcode AB_SubtractionSigned = new((false, true, false, false, true, true));
+            public static readonly ALUOpcode BA_SubtractionSigned = new((false, false, false, true, true, true));
+            public static readonly ALUOpcode A_Negative           = new((false, false, true, true, true, true));
+            public static readonly ALUOpcode B_Negative           = new((true, true, false, false, true, true));
+            public static readonly ALUOpcode A_Increment          = new((false, true, true, true, true, true));
+            public static readonly ALUOpcode B_Increment          = new((true, true, false, true, true, true));
+            public static readonly ALUOpcode A_Decrement          = new((false, false, true, true, true, false));
+            public static readonly ALUOpcode B_Decrement          = new((true, true, false, false, true, false));
+            public static readonly ALUOpcode LogicalAND           = new((false, false, false, false, false, false));
+            public static readonly ALUOpcode LogicalOR            = new((false, true, false, true, false, true));
+            public static readonly ALUOpcode A_LogicalNOT         = new((false, false, true, true, false, true));
+            public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true));
         }
 
         public class ALUInputRegister(ALU alu) : Register(0, true)

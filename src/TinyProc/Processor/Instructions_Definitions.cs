@@ -95,9 +95,10 @@ public sealed partial class Instructions
     }
 
     // Lists all register codes that can appear in an instruction.
-    // Mostly same with internal RCODE_* values, however, RCODE values do contain
+    // Mostly same with internal RegisterCode.RCODE_* values, however, RCODE values do contain
     // some registers that are inaddressable by an instruction (e.g. MDR), so not all RCODE
     // codes are listed here.
+    // -> AddressableRegisterCode is a subset of RegisterCode
     public sealed class AddressableRegisterCode
     {
         private static readonly Dictionary<uint, AddressableRegisterCode> _values = [];

@@ -10,7 +10,7 @@ public partial class CPU
         // Otherwise, previously addressed registers could be overridden by new operations.
         private void ResetBus3()
         {
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_VOID;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
         }
 
         // Load first instruction word
@@ -25,13 +25,13 @@ public partial class CPU
                 $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             // PC -> MAR
-            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             // MDR -> IRA
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
-            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_MDR;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_IRA;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRA;
 
             // Set void as target to not mess up IRA values in Fetch2
             ResetBus3();
@@ -41,15 +41,15 @@ public partial class CPU
         {
             // PC + 1 -> MAR
             _alu.CurrentOpCode = ALU.ALUOpcode.Addition;
-            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
-            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_CV_P1;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_MAR;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             // MDR -> IRB
             ResetBus3();
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
-            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_MDR;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_SPECIAL_IRB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
 
             ResetBus3();
             Console.WriteLine($"Loaded 2 instruction words: {IRA.ValueDirect:X8} {IRB.ValueDirect:X8}");
@@ -62,9 +62,9 @@ public partial class CPU
         {
             // PC + 2 -> PC (Increment PC to next instruction)
             _alu.CurrentOpCode = ALU.ALUOpcode.Addition;
-            _IntBus1Src.BusSourceRegisterAddress = RCODE_PC;
-            _IntBus2Src.BusSourceRegisterAddress = RCODE_SPECIAL_CV_P2;
-            _IntBus3Dst.BusTargetRegisterAddress = RCODE_PC;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
 
             Console.WriteLine("Entering DECODE stage...");
@@ -132,7 +132,7 @@ public partial class CPU
         {
             switch (_currentInstruction.GetInstructionType())
             {
-                case Instructions.InstructionType.Register:
+                case InstructionType.Register:
                     if      (_currentInstruction.GetOpCode() == OpCode.CLZ)   { INSTRUCTION_R_CLZ(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.CLOF)  { INSTRUCTION_R_CLOF(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.CLNG)  { INSTRUCTION_R_CLNG(); }
@@ -141,13 +141,13 @@ public partial class CPU
                     else if (_currentInstruction.GetOpCode() == OpCode.STORR) { INSTRUCTION_R_STORR(); }
                     break;
 
-                case Instructions.InstructionType.Immediate:
+                case InstructionType.Immediate:
                     if      (_currentInstruction.GetOpCode() == OpCode.AOPI)  { INSTRUCTION_I_AOPI(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.LOAD)  { INSTRUCTION_I_LOAD(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.STORE) { INSTRUCTION_I_STORE(); }
                     break;
 
-                case Instructions.InstructionType.Jump:
+                case InstructionType.Jump:
                     if      (_currentInstruction.GetOpCode() == OpCode.NOP)   { INSTRUCTION_J_NOP(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.JMP)   { INSTRUCTION_J_JMP(); }
                     else if (_currentInstruction.GetOpCode() == OpCode.B)     { INSTRUCTION_J_B(); }

@@ -34,7 +34,7 @@ public class Bus
     }
     // Unique bus identifier
     // Useful, when attaching multiple busses to a single class, to identify which bus is "speaking"
-    private readonly uint _UBID;
+    public readonly uint _UBID;
 
     public Bus(int busWidth, uint UBID, IBusAttachable[] registeredComponents)
     {

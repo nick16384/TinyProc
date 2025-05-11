@@ -30,7 +30,8 @@ Today:
 2. ErrorOnIllegalWrite (default true)
 3. ReadAllowed (default true)
 4. ErrorOnIllegalRead (default true)
-- Change memory to use an uint[] array instead of a bool[] array [in progress]
-- Register codes: Pack into enum with "enum RegisterCode : uint" header
-- Rename e.g. CV_P1 register to more understandable Const_Pos1
-- Attach RawMemory and ConsoleMemory to Bus
+- Change memory to use an uint[] array instead of a bool[] array [done]
+- Register codes: Pack into enum with "enum RegisterCode : uint" header [done]
+- Reformat internal bus code [done]
+- Rename e.g. CV_P1 register to more understandable Const_Pos1 [done]
+- Attach RawMemory and ConsoleMemory to Bus [in progress]

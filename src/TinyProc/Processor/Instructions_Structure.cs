@@ -94,16 +94,19 @@ public sealed partial class Instructions
         public InstructionType GetInstructionType();
         
         // Register-Type only
-        public AddressableRegisterCode R_GetDestRegCode()
+        public AddressableRegisterCode R_GetAddressableDestRegCode()
         { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type destination register code."); }
-        public AddressableRegisterCode R_GetSrcRegCode()
+        internal InternalRegisterCode R_GetDestRegCode() => (InternalRegisterCode)(uint)R_GetAddressableDestRegCode();
+        public AddressableRegisterCode R_GetAddressableSrcRegCode()
         { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type source register code."); }
+        internal InternalRegisterCode R_GetSrcRegCode() => (InternalRegisterCode)(uint)R_GetAddressableSrcRegCode();
         public ALU.ALUOpcode R_GetALUOpcode()
         { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type ALU Opcode."); }
 
         // Immediate-Type only
-        public AddressableRegisterCode I_GetDestRegCode()
+        public AddressableRegisterCode I_GetAddressableDestRegCode()
         { throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type destination register code."); }
+        internal InternalRegisterCode I_GetDestRegCode() => (InternalRegisterCode)(uint)I_GetAddressableDestRegCode();
         public ALU.ALUOpcode I_GetALUOpcode()
         { throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type ALU Opcode."); }
         public uint I_GetImmediateValue()
@@ -128,8 +131,8 @@ public sealed partial class Instructions
         public InstructionType GetInstructionType() => InstructionType.Register;
         public OpCode GetOpCode() => OpCode;
         public Condition GetConditional() => Conditional;
-        public AddressableRegisterCode R_GetDestRegCode() => DestRegCode;
-        public AddressableRegisterCode R_GetSrcRegCode() => SrcRegCode;
+        public AddressableRegisterCode R_GetAddressableDestRegCode() => DestRegCode;
+        public AddressableRegisterCode R_GetAddressableSrcRegCode() => SrcRegCode;
         public ALU.ALUOpcode R_GetALUOpcode() => ALUOpcode;
 
         // Explicit cast from binary instruction tuple to RegRegInstruction
@@ -171,7 +174,7 @@ public sealed partial class Instructions
         public InstructionType GetInstructionType() => InstructionType.Immediate;
         public OpCode GetOpCode() => OpCode;
         public Condition GetConditional() => Conditional;
-        public AddressableRegisterCode I_GetDestRegCode() => DestRegCode;
+        public AddressableRegisterCode I_GetAddressableDestRegCode() => DestRegCode;
         public ALU.ALUOpcode I_GetALUOpcode() => ALUOpcode;
         public uint I_GetImmediateValue() => Immediate;
 

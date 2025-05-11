@@ -13,39 +13,46 @@ public partial class CPU
     private readonly Register GP7;
     private readonly Register GP8;
 
-    private static readonly Register CV_P1_SPECIAL_REG = new(1u, true, false, false, true, true);
-    private static readonly Register CV_N1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
-    private static readonly Register CV_P2_SPECIAL_REG = new(2u, true, false, false, true, true);
-    private static readonly Register CV_0_SPECIAL_REG = new(0u, true, false, false, true, true);
+    private static readonly Register CONST_POS1_SPECIAL_REG = new(1u, true, false, false, true, true);
+    private static readonly Register CONST_NEG1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
+    private static readonly Register CONST_POS2_SPECIAL_REG = new(2u, true, false, false, true, true);
+    private static readonly Register CONST_ZERO_SPECIAL_REG = new(0u, true, false, false, true, true);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
-    private const uint RCODE_GP1 = 0x01u;
-    private const uint RCODE_GP2 = 0x02u;
-    private const uint RCODE_GP3 = 0x03u;
-    private const uint RCODE_GP4 = 0x04u;
-    private const uint RCODE_GP5 = 0x05u;
-    private const uint RCODE_GP6 = 0x06u;
-    private const uint RCODE_GP7 = 0x07u;
-    private const uint RCODE_GP8 = 0x08u;
+    internal enum InternalRegisterCode : uint
+    {
+        // General-purpose registers
+        RCODE_GP1 = 0x01u,
+        RCODE_GP2 = 0x02u,
+        RCODE_GP3 = 0x03u,
+        RCODE_GP4 = 0x04u,
+        RCODE_GP5 = 0x05u,
+        RCODE_GP6 = 0x06u,
+        RCODE_GP7 = 0x07u,
+        RCODE_GP8 = 0x08u,
 
-    private const uint RCODE_PC = 0x00u;
-    private const uint RCODE_SR = 0x10u;
+        // Program counter / Instruction pointer
+        RCODE_PC = 0x00u,
+        // Status register
+        RCODE_SR = 0x10u,
 
-    private const uint RCODE_SPECIAL_MAR = 0x70000000;
-    private const uint RCODE_SPECIAL_MDR = 0x70000001;
-    private const uint RCODE_SPECIAL_IRA = 0x70000002;
-    private const uint RCODE_SPECIAL_IRB = 0x70000003;
-    // Constant value (read-only) registers
-    // +1
-    private const uint RCODE_SPECIAL_CV_P1 = 0x70000004;
-    // -1
-    private const uint RCODE_SPECIAL_CV_N1 = 0x70000005;
-    // +2
-    private const uint RCODE_SPECIAL_CV_P2 = 0x70000006;
-    // 0
-    private const uint RCODE_SPECIAL_CV_0 = 0x70000007;
-    // Void register: Since writes to CV0 are discarded, this refers to it in another context.
-    private const uint RCODE_SPECIAL_VOID = 0x70000007;
+        // Memory address register
+        RCODE_SPECIAL_MAR = 0x70000000u,
+        // Memory data register
+        RCODE_SPECIAL_MDR = 0x70000001u,
+        // Instruction registers A and B
+        RCODE_SPECIAL_IRA = 0x70000002u,
+        RCODE_SPECIAL_IRB = 0x70000003u,
+
+        // Constant value, read-only registers
+        RCODE_SPECIAL_CONST_POS1 = 0x70000004u,
+        RCODE_SPECIAL_CONST_NEG1 = 0x70000005u,
+        RCODE_SPECIAL_CONST_POS2 = 0x70000006u,
+        RCODE_SPECIAL_CONST_ZERO = 0x70000007u,
+
+        // Void register: Since writes to CONST_ZERO are discarded, this refers to it in another context.
+        RCODE_SPECIAL_VOID = RCODE_SPECIAL_CONST_ZERO
+    }
 
     private readonly ControlUnit _CU;
     private readonly ALU _ALU;
