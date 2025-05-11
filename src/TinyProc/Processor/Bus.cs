@@ -35,11 +35,15 @@ public class Bus
     // Unique bus identifier
     // Useful, when attaching multiple busses to a single class, to identify which bus is "speaking"
     public readonly uint _UBID;
+    private static readonly List<uint> KnownUBIDs = [];
 
     public Bus(int busWidth, uint UBID, IBusAttachable[] registeredComponents)
     {
         _data = new bool[busWidth];
         _UBID = UBID;
+        if (KnownUBIDs.Contains(_UBID))
+            Console.Error.WriteLine($"Warning: Conflicting bus UBID {_UBID:X8}: Already in use by another bus!");
+        KnownUBIDs.Add(_UBID);
         _registeredComponents = registeredComponents;
         foreach (IBusAttachable component in _registeredComponents)
             component.AttachToBus(_UBID, this);

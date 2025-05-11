@@ -1,9 +1,8 @@
 namespace TinyProc.Memory;
 
-using System.Collections;
 using TinyProc.Processor;
 
-public class RawMemory
+public class RawMemory : IBusAttachable
 {
     public readonly uint _words;
     public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
@@ -30,18 +29,10 @@ public class RawMemory
         set { _writeEnable = value; _readEnable = !value && _readEnable; }
     }
 
-    public uint AddressBus { get; set; } = 0x0u;
-    public uint DataBus
-    {
-        get => Read(AddressBus);
-        set
-        {
-            if (WriteEnable)
-                Write(AddressBus, value);
-        }
-    }
+    private Bus MemoryAddressBus;
+    private Bus MemoryDataBus;
 
-    public RawMemory(uint words)
+    public RawMemory(uint words, uint[] initialData)
     {
         if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
@@ -53,7 +44,11 @@ public class RawMemory
             _data = [new uint[int.MaxValue], [_words - int.MaxValue]];
         else
             _data = [new uint[_words]];
-        // Data is automatically initialized to all-zeroes
+
+        if (initialData.Length > words)
+            throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
+        for (uint i = 0; i < initialData.Length; i++)
+            Write(i, initialData[i]);
         Console.WriteLine(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
             $"WORDS:{_words}; Total space:{TotalSizeBits} bits");
@@ -116,5 +111,34 @@ public class RawMemory
     {
         if (addr > _words - 1)
             throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
+    }
+
+    // Implicitly treats first call as address bus and second call as data bus,
+    // ignoring all subsequent calls.
+    private int busAttachCount = 0;
+    public void AttachToBus(uint ubid, Bus bus)
+    {
+        if (busAttachCount == 0)
+            MemoryAddressBus = bus;
+        else if (busAttachCount == 1)
+            MemoryDataBus = bus;
+        else
+            throw new ArgumentException("Attempted memory beyond address and data bus. Aborting.");
+        busAttachCount++;
+        
+        if (MemoryAddressBus != null && MemoryDataBus != null)
+            Console.WriteLine("Memory successfully attached to address and data bus.");
+    }
+    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData)
+    {
+        // Write request via bus
+        if ((ubid == MemoryAddressBus._UBID || ubid == MemoryDataBus._UBID) && WriteEnable)
+            Write(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus.Data, 0));
+        
+        // Read request via bus
+        if (ubid == MemoryAddressBus._UBID && ReadEnable)
+            return Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(newBusData, 0)));
+        
+        return newBusData;
     }
 }

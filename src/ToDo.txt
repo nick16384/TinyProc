@@ -35,3 +35,11 @@ Today:
 - Reformat internal bus code [done]
 - Rename e.g. CV_P1 register to more understandable Const_Pos1 [done]
 - Attach RawMemory and ConsoleMemory to Bus [in progress]
+-> Fix memory being completely filled with zeroes.
+
+- Make code C# language rule conform and as uniform as possible
+-> Case of variables, preceding underscore, etc.
+
+- Make bus easier to use by replacing adding uint[] DataAsWord fields, that throw an exception if the bus width is not 32.
+
+- Fix errors when addresses in memory bus are set before the read enable, causing old data to be read when the read enable bit changes.

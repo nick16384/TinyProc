@@ -7,7 +7,7 @@ public partial class CPU
     // Memory management unit
     // Much simpler than in modern architectures (like x86_64), but essentially controls
     // memory flow in / out of the CPU
-    private class MMU
+    private class MMU : IBusAttachable
     {
         public class MemoryAddressRegister(MMU mmu) : Register(0, true)
         {
@@ -31,18 +31,35 @@ public partial class CPU
                 get
                 {
                     _mmu.RAM.ReadEnable = true;
-                    _mmu.RAM.AddressBus = _mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM);
-                    _storedValue = _mmu.RAM.DataBus;
+                    _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
+                    _storedValue = Bus.BoolArrayToUInt(_mmu.MemoryDataBus.Data, 0);
                     return _storedValue;
                 }
                 set
                 {
                     _mmu.RAM.WriteEnable = true;
-                    _mmu.RAM.DataBus = value;
+                    _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
+                    _mmu.MemoryDataBus.Data = Bus.UIntToBoolArray(_mmu.MDR.ValueDirect);
                     _storedValue = value;
                 }
             }
         }
+
+        private readonly Dictionary<RawMemory, (uint, uint)> _MemorySpaces;
+        // Memory address register: Sets an address to read from / write to in memory logic.
+        public readonly MemoryAddressRegister MAR;
+        // Memory data register:
+        // When reading, contains the value at address set in MAR.
+        // When writing, contains the value to be written to address in MAR.
+        public readonly MemoryDataRegister MDR;
+
+        // Base bus UBIDs, they increase for every memory object created.
+        public const uint UBID_BASE_MEMADDRESSBUS = 0x11;
+        public const uint UBID_BASE_MEMDATABUS = 0x12;
+        private readonly Dictionary<RawMemory, Bus> MemoryAddressBusses = [];
+        private Bus MemoryAddressBus { get => MemoryAddressBusses[RAM]; }
+        private readonly Dictionary<RawMemory, Bus> MemoryDataBusses = [];
+        private Bus MemoryDataBus { get => MemoryDataBusses[RAM]; }
 
         // Facilitates and encapsulates mechanisms to read from and write to arbitrary memory.
         // Combines attached memory objects' address spaces into one continuous address space.
@@ -59,6 +76,18 @@ public partial class CPU
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
+
+            int idx = 0;
+            foreach (((uint, uint) ramSpace, RawMemory ram) in rams)
+            {
+                MemoryAddressBusses.Add(
+                    ram,
+                    new Bus(Register.SYSTEM_WORD_SIZE, UBID_BASE_MEMADDRESSBUS + (uint)(2 * idx), [this, ram]));
+                MemoryDataBusses.Add(
+                    ram,
+                    new Bus(Register.SYSTEM_WORD_SIZE, UBID_BASE_MEMDATABUS + (uint)(2 * idx), [this, ram]));
+                idx++;
+            }
         }
 
         private RawMemory GetRAMAtVirtualAddress(uint addr)
@@ -85,12 +114,7 @@ public partial class CPU
             return absoluteAddr - _MemorySpaces[ram].Item1;
         }
 
-        private readonly Dictionary<RawMemory, (uint, uint)> _MemorySpaces;
-        // Memory address register: Sets an address to read from / write to in memory logic.
-        public readonly MemoryAddressRegister MAR;
-        // Memory data register:
-        // When reading, contains the value at address set in MAR.
-        // When writing, contains the value to be written to address in MAR.
-        public readonly MemoryDataRegister MDR;
+        public void AttachToBus(uint ubid, Bus bus) { /* Do nothing. MMU already is the bus master. */ }
+        public bool[] HandleBusUpdate(uint ubid, bool[] newBusData) => newBusData;
     }
 }

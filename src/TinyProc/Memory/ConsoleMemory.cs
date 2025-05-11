@@ -1,6 +1,6 @@
 namespace TinyProc.Memory;
 
-public class ConsoleMemory(uint words) : RawMemory(words)
+public class ConsoleMemory(uint words) : RawMemory(words, [])
 {
     private protected override void Write(uint addr, uint value)
     {
