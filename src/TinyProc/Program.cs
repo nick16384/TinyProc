@@ -5,7 +5,7 @@ using TinyProc.Processor.CPU;
 class Program
 {
     // The version of this program itself
-    public const string TINYPROC_PROGRAM_VERSION_STR = "2025.05-dev";
+    public const string TINYPROC_PROGRAM_VERSION_STR = "2025.05-dev2";
     // The version / revision of the emulated CPU
     public const string PROCESSOR_REVISION_VERSION_STR = "0.1-indev";
     static void Main(string[] args)
