@@ -46,3 +46,14 @@ Format: [Register] [32 bit Code]
 - CONST_PLUSTWO 0x70000006
 - CONST_ZERO / CONST_VOID 0x70000007
 - <RESERVED DEFAULT TARGET> 0xFFFFFFFF
+
+TODO:
+Add SR to bus
+-> Do further research how the SR is connected to the CU and how instructions can control / read SR content
+
+UBIDs (Unique bus identifiers):
+0x1  : CPU internal bus 1
+0x2  : CPU internal bus 2
+0x3  : CPU internal bus 3
+0x11 : Memory address bus
+0x12 : Memory data bus

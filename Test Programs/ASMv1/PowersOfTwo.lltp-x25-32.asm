@@ -6,7 +6,7 @@ MOV   gp3, 0
 MOV   gp4, 1
 
 ; Main
-ADDR  gp3, gp4
-MOVR  gp4, gp3
+ADD   gp3, gp4
+MOV   gp4, gp3
 STORE gp3, 0x78
-JMP   4
+JMP   4 ; Main

@@ -21,8 +21,6 @@ Branching:
 02 - B? [Target address] : Branch on condition
 
 Inter-register non-arithmetic operations:
-03 - MOVR [Destination register] [Source register] : Copy register to another register
-04 - MOV [Destination register] [Immediate] : Copy immediate value to register
 05 - TST : Test command; Sets all flags
 
 Flags:
@@ -30,29 +28,20 @@ Flags:
 08 - CLOF : Clear overflow flag
 09 - CLNG : Clear negative flag
 
-Inter-register arithmetic operations:
-10 - ADD? [Destination register] [Immediate] : Add value to register
-11 - ADDR? [Destination register] [Source register]: Adds the second register value to the first one
-12 - SUB? [Destination register] [Immediate] : Subtract value from register
-13 - SUBR? [Destination register] [Source register] : Subtract the second register value from the first one
-14 - MUL?
-15 - MULR?
-16 - AND?
-17 - ANDR?
-18 - OR?
-19 - ORR?
-1A - XOR?
-1B - XORR?
-1C - LS?
-1D - LSR?
-1E - RS?
-1F - RSR?
-20 - SRS? : Signed right shift (keeps leftmost bit always the same)
-21 - SRSR?
-22 - ROL?
-23 - ROLR?
-24 - ROR?
-25 - RORR?
+Arithmetic operations:
+10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
+11 - AOPI [Destination register] [Immediate] : Arithmetic operation between
+
+ALU Opcodes for arithmetic instructions:
+001100 - MOV
+000010 - ADD
+010011 - SUB
+011111 - INC
+001110 - DEC
+000000 - AND
+010101 - OR
+To be implemented:
+MUL, XOR, LS, RS, SRS, ROL, ROR
 
 Add documentation for which flags get set by instructions
 
@@ -64,7 +53,7 @@ Memory:
 
 3F - <Highest possible value for opcode>
 
-Virtual instructions:
+Pseudo instructions (to be implemented):
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
 - NOT (XOR X 0xffffffff)
 - COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
@@ -72,8 +61,8 @@ Instructions, that get mapped to (multiple) other instructions when compiling fr
 Conditional codes:
 [Conditional code] - [Description] - [Instruction suffix]
 0 - Always execute - <None>
-1 - When comparison equal flag set - EQ
-2 - When comparison equal flag not set - NE
+(Not currently used) 1 - When comparison equal flag set - EQ
+(Not currently used) 2 - When comparison equal flag not set - NE
 3 - When overflow flag set - OF
 4 - When overflow flag not set - NO
 5 - When zero flag set - ZR
@@ -87,9 +76,11 @@ R-Type (Register type)
 [ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 5 Reserved* | 1 Word Extension** ] [ 32 Zero* ]
 RD: Destination register
 RS: Source register
+ALU: A(RD) [Op] B(RS) --> R(RD)
 
 I-Type (Immediate type):
 [ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 10 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+ALU: A(I) [Op] B(RD) --> R(RD)
 
 J-Type (Jump type):
 [ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]
@@ -98,12 +89,16 @@ Address: Absolute memory address to jump to
 * Reserved & Zero region: Zeroed out / Filled with 0x0 bytes
 ** Word Extension: Extend to 64 bit instruction (To be implemented later, currently always in use -> Always set to 1)
 
-Flags:
-- Overflow
-- Zero
-- Negative
-- Comparison
-- Carry
+Flags in Status Register (SR):
+Bits (from MSB to LSB)
+1. Enable flags
+(if zero, the ALU does not change any flag values.
+This is necessary, since most CPU internal data flows through the ALU,
+although only part of it is relevant to instructions that are affected by flag values.)
+2. Overflow
+3. Zero
+4. Negative
+5. Carry
 
 Globally addressable Registers
 Format: [Register name] [Register code in instruction]
@@ -123,3 +118,13 @@ Internal registers (Not addressable):
 - Bus 1, 2, 3 selectors
 - IRA / IRB
 - MAR / MDR
+
+Assembly binary file, First 8 words:
+1. Assembler version (byte 1: Major; byte 2: Minor)
+2. Absolute start address of RAM region
+3. Absolute end address of RAM region
+4. Absolute start address of CON region (0xFFFFFFFF if none)
+5. Absolute end address of CON region (0xFFFFFFFE if none, E is not a typo)
+6. Entry point (Absolute address)
+7. 0x0
+8. 0x0

@@ -5,4 +5,5 @@ public class Stack
     private RawMemory _dataMem;
 
     //public void Push()
+    //public void Pop()
 }

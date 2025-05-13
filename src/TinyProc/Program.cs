@@ -4,10 +4,13 @@ using TinyProc.Processor.CPU;
 
 class Program
 {
-    public static readonly string TINYPROC_VERSION_STR = "0.2025.04";
+    // The version of this program itself
+    public const string TINYPROC_PROGRAM_VERSION_STR = "2025.05-dev2";
+    // The version / revision of the emulated CPU
+    public const string PROCESSOR_REVISION_VERSION_STR = "0.1-indev";
     static void Main(string[] args)
     {
-        Console.WriteLine($"\nTinyProc ver. {TINYPROC_VERSION_STR}");
+        Console.WriteLine($"\nTinyProc ver. {TINYPROC_PROGRAM_VERSION_STR}; Processor revision {PROCESSOR_REVISION_VERSION_STR}");
 
         Console.WriteLine($"Arguments: {args.Length}");
 
@@ -25,8 +28,8 @@ class Program
         {
             string sourceFilePath = args[1];
             Console.WriteLine($"Assembling source file {sourceFilePath}");
-            if (sourceFilePath.EndsWith(".lltp-x25-32.asm"))
-                Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp-x25-32.asm\".");
+            if (sourceFilePath.Trim().EndsWith(".lltp32.asm"))
+                Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp32.asm\".");
             
             string assemblyCode = File.ReadAllText(sourceFilePath);
             uint[] MAIN_PROGRAM = Assembler.AssembleToMachineCode(assemblyCode);
@@ -48,27 +51,57 @@ class Program
         {
             string executableFilePath = args[1];
             Console.WriteLine($"Attempting to load and run binary executable {executableFilePath}");
-            if (executableFilePath.EndsWith(".lltp-x25-32.bin"))
-                Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp-x25-32.bin\".");
+            if (executableFilePath.Trim().EndsWith(".lltp32.bin"))
+                Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
 
             Console.WriteLine("Reading binary file");
             byte[] binFileContent = File.ReadAllBytes(executableFilePath);
             uint[] MAIN_PROGRAM = ByteArrayToUIntArray(binFileContent);
             Console.WriteLine($"Decoded binary file into {MAIN_PROGRAM.Length} words.");
 
+            // Extract and process header information
+            uint header_AssemblerVersion = MAIN_PROGRAM[Assembler.HEADER_INDEX_VERSION];
+            uint header_RAMRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_START];
+            uint header_RAMRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_END];
+            uint header_CONRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_START];
+            uint header_CONRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_END];
+            uint header_EntryPoint       = MAIN_PROGRAM[Assembler.HEADER_INDEX_ENTRY_POINT];
+
+            // Remove header words from program
+            MAIN_PROGRAM = [.. MAIN_PROGRAM.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)];
+
+            if (header_AssemblerVersion != Assembler.ASSEMBLER_VERSION_ENCODED)
+            {
+                string asmVersionInFile = Assembler.GetVersionStringFromEncodedValue(header_AssemblerVersion);
+                string asmVersionRequired = Assembler.GetVersionStringFromEncodedValue(Assembler.ASSEMBLER_VERSION_ENCODED);
+                throw new NotSupportedException(
+                    $"Encoded assembler version mismatch " +
+                    $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
+            }
+            Console.WriteLine("Assembly version check successful!");
+
             Console.WriteLine("Creating virtual hardware");
-            uint requiredMemoryWords = (uint)MAIN_PROGRAM.Length;
-            Console.WriteLine("Creating memory object");
-            RawMemory mem1 = new(requiredMemoryWords + 128);
+            Console.WriteLine("Creating working memory & console memory objects");
+            uint RAMRegionSize = header_RAMRegionEnd - header_RAMRegionStart + 1;
+            uint CONRegionSize = header_CONRegionEnd - header_CONRegionStart + 1;
+            Console.WriteLine($"{RAMRegionSize}, {CONRegionSize}");
+            RawMemory mem1 = new(RAMRegionSize, MAIN_PROGRAM);
+            ConsoleMemory tmem1 = new(CONRegionSize);
             Console.WriteLine("Creating CPU object");
-            CPU cpu = new(mem1)
+            CPU cpu = new(new Dictionary<(uint, uint), RawMemory>
+                {
+                    { (header_RAMRegionStart, header_RAMRegionEnd), mem1 },
+                    { (header_CONRegionStart, header_CONRegionEnd), tmem1 }
+                }, header_EntryPoint)
             {
                 ClockLevel = false
             };
 
-            Console.WriteLine("Loading program into memory.");
-            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x00000000u);
-            mem1.Debug_DumpAll();
+            Console.WriteLine("Reading loaded program.");
+            if (mem1._words < 4096)
+                mem1.Debug_DumpAll();
+            else
+                Console.WriteLine("Memory object too large to dump.");
             Console.WriteLine("Done.");
 
             Console.WriteLine("\nDecide, whether to use auto or manual clock.");
@@ -97,27 +130,13 @@ class Program
                 // CPU clock level oscillates between low (false) and high (true)
                 cpu.ClockLevel = !cpu.ClockLevel;
 
-                Thread.Sleep(100);
+                //Thread.Sleep(100);
             }
         }
         // Miku = 39 = Sankyuu easter egg :)
         //mem1.WriteEnable = true;
         //mem1.AddressBus = 0x00000039u;
         //mem1.DataBus = 0x39393939u;
-    }
-
-    private static void LoadDataIntoMemory(uint[] data, RawMemory mem, uint startAddress)
-    {
-        Console.WriteLine($"Loading {data.Length} words into memory (size {mem._words} words) starting at address {startAddress:X8}");
-        if (startAddress + data.Length > mem._words)
-            throw new ArgumentOutOfRangeException("Start address + Data size > Memory size");
-        mem.WriteEnable = true;
-        for (uint i = 0; i < data.Length; i++)
-        {
-            mem.AddressBus = startAddress + i;
-            mem.DataBus = data[i];
-        }
-        Console.WriteLine("Memory write successful.");
     }
 
     private static uint[] ByteArrayToUIntArray(byte[] byteArray)
