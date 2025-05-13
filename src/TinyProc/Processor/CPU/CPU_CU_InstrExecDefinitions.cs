@@ -29,7 +29,7 @@ public partial class CPU
                 $"<{_currentInstruction.R_GetALUOpcode}> " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpCode = _currentInstruction.R_GetALUOpcode();
+            _alu.CurrentOpcode = _currentInstruction.R_GetALUOpcode();
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetDestRegCode();
             _IntBus2.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
             _alu.Status_EnableFlags = true;
@@ -50,11 +50,11 @@ public partial class CPU
                 "at address contained in register " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = _currentInstruction.R_GetDestRegCode();
             ResetBus3();
@@ -68,7 +68,7 @@ public partial class CPU
                 "at address contained in register " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
             ResetBus3();
@@ -85,7 +85,7 @@ public partial class CPU
                 $"#{_currentInstruction.I_GetImmediateValue():x8} <{_currentInstruction.I_GetALUOpcode()}> " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpCode = _currentInstruction.I_GetALUOpcode();
+            _alu.CurrentOpcode = _currentInstruction.I_GetALUOpcode();
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus2.BusSourceRegisterCode = _currentInstruction.I_GetDestRegCode();
             _alu.Status_EnableFlags = true;
@@ -104,11 +104,11 @@ public partial class CPU
                 $"Dst:{_currentInstruction.I_GetDestRegCode()} " +
                 "at immediate address " +
                 $"#{_currentInstruction.I_GetImmediateValue():x8}");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = _currentInstruction.I_GetDestRegCode();
             ResetBus3();
@@ -121,7 +121,7 @@ public partial class CPU
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}] " +
                 "at immediate address " +
                 $"#{_currentInstruction.I_GetImmediateValue():x8}");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
             ResetBus3();
@@ -139,7 +139,7 @@ public partial class CPU
         private void INSTRUCTION_J_JMP()
         {
             Console.WriteLine($"Jump to address {IRB.ValueDirect:x8}");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();

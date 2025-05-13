@@ -7,49 +7,49 @@ public sealed partial class Instructions
     // Note: This class contains a lot of pseudo-enums, which act as enums externally,
     // but have implicit conversions implemented.
 
-    public sealed class OpCode
+    public sealed class Opcode
     {
-        private static readonly Dictionary<uint, OpCode> _values = [];
+        private static readonly Dictionary<uint, Opcode> _values = [];
 
-        public static readonly OpCode NOP   = new(0x00, "NOP");
+        public static readonly Opcode NOP   = new(0x00, "NOP");
 
-        public static readonly OpCode JMP   = new(0x01, "JMP");
-        public static readonly OpCode B     = new(0x02, "B");
+        public static readonly Opcode JMP   = new(0x01, "JMP");
+        public static readonly Opcode B     = new(0x02, "B");
 
-        public static readonly OpCode AOPR  = new(0x10, "AOPR");
-        public static readonly OpCode AOPI  = new(0x11, "AOPI");
+        public static readonly Opcode AOPR  = new(0x10, "AOPR");
+        public static readonly Opcode AOPI  = new(0x11, "AOPI");
 
-        public static readonly OpCode CLZ   = new(0x07, "CLZ");
-        public static readonly OpCode CLOF  = new(0x08, "CLOF");
-        public static readonly OpCode CLNG  = new(0x09, "CLNG");
+        public static readonly Opcode CLZ   = new(0x07, "CLZ");
+        public static readonly Opcode CLOF  = new(0x08, "CLOF");
+        public static readonly Opcode CLNG  = new(0x09, "CLNG");
 
-        public static readonly OpCode LOAD  = new(0x30, "LOAD");
-        public static readonly OpCode LOADR = new(0x31, "LOADR");
-        public static readonly OpCode STORE = new(0x32, "STORE");
-        public static readonly OpCode STORR = new(0x33, "STORR");
+        public static readonly Opcode LOAD  = new(0x30, "LOAD");
+        public static readonly Opcode LOADR = new(0x31, "LOADR");
+        public static readonly Opcode STORE = new(0x32, "STORE");
+        public static readonly Opcode STORR = new(0x33, "STORR");
 
         private readonly uint _value;
         private readonly string _name;
-        private OpCode(uint value, string name)
+        private Opcode(uint value, string name)
         {
             _value = value;
             _name = name;
             _values.Add(value, this);
         }
-        public static implicit operator OpCode(uint value)
+        public static implicit operator Opcode(uint value)
         {
             try { return _values[value]; }
-            catch (Exception) { throw new KeyNotFoundException($"Invalid OpCode {value:x8}"); }
+            catch (Exception) { throw new KeyNotFoundException($"Invalid Opcode {value:x8}"); }
         }
-        public static explicit operator OpCode(string mnemonic)
+        public static explicit operator Opcode(string mnemonic)
         {
             mnemonic = mnemonic.ToUpper();
-            foreach (OpCode opCode in _values.Values)
-                if (opCode._name.Equals(mnemonic))
-                    return opCode;
-            throw new KeyNotFoundException($"Mnemonic {mnemonic} does not map to a valid OpCode.");
+            foreach (Opcode opcode in _values.Values)
+                if (opcode._name.Equals(mnemonic))
+                    return opcode;
+            throw new KeyNotFoundException($"Mnemonic {mnemonic} does not map to a valid Opcode.");
         }
-        public static implicit operator uint(OpCode opCode) => opCode._value;
+        public static implicit operator uint(Opcode opcode) => opcode._value;
 
         public override string ToString() => _name;
     }
@@ -89,7 +89,7 @@ public sealed partial class Instructions
                     return conditional;
             throw new KeyNotFoundException($"Condition code {conditionCode} does not map to a valid Condition.");
         }
-        public static implicit operator uint(Condition opCode) => opCode._value;
+        public static implicit operator uint(Condition conditional) => conditional._value;
 
         public override string ToString() => _name;
     }
@@ -135,7 +135,7 @@ public sealed partial class Instructions
                     return addressableRegister;
             throw new KeyNotFoundException($"Register code {registerCode} does not map to a valid addressable register.");
         }
-        public static implicit operator uint(AddressableRegisterCode opCode) => opCode._value;
+        public static implicit operator uint(AddressableRegisterCode registerCode) => registerCode._value;
 
         public override string ToString() => _name;
     }

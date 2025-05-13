@@ -14,21 +14,21 @@ public partial class CPU
 {
     public class ALU
     {
-        public readonly struct ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits)
+        public readonly struct ALUOpcode((bool, bool, bool, bool, bool, bool) opcodeBits)
         {
-            private readonly (bool, bool, bool, bool, bool, bool) _opCodeBits = opCodeBits;
+            private readonly (bool, bool, bool, bool, bool, bool) _opcodeBits = opcodeBits;
             // If true, set x = 0
-            public readonly bool zx = opCodeBits.Item1;
+            public readonly bool zx = opcodeBits.Item1;
             // If true, set x = !x
-            public readonly bool nx = opCodeBits.Item2;
+            public readonly bool nx = opcodeBits.Item2;
             // If true, set y = 0
-            public readonly bool zy = opCodeBits.Item3;
+            public readonly bool zy = opcodeBits.Item3;
             // If true, set y = !y
-            public readonly bool ny = opCodeBits.Item4;
+            public readonly bool ny = opcodeBits.Item4;
             // If true, out = x + y; If false, out = x & y
-            public readonly bool f = opCodeBits.Item5;
+            public readonly bool f = opcodeBits.Item5;
             // If true, out = !out
-            public readonly bool no = opCodeBits.Item6;
+            public readonly bool no = opcodeBits.Item6;
 
             public override readonly string ToString()
             {
@@ -41,20 +41,20 @@ public partial class CPU
                     (f  ? "1" : "0") +
                     (no ? "1" : "0");
 
-                if      (_opCodeBits == TransferA._opCodeBits)            name = "TraA";
-                else if (_opCodeBits == TransferB._opCodeBits)            name = "TraB";
-                else if (_opCodeBits == AB_SubtractionSigned._opCodeBits) name = "AB_SubSigned";
-                else if (_opCodeBits == BA_SubtractionSigned._opCodeBits) name = "BA_SubSigned";
-                else if (_opCodeBits == A_Negative._opCodeBits)           name = "A_Neg";
-                else if (_opCodeBits == B_Negative._opCodeBits)           name = "B_Neg";
-                else if (_opCodeBits == A_Increment._opCodeBits)          name = "A_Inc";
-                else if (_opCodeBits == B_Increment._opCodeBits)          name = "B_Inc";
-                else if (_opCodeBits == A_Decrement._opCodeBits)          name = "A_Dec";
-                else if (_opCodeBits == B_Decrement._opCodeBits)          name = "B_Dec";
-                else if (_opCodeBits == LogicalAND._opCodeBits)           name = "AND";
-                else if (_opCodeBits == LogicalOR._opCodeBits)            name = "OR";
-                else if (_opCodeBits == A_LogicalNOT._opCodeBits)         name = "A_NOT";
-                else if (_opCodeBits == B_LogicalNOT._opCodeBits)         name = "B_NOT";
+                if      (_opcodeBits == TransferA._opcodeBits)            name = "TraA";
+                else if (_opcodeBits == TransferB._opcodeBits)            name = "TraB";
+                else if (_opcodeBits == AB_SubtractionSigned._opcodeBits) name = "AB_SubSigned";
+                else if (_opcodeBits == BA_SubtractionSigned._opcodeBits) name = "BA_SubSigned";
+                else if (_opcodeBits == A_Negative._opcodeBits)           name = "A_Neg";
+                else if (_opcodeBits == B_Negative._opcodeBits)           name = "B_Neg";
+                else if (_opcodeBits == A_Increment._opcodeBits)          name = "A_Inc";
+                else if (_opcodeBits == B_Increment._opcodeBits)          name = "B_Inc";
+                else if (_opcodeBits == A_Decrement._opcodeBits)          name = "A_Dec";
+                else if (_opcodeBits == B_Decrement._opcodeBits)          name = "B_Dec";
+                else if (_opcodeBits == LogicalAND._opcodeBits)           name = "AND";
+                else if (_opcodeBits == LogicalOR._opcodeBits)            name = "OR";
+                else if (_opcodeBits == A_LogicalNOT._opcodeBits)         name = "A_NOT";
+                else if (_opcodeBits == B_LogicalNOT._opcodeBits)         name = "B_NOT";
 
                 if (name == null)
                     return "UnknownOp / " + bitsString;
@@ -62,8 +62,8 @@ public partial class CPU
                     return name + " / " + bitsString;
             }
 
-            public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opCodeBits) => new(opCodeBits);
-            public static implicit operator (bool, bool, bool, bool, bool, bool)(ALUOpcode opCode) => opCode._opCodeBits;
+            public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opcodeBits) => new(opcodeBits);
+            public static implicit operator (bool, bool, bool, bool, bool, bool)(ALUOpcode opcode) => opcode._opcodeBits;
 
             // List of all commonly used opcodes; Acts as a kind of enum or Dictionary<OpName, ALUOpcode>.
             public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false));
@@ -114,7 +114,7 @@ public partial class CPU
 
         public readonly ALUInputRegister A;
         public readonly ALUInputRegister B;
-        public ALUOpcode CurrentOpCode = new((false, false, false, false, false, false));
+        public ALUOpcode CurrentOpcode = new((false, false, false, false, false, false));
         public readonly ALUResultRegister R;
 
         // Status register
@@ -180,28 +180,28 @@ public partial class CPU
             uint x = A.ValueDirect;
             uint y = B.ValueDirect;
 
-            if (CurrentOpCode.zx)
+            if (CurrentOpcode.zx)
                 x = 0x0u;
-            if (CurrentOpCode.nx)
+            if (CurrentOpcode.nx)
                 x = ~x;
-            if (CurrentOpCode.zy)
+            if (CurrentOpcode.zy)
                 y = 0x0u;
-            if (CurrentOpCode.ny)
+            if (CurrentOpcode.ny)
                 y = ~y;
 
             uint @out;
-            if (CurrentOpCode.f)
+            if (CurrentOpcode.f)
                 @out = x + y;
             else
                 @out = x & y;
         
-            if (CurrentOpCode.no)
+            if (CurrentOpcode.no)
                 @out = ~@out;
 
             // Only override current flags, if "enable flags" flag is set.
             if (Status_EnableFlags)
             {
-                Status_Overflow = CurrentOpCode.f && ((ulong)((uint)x + (uint)y) != (ulong)x + (ulong)y);
+                Status_Overflow = CurrentOpcode.f && ((ulong)((uint)x + (uint)y) != (ulong)x + (ulong)y);
                 Status_Zero     = @out == 0;
                 Status_Negative = ((@out & 0x80000000) >> 31) == 1;
                 Status_Carry    = Status_Overflow;

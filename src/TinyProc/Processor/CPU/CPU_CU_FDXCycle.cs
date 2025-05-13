@@ -23,13 +23,13 @@ public partial class CPU
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
                 $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             // PC -> MAR
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             // MDR -> IRA
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRA;
 
@@ -40,14 +40,14 @@ public partial class CPU
         private void InstructionFetch2()
         {
             // PC + 1 -> MAR
-            _alu.CurrentOpCode = ALU.ALUOpcode.Addition;
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             // MDR -> IRB
             ResetBus3();
-            _alu.CurrentOpCode = ALU.ALUOpcode.TransferB;
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
 
@@ -61,7 +61,7 @@ public partial class CPU
         private void InstructionDecode()
         {
             // PC + 2 -> PC (Increment PC to next instruction)
-            _alu.CurrentOpCode = ALU.ALUOpcode.Addition;
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
@@ -79,7 +79,7 @@ public partial class CPU
 
             Console.WriteLine(
                 $"Type: {_currentInstruction.GetInstructionType()}; " +
-                $"OpCode: {(uint)_currentInstruction.GetOpCode():X2}->{_currentInstruction.GetOpCode()}; " +
+                $"Opcode: {(uint)_currentInstruction.GetOpcode():X2}->{_currentInstruction.GetOpcode()}; " +
                 $"Condition: {(uint)_currentInstruction.GetConditional():X2}->{_currentInstruction.GetConditional()};");
         }
 
@@ -133,24 +133,24 @@ public partial class CPU
             switch (_currentInstruction.GetInstructionType())
             {
                 case InstructionType.Register:
-                    if      (_currentInstruction.GetOpCode() == OpCode.CLZ)   { INSTRUCTION_R_CLZ(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.CLOF)  { INSTRUCTION_R_CLOF(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.CLNG)  { INSTRUCTION_R_CLNG(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.AOPR)  { INSTRUCTION_R_AOPR(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.LOADR) { INSTRUCTION_R_LOADR(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.STORR) { INSTRUCTION_R_STORR(); }
+                    if      (_currentInstruction.GetOpcode() == Opcode.CLZ)   { INSTRUCTION_R_CLZ(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.CLOF)  { INSTRUCTION_R_CLOF(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.STORR) { INSTRUCTION_R_STORR(); }
                     break;
 
                 case InstructionType.Immediate:
-                    if      (_currentInstruction.GetOpCode() == OpCode.AOPI)  { INSTRUCTION_I_AOPI(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.LOAD)  { INSTRUCTION_I_LOAD(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.STORE) { INSTRUCTION_I_STORE(); }
+                    if      (_currentInstruction.GetOpcode() == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.LOAD)  { INSTRUCTION_I_LOAD(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.STORE) { INSTRUCTION_I_STORE(); }
                     break;
 
                 case InstructionType.Jump:
-                    if      (_currentInstruction.GetOpCode() == OpCode.NOP)   { INSTRUCTION_J_NOP(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.JMP)   { INSTRUCTION_J_JMP(); }
-                    else if (_currentInstruction.GetOpCode() == OpCode.B)     { INSTRUCTION_J_B(); }
+                    if      (_currentInstruction.GetOpcode() == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
+                    else if (_currentInstruction.GetOpcode() == Opcode.B)     { INSTRUCTION_J_B(); }
                     break;
             }
         }

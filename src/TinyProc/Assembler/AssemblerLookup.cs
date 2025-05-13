@@ -79,21 +79,21 @@ public partial class Assembler
         return mnemonic switch
         {
             "MOV" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.AOPR,
+                    Instructions.Opcode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     ALU.ALUOpcode.TransferB),
 
             "ADD" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.AOPR,
+                    Instructions.Opcode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     ALU.ALUOpcode.Addition),
             
             "SUB" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.AOPR,
+                    Instructions.Opcode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
@@ -102,28 +102,28 @@ public partial class Assembler
             // No INC / DEC; They are exclusively immediate type instructions
             
             "AND" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.AOPR,
+                    Instructions.Opcode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     ALU.ALUOpcode.LogicalAND),
 
             "OR" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.AOPR,
+                    Instructions.Opcode.AOPR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     ALU.ALUOpcode.LogicalOR),
 
             "LOADR" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.LOADR,
+                    Instructions.Opcode.LOADR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
                     DEFAULT_EMPTY_ALU_OPCODE),
             
             "STORR" => new Instructions.RegRegInstruction(
-                    Instructions.OpCode.STORR,
+                    Instructions.Opcode.STORR,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     (Instructions.AddressableRegisterCode)words[2],
@@ -146,63 +146,63 @@ public partial class Assembler
         return mnemonic switch
         {
             "MOV" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.TransferA,
                     ConvertStringToUInt(words[2])),
 
             "ADD" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.Addition,
                     ConvertStringToUInt(words[2])),
             
             "SUB" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.BA_SubtractionSigned,
                     ConvertStringToUInt(words[2])),
 
             "INC" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.B_Increment,
                     IMMEDIATE_DEFAULT_VALUE),
             
             "DEC" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.B_Decrement,
                     IMMEDIATE_DEFAULT_VALUE),
             
             "AND" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.LogicalAND,
                     ConvertStringToUInt(words[2])),
 
             "OR" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.AOPI,
+                    Instructions.Opcode.AOPI,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     ALU.ALUOpcode.LogicalOR,
                     ConvertStringToUInt(words[2])),
 
             "LOAD" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.LOAD,
+                    Instructions.Opcode.LOAD,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
                     ConvertStringToUInt(words[2])),
 
             "STORE" => new Instructions.RegImmInstruction(
-                    Instructions.OpCode.STORE,
+                    Instructions.Opcode.STORE,
                     conditional,
                     (Instructions.AddressableRegisterCode)words[1],
                     DEFAULT_EMPTY_ALU_OPCODE, // Multiple ALU opcodes required during execution; None set here.
@@ -218,17 +218,17 @@ public partial class Assembler
         return mnemonic switch
         {
             "NOP" => new Instructions.JumpInstruction(
-                    Instructions.OpCode.NOP,
+                    Instructions.Opcode.NOP,
                     conditional,
                     IMMEDIATE_DEFAULT_VALUE),
 
             "JMP" => new Instructions.JumpInstruction(
-                    Instructions.OpCode.JMP,
+                    Instructions.Opcode.JMP,
                     conditional,
                     ConvertStringToUInt(words[1])),
 
             "B" => new Instructions.JumpInstruction(
-                    Instructions.OpCode.B,
+                    Instructions.Opcode.B,
                     conditional,
                     ConvertStringToUInt(words[1])),
             _ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated J-Type instruction.")
