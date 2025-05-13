@@ -1,79 +1,90 @@
 namespace TinyProc.Memory;
 
-using System.Text;
 using TinyProc.Processor;
 
-public class RawMemory
+public class RawMemory : IBusAttachable
 {
     public readonly uint _words;
-    public uint TotalSizeBits { get { return (uint)Register.SYSTEM_WORD_SIZE * _words; } }
-    // A 2D bool array simulating RAM structure
-    private readonly bool[,] _data;
+    public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
+    // The data array can hold a maximum of ~4 billion elements, however an array can
+    // only hold up to ~2 billion elements in C#.
+    // This necessitates the usage of an array of uint arrays, that can hold up the required amount
+    // of uints in total.
+    // Externally, this appears as one continuous address space.
+    private readonly uint[][] _data;
 
     // Logic that allows only either write or read line to be set:
     private bool _readEnable;
     public bool ReadEnable
     {
         get => _readEnable;
-        set { _readEnable = value; _writeEnable = !value && _writeEnable; }
+        set
+        {
+            _readEnable = value;
+            _writeEnable = !value && _writeEnable;
+            // Read request via bus
+            if (value)
+                MemoryDataBus.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0)));
+        }
     }
     private bool _writeEnable;
     public bool WriteEnable
     {
         get => _writeEnable;
-        set { _writeEnable = value; _readEnable = !value && _readEnable; }
-    }
-
-    public uint AddressBus { get; set; } = 0x0u;
-    public uint DataBus
-    {
-        get => Read(AddressBus);
         set
         {
-            if (WriteEnable)
-                Write(AddressBus, value);
+            _writeEnable = value;
+            _readEnable = !value && _readEnable;
+            // Write request via bus
+            if (value)
+                Write(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus.Data, 0));
         }
     }
 
-    public RawMemory(uint words)
+    // Initialized as soon as attached to bus
+    private Bus MemoryAddressBus;
+    private Bus MemoryDataBus;
+
+    public RawMemory(uint words, uint[] initialData)
     {
-        if (words <= 1)
+        if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
+        if (words > 1_000_000)
+            Console.Error.WriteLine(
+                "Warning: *Attempting* to initialize very large memory (>1,000,000 words). Expect out-of-memory errors.");
         _words = words;
-        _data = new bool[Register.SYSTEM_WORD_SIZE, _words];
-        // Data is automatically initialized to all-zeroes
+        if (_words > int.MaxValue)
+            _data = [new uint[int.MaxValue], new uint[_words - int.MaxValue]];
+        else
+            _data = [new uint[_words]];
+
+        if (initialData.Length > words)
+            throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
+        for (uint i = 0; i < initialData.Length; i++)
+            Write(i, initialData[i]);
         Console.WriteLine(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
             $"WORDS:{_words}; Total space:{TotalSizeBits} bits");
     }
 
-    private static readonly uint MASK_LEFT_BIT_SINGLE = 0x8000_0000u;
-    // Reads block of 64 bits
+    // Reads block of 32 bits
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
-        uint readWord = 0x0;
-        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
-        {
-            bool dataBit = _data[x, addr];
-            uint dataBitAsuint = dataBit ? MASK_LEFT_BIT_SINGLE : 0x0u;
-            readWord |= dataBitAsuint >> x;
-        }
-        return readWord;
+        if (addr > int.MaxValue)
+            return _data[1][addr - int.MaxValue + 1];
+        else
+            return _data[0][addr];
     }
     private protected virtual void Write(uint addr, uint value)
     {
-        if (addr == 0x00000039u)
+        if (addr == 0x39u || addr == 39)
             Console.WriteLine("Miku says thank you!");
         CheckValidAddress(addr);
-        Console.WriteLine($"[Mem] Write 0x{value:X8} at 0x{addr:X8}");
-        for (int x = 0; x < Register.SYSTEM_WORD_SIZE; x++)
-        {
-            uint valueMasked = value & (MASK_LEFT_BIT_SINGLE >> x);
-            valueMasked >>= Register.SYSTEM_WORD_SIZE - 1 - x;
-            bool isBitSet = valueMasked > 0;
-            _data[x, addr] = isBitSet;
-        }
+        if (addr > int.MaxValue)
+            _data[1][addr - int.MaxValue + 1] = value;
+        else
+            _data[0][addr] = value;
     }
 
     public void Debug_DumpAll()
@@ -82,12 +93,12 @@ public class RawMemory
         int addressesPerLine = 4;
         for (uint baseAddr = 0; baseAddr < _words; baseAddr += 4)
         {
-            Console.Write($"{baseAddr:X8}:");
+            Console.Write($"{baseAddr:x8}:");
             // Print address values as hexadecimal
             for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
                 uint addr = baseAddr + subAddr;
-                Console.Write($" {Read(addr):X8}");
+                Console.Write($" {Read(addr):x8}");
             }
             Console.Write("   ");
             // Print address values decoded as ASCII
@@ -108,10 +119,27 @@ public class RawMemory
         }
     }
 
-    // Checks if address is below TotalSizeBits. If not, an exception is thrown.
+    // Checks if address is below the amount of words. If not, an exception is thrown.
     private void CheckValidAddress(uint addr)
     {
         if (addr > _words - 1)
-            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
+            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:x8} above 0x{(_words - 1):x8}.");
+    }
+
+    // Implicitly treats first call as address bus and second call as data bus,
+    // ignoring all subsequent calls.
+    private int busAttachCount = 0;
+    public void AttachToBus(uint ubid, Bus bus)
+    {
+        if (busAttachCount == 0)
+            MemoryAddressBus = bus;
+        else if (busAttachCount == 1)
+            MemoryDataBus = bus;
+        else
+            throw new ArgumentException("Attempted memory bus attachment beyond address and data bus. Aborting.");
+        busAttachCount++;
+        
+        if (MemoryAddressBus != null && MemoryDataBus != null)
+            Console.WriteLine("Memory successfully attached to address and data bus.");
     }
 }

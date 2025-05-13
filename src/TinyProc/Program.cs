@@ -4,10 +4,13 @@ using TinyProc.Processor.CPU;
 
 class Program
 {
-    public static readonly string TINYPROC_VERSION_STR = "0.2025.04";
+    // The version of this program itself
+    public const string TINYPROC_PROGRAM_VERSION_STR = "2025.05-dev";
+    // The version / revision of the emulated CPU
+    public const string PROCESSOR_REVISION_VERSION_STR = "0.1-indev";
     static void Main(string[] args)
     {
-        Console.WriteLine($"\nTinyProc ver. {TINYPROC_VERSION_STR}");
+        Console.WriteLine($"\nTinyProc ver. {TINYPROC_PROGRAM_VERSION_STR}; Processor revision {PROCESSOR_REVISION_VERSION_STR}");
 
         Console.WriteLine($"Arguments: {args.Length}");
 
@@ -82,7 +85,7 @@ class Program
             uint RAMRegionSize = header_RAMRegionEnd - header_RAMRegionStart + 1;
             uint CONRegionSize = header_CONRegionEnd - header_CONRegionStart + 1;
             Console.WriteLine($"{RAMRegionSize}, {CONRegionSize}");
-            RawMemory mem1 = new(RAMRegionSize);
+            RawMemory mem1 = new(RAMRegionSize, MAIN_PROGRAM);
             ConsoleMemory tmem1 = new(CONRegionSize);
             Console.WriteLine("Creating CPU object");
             CPU cpu = new(new Dictionary<(uint, uint), RawMemory>
@@ -94,8 +97,7 @@ class Program
                 ClockLevel = false
             };
 
-            Console.WriteLine("Loading program into memory.");
-            LoadDataIntoMemory(MAIN_PROGRAM, mem1, 0x00000000u);
+            Console.WriteLine("Reading loaded program.");
             if (mem1._words < 4096)
                 mem1.Debug_DumpAll();
             else
@@ -135,20 +137,6 @@ class Program
         //mem1.WriteEnable = true;
         //mem1.AddressBus = 0x00000039u;
         //mem1.DataBus = 0x39393939u;
-    }
-
-    private static void LoadDataIntoMemory(uint[] data, RawMemory mem, uint startAddress)
-    {
-        Console.WriteLine($"Loading {data.Length} words into memory (size {mem._words} words) starting at address {startAddress:X8}");
-        if (startAddress + data.Length > mem._words)
-            throw new ArgumentOutOfRangeException("Start address + Data size > Memory size");
-        mem.WriteEnable = true;
-        for (uint i = 0; i < data.Length; i++)
-        {
-            mem.AddressBus = startAddress + i;
-            mem.DataBus = data[i];
-        }
-        Console.WriteLine("Memory write successful.");
     }
 
     private static uint[] ByteArrayToUIntArray(byte[] byteArray)

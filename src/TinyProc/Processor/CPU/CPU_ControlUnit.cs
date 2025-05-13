@@ -8,15 +8,15 @@ public partial class CPU
     private partial class ControlUnit
     {
         // Program counter
-        private readonly Register PC = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register PC = new(0, true);
         // Instruction register 1
-        private readonly Register IRA = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register IRA = new(0, true);
         // Instruction register 2
         // Two 32 bit instruction registers necessary, since an entire instruction
         // is double-word-aligned, meaning it occupies 64 bits.
-        private readonly Register IRB = new(true, RegisterRWAccess.ReadOnly);
+        private readonly Register IRB = new(0, true);
         
-        private readonly Dictionary<uint, Register> CU_ADDRESSABLE_REGISTERS;
+        private readonly Dictionary<InternalRegisterCode, Register> CU_ADDRESSABLE_REGISTERS;
 
         // The parent CPU object (needed to reference e.g. registers)
         private readonly CPU _cpu;
@@ -30,86 +30,86 @@ public partial class CPU
             _alu = alu;
             _mmu = mmu;
 
-            CU_ADDRESSABLE_REGISTERS = new Dictionary<uint, Register>
+            CU_ADDRESSABLE_REGISTERS = new Dictionary<InternalRegisterCode, Register>
             {
-                {RCODE_PC, PC},
-                {RCODE_GP1, _cpu.GP1},
-                {RCODE_GP2, _cpu.GP2},
-                {RCODE_GP3, _cpu.GP3},
-                {RCODE_GP4, _cpu.GP4},
-                {RCODE_GP5, _cpu.GP5},
-                {RCODE_GP6, _cpu.GP6},
-                {RCODE_GP7, _cpu.GP7},
-                {RCODE_GP8, _cpu.GP8},
-                {RCODE_SR, _alu.SR},
-                {RCODE_SPECIAL_MAR, _mmu.MAR},
-                {RCODE_SPECIAL_MDR, _mmu.MDR},
-                {RCODE_SPECIAL_IRA, IRA},
-                {RCODE_SPECIAL_IRB, IRB},
-                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_P1, CV_P1_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_N1, CV_N1_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_P2, CV_P2_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_PC, PC},
+                {InternalRegisterCode.RCODE_GP1, _cpu.GP1},
+                {InternalRegisterCode.RCODE_GP2, _cpu.GP2},
+                {InternalRegisterCode.RCODE_GP3, _cpu.GP3},
+                {InternalRegisterCode.RCODE_GP4, _cpu.GP4},
+                {InternalRegisterCode.RCODE_GP5, _cpu.GP5},
+                {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
+                {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
+                {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                {InternalRegisterCode.RCODE_SR, _alu.SR},
+                {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
+                {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
+                {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
+                {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS2, CONST_POS2_SPECIAL_REG},
             };
 
             // Internal bus 1 - 3 initialization
-            B1_REGISTERS = new Dictionary<uint, Register>
+            B1_REGISTERS = new Dictionary<InternalRegisterCode, Register>
             {
-                {RCODE_PC, PC},
-                {RCODE_GP1, _cpu.GP1},
-                {RCODE_GP2, _cpu.GP2},
-                {RCODE_GP3, _cpu.GP3},
-                {RCODE_GP4, _cpu.GP4},
-                {RCODE_GP5, _cpu.GP5},
-                {RCODE_GP6, _cpu.GP6},
-                {RCODE_GP7, _cpu.GP7},
-                {RCODE_GP8, _cpu.GP8},
-                //{RCODE_SR, _alu.SR},
-                {RCODE_SPECIAL_MAR, _mmu.MAR},
-                {RCODE_SPECIAL_IRA, IRA},
-                {RCODE_SPECIAL_IRB, IRB},
-                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
+                {InternalRegisterCode.RCODE_PC, PC},
+                {InternalRegisterCode.RCODE_GP1, _cpu.GP1},
+                {InternalRegisterCode.RCODE_GP2, _cpu.GP2},
+                {InternalRegisterCode.RCODE_GP3, _cpu.GP3},
+                {InternalRegisterCode.RCODE_GP4, _cpu.GP4},
+                {InternalRegisterCode.RCODE_GP5, _cpu.GP5},
+                {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
+                {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
+                {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                //{RegisterCode.RCODE_SR, _alu.SR},
+                {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
+                {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
+                {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
             };
-            B2_REGISTERS = new Dictionary<uint, Register>
+            B2_REGISTERS = new Dictionary<InternalRegisterCode, Register>
             {
-                {RCODE_GP1, _cpu.GP1},
-                {RCODE_GP2, _cpu.GP2},
-                {RCODE_GP3, _cpu.GP3},
-                {RCODE_GP4, _cpu.GP4},
-                {RCODE_GP5, _cpu.GP5},
-                {RCODE_GP6, _cpu.GP6},
-                {RCODE_GP7, _cpu.GP7},
-                {RCODE_GP8, _cpu.GP8},
-                {RCODE_SPECIAL_MDR, _mmu.MDR},
-                {RCODE_SPECIAL_CV_P1, CV_P1_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_N1, CV_N1_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_P2, CV_P2_SPECIAL_REG},
-                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
+                {InternalRegisterCode.RCODE_GP1, _cpu.GP1},
+                {InternalRegisterCode.RCODE_GP2, _cpu.GP2},
+                {InternalRegisterCode.RCODE_GP3, _cpu.GP3},
+                {InternalRegisterCode.RCODE_GP4, _cpu.GP4},
+                {InternalRegisterCode.RCODE_GP5, _cpu.GP5},
+                {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
+                {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
+                {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS2, CONST_POS2_SPECIAL_REG},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
             };
-            B3_REGISTERS = new Dictionary<uint, Register>
+            B3_REGISTERS = new Dictionary<InternalRegisterCode, Register>
             {
-                {RCODE_PC, PC},
-                {RCODE_GP1, _cpu.GP1},
-                {RCODE_GP2, _cpu.GP2},
-                {RCODE_GP3, _cpu.GP3},
-                {RCODE_GP4, _cpu.GP4},
-                {RCODE_GP5, _cpu.GP5},
-                {RCODE_GP6, _cpu.GP6},
-                {RCODE_GP7, _cpu.GP7},
-                {RCODE_GP8, _cpu.GP8},
-                {RCODE_SPECIAL_MAR, _mmu.MAR},
-                {RCODE_SPECIAL_MDR, _mmu.MDR},
-                {RCODE_SPECIAL_IRA, IRA},
-                {RCODE_SPECIAL_IRB, IRB},
-                {RCODE_SPECIAL_CV_0, CV_0_SPECIAL_REG}
+                {InternalRegisterCode.RCODE_PC, PC},
+                {InternalRegisterCode.RCODE_GP1, _cpu.GP1},
+                {InternalRegisterCode.RCODE_GP2, _cpu.GP2},
+                {InternalRegisterCode.RCODE_GP3, _cpu.GP3},
+                {InternalRegisterCode.RCODE_GP4, _cpu.GP4},
+                {InternalRegisterCode.RCODE_GP5, _cpu.GP5},
+                {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
+                {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
+                {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
+                {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
+                {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
+                {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
             };
 
-            _IntBus1Src = new MultiSrcSingleDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B1_UBID, B1_REGISTERS, RCODE_GP1, alu.A);
-            _IntBus2Src = new MultiSrcSingleDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B2_UBID, B2_REGISTERS, RCODE_GP1, alu.B);
-            _IntBus3Dst = new SingleSrcMultiDstRegisterSelector(
-                Register.SYSTEM_WORD_SIZE, INTBUS_B3_UBID, alu.R, B3_REGISTERS, RCODE_GP1);
+            _IntBus1 = new MultiSrcSingleDstRegisterSelector(
+                Register.SYSTEM_WORD_SIZE, INTBUS_B1_UBID, B1_REGISTERS, alu.A);
+            _IntBus2 = new MultiSrcSingleDstRegisterSelector(
+                Register.SYSTEM_WORD_SIZE, INTBUS_B2_UBID, B2_REGISTERS, alu.B);
+            _IntBus3 = new SingleSrcMultiDstRegisterSelector(
+                Register.SYSTEM_WORD_SIZE, INTBUS_B3_UBID, alu.R, B3_REGISTERS);
         }
 
         private enum ControlState
