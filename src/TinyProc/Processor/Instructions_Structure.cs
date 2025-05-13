@@ -53,7 +53,7 @@ public sealed partial class Instructions
         else if (opCode == OpCode.LOADR) { return InstructionType.Register; }
         else if (opCode == OpCode.STORE) { return InstructionType.Immediate; }
         else if (opCode == OpCode.STORR) { return InstructionType.Register; }
-        throw new NotImplementedException($"Instruction opcode {opCode:X8} not linked to instruction type (R/I/J).");
+        throw new NotImplementedException($"Instruction opcode {opCode:x8} not linked to instruction type (R/I/J).");
     }
     public static InstructionType DetermineInstructionType(OpCode opCode)
     {

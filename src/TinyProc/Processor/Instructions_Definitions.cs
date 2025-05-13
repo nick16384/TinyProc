@@ -39,7 +39,7 @@ public sealed partial class Instructions
         public static implicit operator OpCode(uint value)
         {
             try { return _values[value]; }
-            catch (Exception) { throw new KeyNotFoundException($"Invalid OpCode {value:X8}"); }
+            catch (Exception) { throw new KeyNotFoundException($"Invalid OpCode {value:x8}"); }
         }
         public static explicit operator OpCode(string mnemonic)
         {
@@ -79,7 +79,7 @@ public sealed partial class Instructions
         public static implicit operator Condition(uint value)
         {
             try { return _values[value]; }
-            catch (Exception) { throw new KeyNotFoundException($"Invalid Conditional {value:X8}"); }
+            catch (Exception) { throw new KeyNotFoundException($"Invalid Conditional {value:x8}"); }
         }
         public static explicit operator Condition(string conditionCode)
         {
@@ -125,7 +125,7 @@ public sealed partial class Instructions
         public static implicit operator AddressableRegisterCode(uint value)
         {
             try { return _values[value]; }
-            catch (Exception) { throw new KeyNotFoundException($"Invalid register code {value:X8}"); }
+            catch (Exception) { throw new KeyNotFoundException($"Invalid register code {value:x8}"); }
         }
         public static explicit operator AddressableRegisterCode(string registerCode)
         {

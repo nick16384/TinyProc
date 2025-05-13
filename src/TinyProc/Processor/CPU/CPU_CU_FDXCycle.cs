@@ -18,7 +18,7 @@ public partial class CPU
         {
             Console.WriteLine("Entering FETCH stage...");
             Console.WriteLine(
-                $"PC at {PC.ValueDirect:X8}; " +
+                $"PC at {PC.ValueDirect:x8}; " +
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
@@ -52,7 +52,7 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
 
             ResetBus3();
-            Console.WriteLine($"Loaded 2 instruction words: {IRA.ValueDirect:X8} {IRB.ValueDirect:X8}");
+            Console.WriteLine($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
         }
 
         private IInstruction _currentInstruction;

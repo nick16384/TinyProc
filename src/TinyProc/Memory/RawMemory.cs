@@ -13,22 +13,35 @@ public class RawMemory : IBusAttachable
     // Externally, this appears as one continuous address space.
     private readonly uint[][] _data;
 
-    // TODO: Attach to true bus object
-
     // Logic that allows only either write or read line to be set:
     private bool _readEnable;
     public bool ReadEnable
     {
         get => _readEnable;
-        set { _readEnable = value; _writeEnable = !value && _writeEnable; }
+        set
+        {
+            _readEnable = value;
+            _writeEnable = !value && _writeEnable;
+            // Read request via bus
+            if (value)
+                MemoryDataBus.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0)));
+        }
     }
     private bool _writeEnable;
     public bool WriteEnable
     {
         get => _writeEnable;
-        set { _writeEnable = value; _readEnable = !value && _readEnable; }
+        set
+        {
+            _writeEnable = value;
+            _readEnable = !value && _readEnable;
+            // Write request via bus
+            if (value)
+                Write(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus.Data, 0));
+        }
     }
 
+    // Initialized as soon as attached to bus
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
@@ -41,7 +54,7 @@ public class RawMemory : IBusAttachable
                 "Warning: *Attempting* to initialize very large memory (>1,000,000 words). Expect out-of-memory errors.");
         _words = words;
         if (_words > int.MaxValue)
-            _data = [new uint[int.MaxValue], [_words - int.MaxValue]];
+            _data = [new uint[int.MaxValue], new uint[_words - int.MaxValue]];
         else
             _data = [new uint[_words]];
 
@@ -80,12 +93,12 @@ public class RawMemory : IBusAttachable
         int addressesPerLine = 4;
         for (uint baseAddr = 0; baseAddr < _words; baseAddr += 4)
         {
-            Console.Write($"{baseAddr:X8}:");
+            Console.Write($"{baseAddr:x8}:");
             // Print address values as hexadecimal
             for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
                 uint addr = baseAddr + subAddr;
-                Console.Write($" {Read(addr):X8}");
+                Console.Write($" {Read(addr):x8}");
             }
             Console.Write("   ");
             // Print address values decoded as ASCII
@@ -106,11 +119,11 @@ public class RawMemory : IBusAttachable
         }
     }
 
-    // Checks if address is below TotalSizeBits. If not, an exception is thrown.
+    // Checks if address is below the amount of words. If not, an exception is thrown.
     private void CheckValidAddress(uint addr)
     {
         if (addr > _words - 1)
-            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:X} above 0x{(_words - 1):X}.");
+            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:x8} above 0x{(_words - 1):x8}.");
     }
 
     // Implicitly treats first call as address bus and second call as data bus,
@@ -123,22 +136,10 @@ public class RawMemory : IBusAttachable
         else if (busAttachCount == 1)
             MemoryDataBus = bus;
         else
-            throw new ArgumentException("Attempted memory beyond address and data bus. Aborting.");
+            throw new ArgumentException("Attempted memory bus attachment beyond address and data bus. Aborting.");
         busAttachCount++;
         
         if (MemoryAddressBus != null && MemoryDataBus != null)
             Console.WriteLine("Memory successfully attached to address and data bus.");
-    }
-    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData)
-    {
-        // Write request via bus
-        if ((ubid == MemoryAddressBus._UBID || ubid == MemoryDataBus._UBID) && WriteEnable)
-            Write(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus.Data, 0));
-        
-        // Read request via bus
-        if (ubid == MemoryAddressBus._UBID && ReadEnable)
-            return Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(newBusData, 0)));
-        
-        return newBusData;
     }
 }

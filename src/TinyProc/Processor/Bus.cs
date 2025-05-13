@@ -3,7 +3,7 @@ namespace TinyProc.Processor;
 public interface IBusAttachable
 {
     public void AttachToBus(uint ubid, Bus bus);
-    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData);
+    public bool[] HandleBusUpdate(uint ubid, bool[] newBusData) => newBusData;
 }
 
 public interface ISelectableBusAttachable : IBusAttachable
@@ -29,7 +29,7 @@ public class Bus
                 throw new ArgumentException($"Bus write data has different size {value.Length} than bus width {_data.Length}.");
             _data = value;
             foreach (IBusAttachable component in _registeredComponents)
-                _data = component.HandleBusUpdate(_UBID, Data);
+                _data = component.HandleBusUpdate(_UBID, _data);
         }
     }
     // Unique bus identifier
@@ -42,7 +42,7 @@ public class Bus
         _data = new bool[busWidth];
         _UBID = UBID;
         if (KnownUBIDs.Contains(_UBID))
-            Console.Error.WriteLine($"Warning: Conflicting bus UBID {_UBID:X8}: Already in use by another bus!");
+            Console.Error.WriteLine($"Warning: Conflicting bus UBID {_UBID:x8} already in use by another bus!");
         KnownUBIDs.Add(_UBID);
         _registeredComponents = registeredComponents;
         foreach (IBusAttachable component in _registeredComponents)

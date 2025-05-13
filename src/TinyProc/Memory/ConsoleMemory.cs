@@ -2,18 +2,21 @@ namespace TinyProc.Memory;
 
 public class ConsoleMemory(uint words) : RawMemory(words, [])
 {
+    public bool EnableConsoleOutput = true;
+
     private protected override void Write(uint addr, uint value)
     {
         base.Write(addr, value);
-        PrintToConsole();
+        if (EnableConsoleOutput)
+            PrintToConsole();
     }
 
     private void PrintToConsole()
     {
         Console.WriteLine("CON memory received update; Current contents:");
-        for (uint addr = 0; addr < _words; addr++)
+        for (uint address = 0; address < _words; address++)
         {
-            uint data = Read(addr);
+            uint data = Read(address);
             char c1 = (char)((data & 0xFF000000) >> 24);
             char c2 = (char)((data & 0x00FF0000) >> 16);
             char c3 = (char)((data & 0x0000FF00) >> 8);

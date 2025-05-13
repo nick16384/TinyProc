@@ -34,8 +34,9 @@ Today:
 - Register codes: Pack into enum with "enum RegisterCode : uint" header [done]
 - Reformat internal bus code [done]
 - Rename e.g. CV_P1 register to more understandable Const_Pos1 [done]
-- Attach RawMemory and ConsoleMemory to Bus [in progress]
+- Attach RawMemory and ConsoleMemory to Bus [done]
 -> Fix memory being completely filled with zeroes.
+- Convert hex numbers and some logging to lowercase [done]
 
 - Make code C# language rule conform and as uniform as possible
 -> Case of variables, preceding underscore, etc.
@@ -43,3 +44,12 @@ Today:
 - Make bus easier to use by replacing adding uint[] DataAsWord fields, that throw an exception if the bus width is not 32.
 
 - Fix errors when addresses in memory bus are set before the read enable, causing old data to be read when the read enable bit changes.
+
+- Single bus access often results in multiple updates -> Fix. (Check e.g. MAR/MDR access or ALU computation count)
+-> This is a result of bus members updating their content everytime an attached bus updates, even though the data is often redundant
+   e.g. MemoryAddress and MemoryData get changed once each during memory writes, causing a double write.
+   Potential fix: Enable write on setting EnableWrite only and not during bus updates.
+
+Git issue regarding terminal not rendering input text after an exception:
+https://github.com/dotnet/runtime/issues/110502
+Temporary fix: Run "reset" after the error occurs

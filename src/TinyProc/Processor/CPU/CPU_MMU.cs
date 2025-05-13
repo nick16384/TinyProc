@@ -19,7 +19,7 @@ public partial class CPU
                 {
                     _storedValue = value;
                     // Update MDR --> Trigger bus update
-                    uint? unassigned = _mmu?.MDR?.ValueDirect;
+                    //uint? unassigned = _mmu?.MDR?.ValueDirect;
                 }
             }
         }
@@ -30,16 +30,18 @@ public partial class CPU
             {
                 get
                 {
-                    _mmu.RAM.ReadEnable = true;
                     _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
+                    _mmu.RAM.ReadEnable = true;
                     _storedValue = Bus.BoolArrayToUInt(_mmu.MemoryDataBus.Data, 0);
+                    _mmu.RAM.ReadEnable = false;
                     return _storedValue;
                 }
                 set
                 {
-                    _mmu.RAM.WriteEnable = true;
                     _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
-                    _mmu.MemoryDataBus.Data = Bus.UIntToBoolArray(_mmu.MDR.ValueDirect);
+                    _mmu.MemoryDataBus.Data = Bus.UIntToBoolArray(value);
+                    _mmu.RAM.WriteEnable = true;
+                    _mmu.RAM.WriteEnable = false;
                     _storedValue = value;
                 }
             }
@@ -101,7 +103,7 @@ public partial class CPU
             }
             // If the foreach loop runs through before the return statement was called, then the address is out of range.
             throw new ArgumentOutOfRangeException(
-                $"Cannot determine memory from absolute address {addr:X8}. Max. address is {_MemorySpaces.Values.Last().Item2:X8}");
+                $"Cannot determine memory from absolute address {addr:x8}. Max. address is {_MemorySpaces.Values.Last().Item2:x8}");
         }
 
         private RawMemory RAM
@@ -115,6 +117,5 @@ public partial class CPU
         }
 
         public void AttachToBus(uint ubid, Bus bus) { /* Do nothing. MMU already is the bus master. */ }
-        public bool[] HandleBusUpdate(uint ubid, bool[] newBusData) => newBusData;
     }
 }

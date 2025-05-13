@@ -25,10 +25,10 @@ public partial class CPU
             Console.Write(
                 "Arithmetic register operation: " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:X8}] " +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
                 $"<{_currentInstruction.R_GetALUOpcode}> " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpCode = _currentInstruction.R_GetALUOpcode();
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetDestRegCode();
             _IntBus2.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
@@ -38,7 +38,7 @@ public partial class CPU
             ResetBus3();
             Console.WriteLine(
                 $" --> Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}]");
         }
         
         private void INSTRUCTION_R_LOADR()
@@ -46,10 +46,10 @@ public partial class CPU
             Console.WriteLine(
                 "Load from memory to register " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:X8}] " +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
                 "at address contained in register " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
@@ -64,10 +64,10 @@ public partial class CPU
             Console.WriteLine(
                 "Store to memory from register " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:X8}] " +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
                 "at address contained in register " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
@@ -82,9 +82,9 @@ public partial class CPU
         {
             Console.Write(
                 "Arithmetic immediate operation: " +
-                $"#{_currentInstruction.I_GetImmediateValue():X8} <{_currentInstruction.I_GetALUOpcode()}> " +
+                $"#{_currentInstruction.I_GetImmediateValue():x8} <{_currentInstruction.I_GetALUOpcode()}> " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpCode = _currentInstruction.I_GetALUOpcode();
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus2.BusSourceRegisterCode = _currentInstruction.I_GetDestRegCode();
@@ -94,7 +94,7 @@ public partial class CPU
             ResetBus3();
             Console.WriteLine(
                 $" --> Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:X8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]");
         }
 
         private void INSTRUCTION_I_LOAD()
@@ -103,7 +103,7 @@ public partial class CPU
                 "Load from memory to register " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()} " +
                 "at immediate address " +
-                $"#{_currentInstruction.I_GetImmediateValue():X8}");
+                $"#{_currentInstruction.I_GetImmediateValue():x8}");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
@@ -118,9 +118,9 @@ public partial class CPU
             Console.WriteLine(
                 "Store to memory from register " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:X8}] " +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}] " +
                 "at immediate address " +
-                $"#{_currentInstruction.I_GetImmediateValue():X8}");
+                $"#{_currentInstruction.I_GetImmediateValue():x8}");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
@@ -138,7 +138,7 @@ public partial class CPU
         }
         private void INSTRUCTION_J_JMP()
         {
-            Console.WriteLine($"Jump to address {IRB.ValueDirect:X8}");
+            Console.WriteLine($"Jump to address {IRB.ValueDirect:x8}");
             _alu.CurrentOpCode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
