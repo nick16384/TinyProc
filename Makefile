@@ -1,6 +1,11 @@
-DOTNET = dotnet
+ifeq ($(OS), Windows_NT)
+	DOTNET = dotnet.exe
+else
+	DOTNET = dotnet
+endif
 
 SRC_CODE_DIR = src/TinyProc
+
 ifeq ($(OS), Windows_NT)
 	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc.exe
 else
