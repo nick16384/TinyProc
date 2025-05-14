@@ -1,8 +1,11 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyProc", "TinyProc.csproj", "{1CCC1100-362F-25B4-BCBD-9FFC0912858B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyProcVisualizer", "..\Avalonia\TinyProcVisualizer\TinyProcVisualizer.csproj", "{59A32925-F9F2-472B-BA05-34E10A5306FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +17,10 @@ Global
 		{1CCC1100-362F-25B4-BCBD-9FFC0912858B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CCC1100-362F-25B4-BCBD-9FFC0912858B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CCC1100-362F-25B4-BCBD-9FFC0912858B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59A32925-F9F2-472B-BA05-34E10A5306FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59A32925-F9F2-472B-BA05-34E10A5306FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59A32925-F9F2-472B-BA05-34E10A5306FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59A32925-F9F2-472B-BA05-34E10A5306FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
