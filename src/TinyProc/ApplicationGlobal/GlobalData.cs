@@ -2,5 +2,8 @@ namespace TinyProc.ApplicationGlobal;
 
 public sealed class GlobalData
 {
-    public static readonly string TINYPROC_VERSION_STR = "0.2025.04";
+    // The version of this program itself
+    public const string TINYPROC_PROGRAM_VERSION_STR = "2025.05-dev2";
+    // The version / revision of the emulated CPU
+    public const string PROCESSOR_REVISION_VERSION_STR = "0.1-indev";
 }
