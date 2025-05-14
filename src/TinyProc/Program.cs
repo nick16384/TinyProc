@@ -7,7 +7,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine($"\nTinyProc ver. {GlobalData.TINYPROC_VERSION_STR}");
+        Console.WriteLine(
+            $"\nTinyProc ver. {GlobalData.TINYPROC_PROGRAM_VERSION_STR} " +
+            $"Processor revision {GlobalData.PROCESSOR_REVISION_VERSION_STR}");
 
         Console.WriteLine($"Arguments: {args.Length}");
 
