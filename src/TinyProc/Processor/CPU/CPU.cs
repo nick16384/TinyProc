@@ -74,21 +74,7 @@ public partial class CPU
         _CU = new ControlUnit(this, entryPoint, _ALU, _MMU);
     }
 
-    private bool _clockLevel;
-    public bool ClockLevel
-    {
-        get => _clockLevel;
-        // If rising edge, initiate next clock cycle
-        set
-        {
-            bool clockLevelOld = _clockLevel;
-            _clockLevel = value;
-            if (clockLevelOld == false && value == true)
-                NextClock();
-        }
-    }
-
-    private void NextClock()
+    public void NextClock()
     {
         Console.WriteLine("====================================================================");
 

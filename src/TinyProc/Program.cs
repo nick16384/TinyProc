@@ -1,10 +1,9 @@
 ﻿using TinyProc.Assembler;
 using TinyProc.ApplicationGlobal;
-using TinyProc.Memory;
-using TinyProc.Processor.CPU;
 
 class Program
 {
+    // Note: This Main function should only be called when intending to run in CLI mode.
     static void Main(string[] args)
     {
         Console.WriteLine(
@@ -78,64 +77,25 @@ class Program
                     $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
             }
             Console.WriteLine("Assembly version check successful!");
-
-            Console.WriteLine("Creating virtual hardware");
-            Console.WriteLine("Creating working memory & console memory objects");
-            uint RAMRegionSize = header_RAMRegionEnd - header_RAMRegionStart + 1;
-            uint CONRegionSize = header_CONRegionEnd - header_CONRegionStart + 1;
-            Console.WriteLine($"{RAMRegionSize}, {CONRegionSize}");
-            RawMemory mem1 = new(RAMRegionSize, MAIN_PROGRAM);
-            ConsoleMemory tmem1 = new(CONRegionSize);
-            Console.WriteLine("Creating CPU object");
-            CPU cpu = new(new Dictionary<(uint, uint), RawMemory>
-                {
-                    { (header_RAMRegionStart, header_RAMRegionEnd), mem1 },
-                    { (header_CONRegionStart, header_CONRegionEnd), tmem1 }
-                }, header_EntryPoint)
-            {
-                ClockLevel = false
-            };
-
-            Console.WriteLine("Reading loaded program.");
-            if (mem1._words < 4096)
-                mem1.Debug_DumpAll();
-            else
-                Console.WriteLine("Memory object too large to dump.");
-            Console.WriteLine("Done.");
-
-            Console.WriteLine("\nDecide, whether to use auto or manual clock.");
-            Console.WriteLine("For auto, press \"a\" key; For manual, press any other key.");
-            char? input = (char)Console.Read();
-            bool isAutoClock = input == 'a' || input == 'A';
-            Console.WriteLine($"Auto clock enabled: {isAutoClock}");
-
+            
             Console.CancelKeyPress += delegate
             {
                 Console.WriteLine("\nLeaving cycle loop and exiting...");
             };
 
-            long cycles = 0;
-            // Main clock loop
+            ExecutionContainer container0 = new(
+                header_RAMRegionStart, header_RAMRegionEnd,
+                header_CONRegionStart, header_CONRegionEnd,
+                MAIN_PROGRAM, header_EntryPoint);
+            
+            // If this program is at this stage, it is probably running in CLI mode.
+            Console.WriteLine("Program ready to execute. Press enter to start first cycle.");
             while (true)
             {
-                if (!cpu.ClockLevel)
-                {
-                    if (!isAutoClock)
-                        // Wait until the user presses enter for the next time
-                        Console.ReadLine();
-                    cycles++;
-                    Console.WriteLine($"\n\nCPU cycle {cycles}");
-                }
-                // CPU clock level oscillates between low (false) and high (true)
-                cpu.ClockLevel = !cpu.ClockLevel;
-
-                //Thread.Sleep(100);
+                Console.ReadLine();
+                container0.StepSingleCycle();
             }
         }
-        // Miku = 39 = Sankyuu easter egg :)
-        //mem1.WriteEnable = true;
-        //mem1.AddressBus = 0x00000039u;
-        //mem1.DataBus = 0x39393939u;
     }
 
     private static uint[] ByteArrayToUIntArray(byte[] byteArray)

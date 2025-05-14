@@ -9,7 +9,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = "TinyProc CPU Emulator Visualizer v" + TinyProc.ApplicationGlobal.GlobalData.TINYPROC_VERSION_STR;
+        Title = $"TinyProc CPU Emulator v{TinyProc.ApplicationGlobal.GlobalData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
     }
 
     private void Button_OnClick(object? sender, RoutedEventArgs e)
