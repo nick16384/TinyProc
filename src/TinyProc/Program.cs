@@ -1,13 +1,14 @@
 ﻿using TinyProc.Assembler;
+using TinyProc.ApplicationGlobal;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 
 class Program
 {
-    public static readonly string TINYPROC_VERSION_STR = "0.2025.04";
+    
     static void Main(string[] args)
     {
-        Console.WriteLine($"\nTinyProc ver. {TINYPROC_VERSION_STR}");
+        Console.WriteLine($"\nTinyProc ver. {GlobalData.TINYPROC_VERSION_STR}");
 
         Console.WriteLine($"Arguments: {args.Length}");
 

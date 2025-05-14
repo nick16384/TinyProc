@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using System;
-
-using TinyProc.Assembler;
+using System.Diagnostics;
 
 namespace TinyProcVisualizer;
 
@@ -13,9 +12,8 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        Console.WriteLine("Hello?");
-        Console.WriteLine($"Asm ver: {Assembler.ASSEMBLER_VERSION}");
-        Console.WriteLine();
+        Console.WriteLine("[TinyProcV] Avalonia runtime seems to be running successfully!");
+        Debug.WriteLine("Launching TinyProc visualizer GUI.");
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
