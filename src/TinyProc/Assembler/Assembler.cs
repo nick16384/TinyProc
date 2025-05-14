@@ -92,11 +92,11 @@ public partial class Assembler()
                         uint regionEnd = ConvertStringToUInt(words[3]);
                         if (regionEnd < regionStart)
                             throw new ArgumentOutOfRangeException(
-                                $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
+                                $"Working memory region end {regionEnd:X8} smaller than start {regionStart:X8}");
                         workingMemoryRegion = (regionStart, regionEnd);
                         assembledMachineCode[HEADER_INDEX_RAM_REGION_START] = regionStart;
                         assembledMachineCode[HEADER_INDEX_RAM_REGION_END] = regionEnd;
-                        Console.WriteLine($"Working memory region: {regionStart:x8} - {regionEnd:x8}");
+                        Console.WriteLine($"Working memory region: {regionStart:X8} - {regionEnd:X8}");
                         continue;
                     }
                     if (words[1] == ASM_DIRECTIVE_MEMREGION_CON)
@@ -105,11 +105,11 @@ public partial class Assembler()
                         uint regionEnd = ConvertStringToUInt(words[3]);
                         if (regionEnd < regionStart)
                             throw new ArgumentOutOfRangeException(
-                                $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
+                                $"Working memory region end {regionEnd:X8} smaller than start {regionStart:X8}");
                         consoleMemoryRegion = (regionStart, regionEnd);
                         assembledMachineCode[HEADER_INDEX_CON_REGION_START] = regionStart;
                         assembledMachineCode[HEADER_INDEX_CON_REGION_END] = regionEnd;
-                        Console.WriteLine($"Console memory region: {regionStart:x8} - {regionEnd:x8}");
+                        Console.WriteLine($"Console memory region: {regionStart:X8} - {regionEnd:X8}");
                         continue;
                     }
                     throw new ArgumentException($"Unknown memory region type {words[1]}");
@@ -137,7 +137,7 @@ public partial class Assembler()
                 {
                     string label = words[0][..^1];
                     labelAddressMap.Add(label, currentAddress);
-                    Console.WriteLine($"Found label declaration \"{label}\" at address {currentAddress:x8}");
+                    Console.WriteLine($"Found label declaration \"{label}\" at address {currentAddress:X8}");
                     continue;
                 }
                 for (int i = 0; i < words.Length; i++)
