@@ -53,3 +53,5 @@ Today:
 Git issue regarding terminal not rendering input text after an exception:
 https://github.com/dotnet/runtime/issues/110502
 Temporary fix: Run "reset" after the error occurs
+
+Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex)

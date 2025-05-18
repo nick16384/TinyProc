@@ -10,6 +10,11 @@
     </Application.DataTemplates>
   
     <Application.Styles>
+        <StyleInclude Source="avares://AvaloniaHex/Themes/Simple/AvaloniaHex.axaml"/>
         <FluentTheme />
     </Application.Styles>
+
+    <Application.Resources>
+        <FontFamily x:Key="SourceCodeProFont">avares://TinyProcVisualizer/Resources/Fonts/SourceCodePro-Regular.ttf#Source Code Pro</FontFamily>
+    </Application.Resources>
 </Application>

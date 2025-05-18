@@ -28,20 +28,17 @@ class Program
             Console.WriteLine($"Assembling source file {sourceFilePath}");
             if (sourceFilePath.Trim().EndsWith(".lltp32.asm"))
                 Console.Error.WriteLine("Warning: Source file name does not end with standard suffix \".lltp32.asm\".");
-            
+
             string assemblyCode = File.ReadAllText(sourceFilePath);
             uint[] MAIN_PROGRAM = Assembler.AssembleToMachineCode(assemblyCode);
 
             string outputBinaryFilePath = sourceFilePath + ".bin";
             if (sourceFilePath.EndsWith(".asm"))
                 outputBinaryFilePath = sourceFilePath[..^4] + ".bin";
-            FileStream outputBinaryFileStream = File.Open(outputBinaryFilePath, FileMode.Create);
-            BinaryWriter binaryWriter = new(outputBinaryFileStream);
-            foreach (uint programWord in MAIN_PROGRAM)
-                binaryWriter.Write(programWord);
-            
+            // TODO: Fix endianness
+            WriteBytesToFileWithBigEndian(MAIN_PROGRAM, outputBinaryFilePath);
+
             Console.WriteLine($"Binary executable file written at {outputBinaryFilePath}");
-            binaryWriter.Close();
             return;
         }
 
@@ -59,11 +56,11 @@ class Program
 
             // Extract and process header information
             uint header_AssemblerVersion = MAIN_PROGRAM[Assembler.HEADER_INDEX_VERSION];
-            uint header_RAMRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_START];
-            uint header_RAMRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_END];
-            uint header_CONRegionStart   = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_START];
-            uint header_CONRegionEnd     = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_END];
-            uint header_EntryPoint       = MAIN_PROGRAM[Assembler.HEADER_INDEX_ENTRY_POINT];
+            uint header_RAMRegionStart = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_START];
+            uint header_RAMRegionEnd = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_END];
+            uint header_CONRegionStart = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_START];
+            uint header_CONRegionEnd = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_END];
+            uint header_EntryPoint = MAIN_PROGRAM[Assembler.HEADER_INDEX_ENTRY_POINT];
 
             // Remove header words from program
             MAIN_PROGRAM = [.. MAIN_PROGRAM.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)];
@@ -77,7 +74,7 @@ class Program
                     $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
             }
             Console.WriteLine("Assembly version check successful!");
-            
+
             Console.CancelKeyPress += delegate
             {
                 Console.WriteLine("\nLeaving cycle loop and exiting...");
@@ -87,7 +84,7 @@ class Program
                 header_RAMRegionStart, header_RAMRegionEnd,
                 header_CONRegionStart, header_CONRegionEnd,
                 MAIN_PROGRAM, header_EntryPoint);
-            
+
             // If this program is at this stage, it is probably running in CLI mode.
             Console.WriteLine("Program ready to execute. Press enter to start first cycle.");
             while (true)
@@ -109,5 +106,32 @@ class Program
             uintArray[i] = BitConverter.ToUInt32(byteArray, i * 4);
         }
         return uintArray;
+    }
+    private static byte[] UIntArrayToByteArray(uint[] uintArray)
+    {
+        // TODO: Fix potential errors with very large programs exceeding C# array size limits.
+        byte[] byteArray = new byte[uintArray.Length * 4];
+        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx += 4)
+        {
+            Console.WriteLine($"UInt: {uintArray[uintIdx]:X8}");
+            int byteIdx = uintIdx * 4;
+            byteArray[byteIdx + 0] = (byte)((uintArray[uintIdx] & 0xFF000000) >> 24);
+            byteArray[byteIdx + 1] = (byte)((uintArray[uintIdx] & 0x00FF0000) >> 16);
+            byteArray[byteIdx + 2] = (byte)((uintArray[uintIdx] & 0x0000FF00) >> 8);
+            byteArray[byteIdx + 3] = (byte)((uintArray[uintIdx] & 0x000000FF) >> 0);
+        }
+        Console.WriteLine($"Bytes: {byteArray.Length}");
+        return byteArray;
+    }
+
+    private static void WriteBytesToFileWithBigEndian(uint[] bytes, string filePath)
+    {
+        // Reverse bytes, so that little endian writer "actually" writes in big endian
+        //Array.Reverse(bytes);
+        FileStream outputBinaryFileStream = File.Open(filePath, FileMode.Create);
+        BinaryWriter binaryWriter = new(outputBinaryFileStream);
+        foreach (uint @byte in bytes)
+            binaryWriter.Write(@byte);
+        binaryWriter.Close();
     }
 }

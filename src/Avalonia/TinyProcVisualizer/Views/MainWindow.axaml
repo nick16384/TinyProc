@@ -3,11 +3,13 @@
         xmlns:vm="using:TinyProcVisualizer.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
+        xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="TinyProcVisualizer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="TinyProc CPU Emulator [Uninitialized] Visualizer">
+        Title="TinyProc CPU Emulator Visualizer">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -15,15 +17,46 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10, 10, 10, 10">
-        <TextBlock Name="Test1TB" Text="null"/>
-        <Button Click="Button_OnClick">Hi!</Button>
-        <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="120, 100" RowDefinitions="Auto, Auto, Auto">
-            <Label Grid.Row="0" Grid.Column="0">Labellus</Label>
-            <TextBox Grid.Row="0" Grid.Column="1">Textus</TextBox>
-        </Grid>
-        <TextBlock Text="Controls"/>
-        <Button Name="InitCPU" Click="Button_CPUInit_OnClick">Initialize CPU</Button>
-    </StackPanel>
+    <DockPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" MinHeight="500">
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
+                <TextBlock Name="TextBlock_Title" Text="CPU control panel"/>
+                <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
+                <Button Click="ReloadExecutableBinaryFile" Name="Button_ReloadExecutable" IsEnabled="false">Reload binary executable</Button>
+            </StackPanel>
+            <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+                <Label Grid.Row="0" Grid.Column="0">Source binary executable</Label>
+                <avaloniaHex:HexEditor
+                Grid.Row="1" Grid.Column="0"
+                MinHeight="500"
+                MinWidth="280"
+                FontFamily="{StaticResource SourceCodeProFont}"
+                Name="SourceBinaryHexEditor">
+                    <!-- Define columns to display -->
+                    <avaloniaHex:HexEditor.Columns>
+                        <rendering:OffsetColumn />
+                        <rendering:HexColumn />
+                        <rendering:AsciiColumn />
+                    </avaloniaHex:HexEditor.Columns>
+                </avaloniaHex:HexEditor>
+
+                <Label Grid.Row="0" Grid.Column="1">Working memory (RAM)</Label>
+                <avaloniaHex:HexEditor
+                Grid.Row="1" Grid.Column="1"
+                MinHeight="500"
+                MinWidth="480"
+                FontFamily="{StaticResource SourceCodeProFont}"
+                Name="WorkingMemoryHexEditor">
+                    <!-- Define columns to display -->
+                    <avaloniaHex:HexEditor.Columns>
+                        <rendering:OffsetColumn />
+                        <rendering:HexColumn />
+                        <rendering:AsciiColumn />
+                    </avaloniaHex:HexEditor.Columns>
+                </avaloniaHex:HexEditor>
+            </Grid>
+        </StackPanel>
+        <!-- Add console memory hex editor and vmem display (video buffer 0/1) -->
+    </DockPanel>
 
 </Window>
