@@ -2,34 +2,40 @@ using System.Diagnostics;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 
-namespace TinyProc.ApplicationGlobal;
+namespace TinyProc.Application;
 
 public class ExecutionContainer
 {
     // The first (and almost always only) instance of an ExecutionContainer, which is
     // exposed externally to be used by e.g. GUIs.
-    public readonly ExecutionContainer INSTANCE0;
+    public static ExecutionContainer INSTANCE0;
 
     private readonly RawMemory _mem1;
     private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
 
-    public ExecutionContainer(uint ramStart, uint ramEnd, uint conStart, uint conEnd, uint[] mainProgram, uint entryPoint)
+    public static ExecutionContainer Initialize(ExecutableWrapper mainProgramWrapper)
     {
-        uint ramSize = ramEnd - ramStart + 1;
-        uint conSize = conEnd - conStart + 1;
+        INSTANCE0 = new ExecutionContainer(mainProgramWrapper);
+        return INSTANCE0;
+    }
+
+    private ExecutionContainer(ExecutableWrapper mainProgramWrapper)
+    {
+        uint ramSize = mainProgramWrapper.RAMRegionEnd - mainProgramWrapper.RAMRegionStart + 1;
+        uint conSize = mainProgramWrapper.CONRegionEnd - mainProgramWrapper.CONRegionStart + 1;
         Console.WriteLine("Creating virtual hardware");
         Console.WriteLine("Creating working memory & console memory objects");
         Console.WriteLine($"{ramSize}, {conSize}");
-        _mem1 = new RawMemory(ramSize, mainProgram);
+        _mem1 = new RawMemory(ramSize, mainProgramWrapper.ExecutableProgram);
         _tmem1 = new ConsoleMemory(conSize);
-        
+
         Console.WriteLine("Creating CPU object, loading main program");
         _cpu = new(new Dictionary<(uint, uint), RawMemory>
             {
-                { (ramStart, ramEnd), _mem1 },
-                { (conStart, conEnd), _tmem1 }
-            }, entryPoint
+                { (mainProgramWrapper.RAMRegionStart, mainProgramWrapper.RAMRegionEnd), _mem1 },
+                { (mainProgramWrapper.CONRegionStart, mainProgramWrapper.CONRegionEnd), _tmem1 }
+            }, mainProgramWrapper.EntryPoint
         );
 
         Console.WriteLine("Reading loaded program.");

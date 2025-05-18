@@ -1,5 +1,5 @@
 ﻿using TinyProc.Assembler;
-using TinyProc.ApplicationGlobal;
+using TinyProc.Application;
 
 class Program
 {
@@ -32,108 +32,36 @@ class Program
             string assemblyCode = File.ReadAllText(sourceFilePath);
             uint[] MAIN_PROGRAM = Assembler.AssembleToMachineCode(assemblyCode);
 
+            ExecutableWrapper programWrapper = new(MAIN_PROGRAM);
+
             string outputBinaryFilePath = sourceFilePath + ".bin";
             if (sourceFilePath.EndsWith(".asm"))
                 outputBinaryFilePath = sourceFilePath[..^4] + ".bin";
-            WriteBytesToFile(UIntArrayToByteArray(MAIN_PROGRAM), outputBinaryFilePath);
+            programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath);
 
-            Console.WriteLine($"Binary executable file written at {outputBinaryFilePath}");
             return;
         }
 
         if (args[0].Equals("--run"))
         {
             string executableFilePath = args[1];
-            Console.WriteLine($"Attempting to load and run binary executable {executableFilePath}");
-            if (executableFilePath.Trim().EndsWith(".lltp32.bin"))
-                Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
 
-            Console.WriteLine("Reading binary file");
-            byte[] binFileContent = File.ReadAllBytes(executableFilePath);
-            uint[] MAIN_PROGRAM = ByteArrayToUIntArray(binFileContent);
-            Console.WriteLine($"Decoded binary file into {MAIN_PROGRAM.Length} words.");
-
-            // Extract and process header information
-            uint header_AssemblerVersion = MAIN_PROGRAM[Assembler.HEADER_INDEX_VERSION];
-            uint header_RAMRegionStart = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_START];
-            uint header_RAMRegionEnd = MAIN_PROGRAM[Assembler.HEADER_INDEX_RAM_REGION_END];
-            uint header_CONRegionStart = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_START];
-            uint header_CONRegionEnd = MAIN_PROGRAM[Assembler.HEADER_INDEX_CON_REGION_END];
-            uint header_EntryPoint = MAIN_PROGRAM[Assembler.HEADER_INDEX_ENTRY_POINT];
-
-            // Remove header words from program
-            MAIN_PROGRAM = [.. MAIN_PROGRAM.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)];
-
-            if (header_AssemblerVersion != Assembler.ASSEMBLER_VERSION_ENCODED)
-            {
-                string asmVersionInFile = Assembler.GetVersionStringFromEncodedValue(header_AssemblerVersion);
-                string asmVersionRequired = Assembler.GetVersionStringFromEncodedValue(Assembler.ASSEMBLER_VERSION_ENCODED);
-                throw new NotSupportedException(
-                    $"Encoded assembler version mismatch " +
-                    $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
-            }
-            Console.WriteLine("Assembly version check successful!");
+            ExecutableWrapper programWrapper = new(executableFilePath);
 
             Console.CancelKeyPress += delegate
             {
                 Console.WriteLine("\nLeaving cycle loop and exiting...");
             };
 
-            ExecutionContainer container0 = new(
-                header_RAMRegionStart, header_RAMRegionEnd,
-                header_CONRegionStart, header_CONRegionEnd,
-                MAIN_PROGRAM, header_EntryPoint);
+            ExecutionContainer.Initialize(programWrapper);
 
             // If this program is at this stage, it is probably running in CLI mode.
             Console.WriteLine("Program ready to execute. Press enter to start first cycle.");
             while (true)
             {
                 Console.ReadLine();
-                container0.StepSingleCycle();
+                ExecutionContainer.INSTANCE0.StepSingleCycle();
             }
-        }
-    }
-
-    private static uint[] ByteArrayToUIntArray(byte[] byteArray)
-    {
-        if (byteArray.Length % 4 != 0)
-            throw new ArgumentException("Byte array length not divisible by 4.");
-
-        uint[] uintArray = new uint[byteArray.Length / 4];
-        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
-        {
-            uint currentUInt = 0;
-            int byteIdx = uintIdx * 4;
-            currentUInt |= ((uint)byteArray[byteIdx + 0]) << 24;
-            currentUInt |= ((uint)byteArray[byteIdx + 1]) << 16;
-            currentUInt |= ((uint)byteArray[byteIdx + 2]) << 8;
-            currentUInt |= ((uint)byteArray[byteIdx + 3]) << 0;
-            uintArray[uintIdx] = currentUInt;
-        }
-        return uintArray;
-    }
-    private static byte[] UIntArrayToByteArray(uint[] uintArray)
-    {
-        // TODO: Fix potential errors with very large programs exceeding C# array size limits.
-        byte[] byteArray = new byte[uintArray.Length * 4];
-        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
-        {
-            int byteIdx = uintIdx * 4;
-            byteArray[byteIdx + 0] = (byte)((uintArray[uintIdx] & 0xFF000000) >> 24);
-            byteArray[byteIdx + 1] = (byte)((uintArray[uintIdx] & 0x00FF0000) >> 16);
-            byteArray[byteIdx + 2] = (byte)((uintArray[uintIdx] & 0x0000FF00) >> 8);
-            byteArray[byteIdx + 3] = (byte)((uintArray[uintIdx] & 0x000000FF) >> 0);
-        }
-        return byteArray;
-    }
-
-    private static void WriteBytesToFile(byte[] bytes, string filePath)
-    {
-        FileStream outputBinaryFileStream = File.Open(filePath, FileMode.Create);
-        using (BinaryWriter binaryWriter = new(outputBinaryFileStream))
-        {
-            Console.WriteLine($"Write bytes count {bytes.Length}");
-            binaryWriter.Write(bytes);
         }
     }
 }

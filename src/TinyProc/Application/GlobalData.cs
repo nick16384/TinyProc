@@ -1,4 +1,4 @@
-namespace TinyProc.ApplicationGlobal;
+namespace TinyProc.Application;
 
 public sealed class GlobalData
 {

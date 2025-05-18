@@ -29,7 +29,7 @@
                 <avaloniaHex:HexEditor
                 Grid.Row="1" Grid.Column="0"
                 MinHeight="500"
-                MinWidth="280"
+                MinWidth="415"
                 FontFamily="{StaticResource SourceCodeProFont}"
                 Name="SourceBinaryHexEditor">
                     <!-- Define columns to display -->
@@ -44,7 +44,7 @@
                 <avaloniaHex:HexEditor
                 Grid.Row="1" Grid.Column="1"
                 MinHeight="500"
-                MinWidth="480"
+                MinWidth="415"
                 FontFamily="{StaticResource SourceCodeProFont}"
                 Name="WorkingMemoryHexEditor">
                     <!-- Define columns to display -->

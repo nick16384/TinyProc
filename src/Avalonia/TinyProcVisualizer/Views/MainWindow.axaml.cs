@@ -11,10 +11,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = $"TinyProc CPU Emulator v{TinyProc.ApplicationGlobal.GlobalData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
+        Title = $"TinyProc CPU Emulator v{TinyProc.Application.GlobalData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
 
         ReloadExecutableBinaryFile(null, null);
-        SourceBinaryHexEditor.HexView.BytesPerLine = 4;
+        SourceBinaryHexEditor.HexView.BytesPerLine = 8;
         //MainHexEditor.HexView.ColumnPadding = 20.0d;
         //MainHexEditor.HexView.FontSize = 22;
         //MainHexEditor.HexView.
