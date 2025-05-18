@@ -35,8 +35,7 @@ class Program
             string outputBinaryFilePath = sourceFilePath + ".bin";
             if (sourceFilePath.EndsWith(".asm"))
                 outputBinaryFilePath = sourceFilePath[..^4] + ".bin";
-            // TODO: Fix endianness
-            WriteBytesToFileWithBigEndian(MAIN_PROGRAM, outputBinaryFilePath);
+            WriteBytesToFile(UIntArrayToByteArray(MAIN_PROGRAM), outputBinaryFilePath);
 
             Console.WriteLine($"Binary executable file written at {outputBinaryFilePath}");
             return;
@@ -101,9 +100,15 @@ class Program
             throw new ArgumentException("Byte array length not divisible by 4.");
 
         uint[] uintArray = new uint[byteArray.Length / 4];
-        for (int i = 0; i < uintArray.Length; i++)
+        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
         {
-            uintArray[i] = BitConverter.ToUInt32(byteArray, i * 4);
+            uint currentUInt = 0;
+            int byteIdx = uintIdx * 4;
+            currentUInt |= ((uint)byteArray[byteIdx + 0]) << 24;
+            currentUInt |= ((uint)byteArray[byteIdx + 1]) << 16;
+            currentUInt |= ((uint)byteArray[byteIdx + 2]) << 8;
+            currentUInt |= ((uint)byteArray[byteIdx + 3]) << 0;
+            uintArray[uintIdx] = currentUInt;
         }
         return uintArray;
     }
@@ -111,27 +116,24 @@ class Program
     {
         // TODO: Fix potential errors with very large programs exceeding C# array size limits.
         byte[] byteArray = new byte[uintArray.Length * 4];
-        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx += 4)
+        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
         {
-            Console.WriteLine($"UInt: {uintArray[uintIdx]:X8}");
             int byteIdx = uintIdx * 4;
             byteArray[byteIdx + 0] = (byte)((uintArray[uintIdx] & 0xFF000000) >> 24);
             byteArray[byteIdx + 1] = (byte)((uintArray[uintIdx] & 0x00FF0000) >> 16);
             byteArray[byteIdx + 2] = (byte)((uintArray[uintIdx] & 0x0000FF00) >> 8);
             byteArray[byteIdx + 3] = (byte)((uintArray[uintIdx] & 0x000000FF) >> 0);
         }
-        Console.WriteLine($"Bytes: {byteArray.Length}");
         return byteArray;
     }
 
-    private static void WriteBytesToFileWithBigEndian(uint[] bytes, string filePath)
+    private static void WriteBytesToFile(byte[] bytes, string filePath)
     {
-        // Reverse bytes, so that little endian writer "actually" writes in big endian
-        //Array.Reverse(bytes);
         FileStream outputBinaryFileStream = File.Open(filePath, FileMode.Create);
-        BinaryWriter binaryWriter = new(outputBinaryFileStream);
-        foreach (uint @byte in bytes)
-            binaryWriter.Write(@byte);
-        binaryWriter.Close();
+        using (BinaryWriter binaryWriter = new(outputBinaryFileStream))
+        {
+            Console.WriteLine($"Write bytes count {bytes.Length}");
+            binaryWriter.Write(bytes);
+        }
     }
 }
