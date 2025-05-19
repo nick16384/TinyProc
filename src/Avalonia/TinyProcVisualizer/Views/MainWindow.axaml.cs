@@ -26,6 +26,10 @@ public partial class MainWindow : Window
         Console.WriteLine("Initializing new CPU");
         Button_InitCPU.IsEnabled = false;
         Button_ReloadExecutable.IsEnabled = true;
+        Button_CPUStepSingleCycle.IsEnabled = true;
+
+        TinyProc.Application.ExecutionContainer.Initialize(new TinyProc.Application.ExecutableWrapper("../../../Test Programs/ASMv2/Alphabet.lltp32.bin"));
+        // TODO: Add real-time updating MemoryBinaryDocument for CPU RAM
     }
 
     private MemoryBinaryDocument _currentBinFile;
@@ -35,5 +39,10 @@ public partial class MainWindow : Window
         string binFilePath = "../../../Test Programs/ASMv2/Alphabet.lltp32.bin";
         Console.WriteLine($"Reloading binary file at \"{binFilePath}\"");
         SourceBinaryHexEditor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
+    }
+
+    private void CPUStepSingleCycle(object? sender, RoutedEventArgs e)
+    {
+        TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
     }
 }

@@ -22,7 +22,9 @@
             <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
                 <TextBlock Name="TextBlock_Title" Text="CPU control panel"/>
                 <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
+                <TextBox Name="TextBox_BinarySourceFilePath" Watermark="Source file path..." />
                 <Button Click="ReloadExecutableBinaryFile" Name="Button_ReloadExecutable" IsEnabled="false">Reload binary executable</Button>
+                <Button Click="CPUStepSingleCycle" Name="Button_CPUStepSingleCycle" IsEnabled="false">Step</Button>
             </StackPanel>
             <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
                 <Label Grid.Row="0" Grid.Column="0">Source binary executable</Label>
