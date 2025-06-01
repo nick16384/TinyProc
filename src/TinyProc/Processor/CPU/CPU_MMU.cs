@@ -1,3 +1,4 @@
+using TinyProc.Application;
 using TinyProc.Memory;
 
 namespace TinyProc.Processor.CPU;
@@ -69,7 +70,7 @@ public partial class CPU
         {
             _MemorySpaces = [];
             // TODO: Implement ROMs
-            Console.Error.WriteLine(
+            Logging.LogWarn(
                 "Warning: ROM not implemented yet in MMU. Access to its space will result in a NullReferenceException.");
             //_MemorySpaces.Add(null, romSpace);
             foreach (((uint, uint) ramSpace, RawMemory ram) in rams)

@@ -1,3 +1,5 @@
+using TinyProc.Application;
+
 namespace TinyProc.Processor;
 
 public interface IBusAttachable
@@ -42,7 +44,7 @@ public class Bus
         _data = new bool[busWidth];
         _UBID = UBID;
         if (KnownUBIDs.Contains(_UBID))
-            Console.Error.WriteLine($"Warning: Conflicting bus UBID {_UBID:x8} already in use by another bus!");
+            Logging.LogWarn($"Warning: Conflicting bus UBID {_UBID:x8} already in use by another bus!");
         KnownUBIDs.Add(_UBID);
         _registeredComponents = registeredComponents;
         foreach (IBusAttachable component in _registeredComponents)

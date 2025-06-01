@@ -1,3 +1,4 @@
+using TinyProc.Application;
 using static TinyProc.Processor.Instructions;
 
 namespace TinyProc.Processor.CPU;
@@ -16,8 +17,8 @@ public partial class CPU
         // Load first instruction word
         private void InstructionFetch1()
         {
-            Console.WriteLine("Entering FETCH stage...");
-            Console.WriteLine(
+            Logging.LogDebug("Entering FETCH stage...");
+            Logging.LogDebug(
                 $"PC at {PC.ValueDirect:x8}; " +
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
@@ -52,7 +53,7 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
 
             ResetBus3();
-            Console.WriteLine($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
+            Logging.LogInfo($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
         }
 
         private IInstruction _currentInstruction;
@@ -67,7 +68,7 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
 
-            Console.WriteLine("Entering DECODE stage...");
+            Logging.LogDebug("Entering DECODE stage...");
 
             InstructionType instructionType = DetermineInstructionType(IRA.ValueDirect);
             if (instructionType == InstructionType.Register)
@@ -77,7 +78,7 @@ public partial class CPU
             else if (instructionType == InstructionType.Jump)
                 _currentInstruction = (JumpInstruction)(IRA.ValueDirect, IRB.ValueDirect);
 
-            Console.WriteLine(
+            Logging.LogInfo(
                 $"Type: {_currentInstruction.GetInstructionType()}; " +
                 $"Opcode: {(uint)_currentInstruction.GetOpcode():X2}->{_currentInstruction.GetOpcode()}; " +
                 $"Condition: {(uint)_currentInstruction.GetConditional():X2}->{_currentInstruction.GetConditional()};");
@@ -87,8 +88,8 @@ public partial class CPU
         // Equivalent to the execute stage in a real CPU's Fetch-Decode-Execute cycle.
         private void InstructionExecute()
         {
-            Console.WriteLine("Entering EXECUTE stage...");
-            bool execute = false;
+            Logging.LogDebug("Entering EXECUTE stage...");
+            bool execute;
             if (_currentInstruction.GetConditional() == Condition.ALWAYS)
                 execute = true;
             else if (_currentInstruction.GetConditional() == Condition.OF)
@@ -108,7 +109,7 @@ public partial class CPU
             
             if (!execute)
             {
-                Console.WriteLine($"Not executing: Conditional {_currentInstruction.GetConditional()} not satisfied.");
+                Logging.LogInfo($"Not executing: Conditional {_currentInstruction.GetConditional()} not satisfied.");
                 return;
             }
 
@@ -118,7 +119,7 @@ public partial class CPU
             // Disable flag setting by ALU
             _alu.Status_EnableFlags = false;
 
-            Console.WriteLine(
+            Logging.LogDebug(
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +

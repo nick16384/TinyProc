@@ -1,3 +1,4 @@
+using TinyProc.Application;
 using TinyProc.Memory;
 
 namespace TinyProc.Processor.CPU;
@@ -76,14 +77,14 @@ public partial class CPU
 
     public void NextClock()
     {
-        Console.WriteLine("====================================================================");
+        Logging.PrintDebug("====================================================================\n");
 
         _CU.Temp_InstructionFetch1();
         _CU.Temp_InstructionFetch2();
         _CU.Temp_InstructionDecode();
         _CU.Temp_InstructionExecute();
 
-        Console.WriteLine("\n====================================================================");
-        Console.WriteLine("Cycle finished. Waiting for next clock pulse.");
+        Logging.PrintDebug("\n====================================================================\n");
+        Logging.LogInfo("Cycle finished. Waiting for next clock pulse.");
     }
 }

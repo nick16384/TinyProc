@@ -24,13 +24,13 @@ public class ExecutionContainer
     {
         uint ramSize = mainProgramWrapper.RAMRegionEnd - mainProgramWrapper.RAMRegionStart + 1;
         uint conSize = mainProgramWrapper.CONRegionEnd - mainProgramWrapper.CONRegionStart + 1;
-        Console.WriteLine("Creating virtual hardware");
-        Console.WriteLine("Creating working memory & console memory objects");
-        Console.WriteLine($"{ramSize}, {conSize}");
+        Logging.LogDebug("Creating virtual hardware");
+        Logging.LogDebug("Creating working memory & console memory objects");
+        Logging.LogDebug($"{ramSize}, {conSize}");
         _mem1 = new RawMemory(ramSize, mainProgramWrapper.ExecutableProgram);
         _tmem1 = new ConsoleMemory(conSize);
 
-        Console.WriteLine("Creating CPU object, loading main program");
+        Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(new Dictionary<(uint, uint), RawMemory>
             {
                 { (mainProgramWrapper.RAMRegionStart, mainProgramWrapper.RAMRegionEnd), _mem1 },
@@ -38,12 +38,12 @@ public class ExecutionContainer
             }, mainProgramWrapper.EntryPoint
         );
 
-        Console.WriteLine("Reading loaded program.");
+        Logging.LogDebug("Reading loaded program.");
         if (_mem1._words < 4096)
             _mem1.Debug_DumpAll();
         else
-            Console.WriteLine("Memory object too large to dump.");
-        Console.WriteLine("Done.");
+            Logging.LogDebug("Memory object too large to dump.");
+        Logging.LogDebug("Done.");
 
         // Miku = 39 = Sankyuu easter egg ^-^
         //mem1.WriteEnable = true;
@@ -70,9 +70,9 @@ public class ExecutionContainer
         cycleTimer.Stop();
         long cycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
         if (cycle == null)
-            Console.WriteLine($"Cycle took {cycleTimeMicroseconds}us");
+            Logging.LogDebug($"Cycle took {cycleTimeMicroseconds}us");
         else
-            Console.WriteLine($"Cycle {cycle} took {cycleTimeMicroseconds}us");
+            Logging.LogDebug($"Cycle {cycle} took {cycleTimeMicroseconds}us");
         return cycleTimer.Elapsed;
     }
 }

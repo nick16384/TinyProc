@@ -57,7 +57,7 @@ public partial class CPU
                 else if (_opcodeBits == B_LogicalNOT._opcodeBits)         name = "B_NOT";
 
                 if (name == null)
-                    return "UnknownOp / " + bitsString;
+                    return "Unknown / " + bitsString;
                 else
                     return name + " / " + bitsString;
             }

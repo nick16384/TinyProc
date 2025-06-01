@@ -1,3 +1,4 @@
+using TinyProc.Application;
 using TinyProc.Processor;
 using static TinyProc.Processor.CPU.CPU;
 
@@ -17,11 +18,11 @@ public partial class Assembler
             {
                 conditional = (Instructions.Condition)possibleConditionCode;
                 // Mnemonic has conditional at this point
-                Console.WriteLine($"Mnemonic {mnemonic} has condition code {conditional}");
+                Logging.LogDebug($"Mnemonic {mnemonic} has condition code {conditional}");
                 mnemonic = mnemonic[..^2];
                 words[0] = mnemonic;
             }
-            catch (KeyNotFoundException) { Console.WriteLine($"Mnemonic {mnemonic} has no condition code."); }
+            catch (KeyNotFoundException) { Logging.LogDebug($"Mnemonic {mnemonic} has no condition code."); }
         }
 
         // Determine instruction type (R/I/J)
@@ -48,7 +49,7 @@ public partial class Assembler
         else if (mnemonic == "JMP")   { type = Instructions.InstructionType.Jump; }
         else if (mnemonic == "B")     { type = Instructions.InstructionType.Jump; }
 
-        Console.Error.WriteLine($"Type: {type}");
+        Logging.LogDebug($"Type: {type}");
         switch (type)
         {
             case Instructions.InstructionType.Register:

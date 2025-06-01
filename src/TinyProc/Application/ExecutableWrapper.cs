@@ -19,14 +19,14 @@ public class ExecutableWrapper
     public ExecutableWrapper(string executableFilePath) => LoadProgramFromFile(executableFilePath);
     public void LoadProgramFromFile(string executableFilePath)
     {
-        Console.WriteLine($"Attempting to load binary executable {executableFilePath}");
+        Logging.LogInfo($"Attempting to load binary executable {executableFilePath}");
         if (executableFilePath.Trim().EndsWith(".lltp32.bin"))
-            Console.Error.WriteLine("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
+            Logging.LogWarn("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
 
-        Console.WriteLine("Reading binary file");
+        Logging.LogDebug("Reading binary file");
         byte[] binFileContent = File.ReadAllBytes(executableFilePath);
         Program = ByteArrayToUIntArray(binFileContent);
-        Console.WriteLine($"Decoded binary file into {Program.Length} words.");
+        Logging.LogDebug($"Decoded binary file into {Program.Length} words.");
         CheckAsmVersion();
     }
     public ExecutableWrapper(uint[] program)
@@ -44,13 +44,13 @@ public class ExecutableWrapper
                 $"Encoded assembler version mismatch " +
                 $"(Found: {asmVersionInFile} != Required: {asmVersionRequired})");
         }
-        Console.WriteLine("Assembly version check successful!");
+        Logging.LogDebug("Assembly version check successful!");
     }
 
     public void WriteExecutableBinaryToFile(string filePath)
     {
         WriteBytesToFile(UIntArrayToByteArray(Program), filePath);
-        Console.WriteLine($"Binary executable file written at {filePath}");
+        Logging.LogInfo($"Binary executable file written at {filePath}");
     }
 
     private static uint[] ByteArrayToUIntArray(byte[] byteArray)
@@ -91,7 +91,7 @@ public class ExecutableWrapper
         FileStream outputBinaryFileStream = File.Open(filePath, FileMode.Create);
         using (BinaryWriter binaryWriter = new(outputBinaryFileStream))
         {
-            Console.WriteLine($"Write bytes count {bytes.Length}");
+            Logging.LogDebug($"Write bytes count {bytes.Length}");
             binaryWriter.Write(bytes);
         }
     }
