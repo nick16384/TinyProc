@@ -11,8 +11,14 @@ public class Logging
     {
         switch (pipe)
         {
-            case Pipe.STDOUT: Console.Write(message); break;
-            case Pipe.STDERR: Console.Error.Write(message); break;
+            case Pipe.STDOUT:
+                Console.Write(message);
+                break;
+            case Pipe.STDERR:
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.Write(message);
+                Console.ResetColor();
+                break;
         }
     }
 
