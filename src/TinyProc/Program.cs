@@ -6,6 +6,13 @@ class Program
     // Note: This Main function should only be called when intending to run in CLI mode.
     static void Main(string[] args)
     {
+        // Enable full logging when running from CLI mode
+        // TODO: Make this configurable via command-line arguments
+        Logging.SuppressDebugMessages = false;
+        Logging.SuppressInfoMessages = false;
+        Logging.SuppressWarningMessages = false;
+        Logging.SuppressErrorMessages = false;
+
         Logging.LogInfo(
             $"TinyProc ver. {GlobalData.TINYPROC_PROGRAM_VERSION_STR} " +
             $"Processor revision {GlobalData.PROCESSOR_REVISION_VERSION_STR}");
