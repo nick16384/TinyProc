@@ -39,7 +39,7 @@ public class Logging
     }
     public static void LogDebugWithoutNewline(string message)
     {
-        if (!SuppressInfoMessages)
+        if (!SuppressDebugMessages)
             PrintMessageToPipe($"[Debug, {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDOUT);
     }
     public static void LogDebug(string message) => LogDebugWithoutNewline(message + "\n");
@@ -63,7 +63,7 @@ public class Logging
     }
     public static void LogWarnWithoutNewline(string message)
     {
-        if (!SuppressInfoMessages)
+        if (!SuppressWarningMessages)
             PrintMessageToPipe($"[Warn,  {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDERR);
     }
     public static void LogWarn(string message) => LogWarnWithoutNewline(message + "\n");
@@ -75,7 +75,7 @@ public class Logging
     }
     public static void LogErrorWithoutNewline(string message)
     {
-        if (!SuppressInfoMessages)
+        if (!SuppressErrorMessages)
             PrintMessageToPipe($"[Error, {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDERR);
     }
     public static void LogError(string message) => LogErrorWithoutNewline(message + "\n");

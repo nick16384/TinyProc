@@ -60,14 +60,29 @@ public partial class MainWindow : Window
             TextBox_AssemblySourceFilePath.Text = files[0].Path.AbsolutePath;
         }
     }
-    private void Button_OpenBinaryExecutableFilePath_OnClick(object? sender, RoutedEventArgs e)
+    private async void Button_OpenBinaryExecutableFilePath_OnClick(object? sender, RoutedEventArgs e)
     {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Binary Executable file...",
+            AllowMultiple = false
+        });
 
+        if (files.Count >= 1)
+        {
+            Console.WriteLine("Selected binary executable file: " + files[0].Name);
+            /*await using var stream = await files[0].OpenReadAsync();
+            using var streamReader = new StreamReader(stream);
+            string assemblySourceFileContent = await streamReader.ReadToEndAsync();*/
+            TextBox_BinaryExecutableFilePath.Text = files[0].Path.AbsolutePath.Replace("%20", " ");
+            ReloadExecutableBinaryFile(null, null);
+        }
     }
 
     private void ReloadExecutableBinaryFile(object? sender, RoutedEventArgs e)
     {
-        string binFilePath = "../../../Test Programs/ASMv2/Alphabet.lltp32.bin";
+        string binFilePath = TextBox_BinaryExecutableFilePath.Text;
         Console.WriteLine($"Reloading binary file at \"{binFilePath}\"");
         SourceBinaryHexEditor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
     }
