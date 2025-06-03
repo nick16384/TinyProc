@@ -2,6 +2,7 @@ namespace TinyProc.Application;
 
 public class Logging
 {
+    // TODO: Make log files attachable
     public enum Pipe
     {
         STDOUT,
