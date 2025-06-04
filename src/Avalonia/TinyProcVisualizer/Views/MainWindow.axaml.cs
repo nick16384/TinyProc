@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using AvaloniaHex.Document;
 using System.Threading.Tasks;
+using AvaloniaHex;
 
 namespace TinyProcVisualizer.Views;
 
@@ -17,8 +18,36 @@ public partial class MainWindow : Window
         InitializeComponent();
         Title = $"TinyProc CPU Emulator v{TinyProc.Application.GlobalData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
 
-        SourceBinaryHexEditor.HexView.BytesPerLine = 8;
-        WorkingMemoryHexEditor.HexView.BytesPerLine = 8;
+        HexEditor1.HexView.BytesPerLine = 8;
+        HexEditor2.HexView.BytesPerLine = 8;
+    }
+
+    private void ComboBox_HexEditor1Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => ChangeHexEditorWithNewComboBoxSelection(sender as ComboBox, HexEditor1);
+    private void ComboBox_HexEditor2Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => ChangeHexEditorWithNewComboBoxSelection(sender as ComboBox, HexEditor2);
+    private const string COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE = "Binary executable";
+    private const string COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY = "Working memory (RAM)";
+    private const string COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY = "Console memory (CON)";
+    private void ChangeHexEditorWithNewComboBoxSelection(ComboBox? comboBox, HexEditor editor)
+    {
+        switch ((comboBox?.SelectedItem as ComboBoxItem)?.Content)
+        {
+            case COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE:
+                string? binFilePath = TextBox_BinaryExecutableFilePath?.Text;
+                if (string.IsNullOrWhiteSpace(binFilePath))
+                {
+                    Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is null or whitespace.");
+                    break;
+                }
+                editor.IsEnabled = false;
+                editor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
+                break;
+
+            default:
+                if (editor != null) editor.IsEnabled = true;
+                return;
+        }
     }
 
     private void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
@@ -65,7 +94,7 @@ public partial class MainWindow : Window
         Console.WriteLine("Selected binary executable file: " + files[0].Name);
         string binFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
         TextBox_BinaryExecutableFilePath.Text = binFilePath;
-        SourceBinaryHexEditor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
+        HexEditor1.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
     }
     private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
     {
@@ -78,14 +107,20 @@ public partial class MainWindow : Window
         return files;
     }
 
-    private void Button_CompileSourceAssemblerFile_OnClick(object? sender, RoutedEventArgs e)
+    private async void Button_CompileSourceAssemblerFile_OnClick(object? sender, RoutedEventArgs e)
     {
         // Read assembly source file contents
-        string sourceFilePath = TextBox_AssemblySourceFilePath.Text;
+        string? sourceFilePath = TextBox_AssemblySourceFilePath.Text;
+        if (string.IsNullOrWhiteSpace(sourceFilePath))
+        {
+            Console.Error.WriteLine("No assembly file selection found. Aborting compilation.");
+            return;
+        }
         string sourceFileText = File.ReadAllText(sourceFilePath);
 
         // Compile source file to binary and save to binary file
-        uint[] compiledBinary = TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceFileText);
+        // Using async await, since the compilation process might take a long time
+        uint[] compiledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceFileText));
         TinyProc.Application.ExecutableWrapper programWrapper = new(compiledBinary);
         string outputBinaryFilePath = sourceFilePath + ".bin";
         if (sourceFilePath.EndsWith(".asm"))
@@ -94,7 +129,12 @@ public partial class MainWindow : Window
 
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
-        SourceBinaryHexEditor.Document = new MemoryBinaryDocument(File.ReadAllBytes(outputBinaryFilePath));
+        // TODO: Make this more clean (add separate Update() method and real-time changing documents)
+        if ((ComboBox_HexEditor1Selector.SelectedItem as ComboBoxItem)?.Content == COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE)
+            HexEditor1.Document = new MemoryBinaryDocument(File.ReadAllBytes(outputBinaryFilePath));
+        if ((ComboBox_HexEditor2Selector.SelectedItem as ComboBoxItem)?.Content == COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE)
+            HexEditor2.Document = new MemoryBinaryDocument(File.ReadAllBytes(outputBinaryFilePath));
+        
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
@@ -107,7 +147,5 @@ public partial class MainWindow : Window
         => TinyProc.Application.Logging.SuppressErrorMessages = !CheckBox_LogErrorMessages.IsChecked.Value;
 
     private void CPUStepSingleCycle(object? sender, RoutedEventArgs e)
-    {
-        TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
-    }
+        => TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
 }

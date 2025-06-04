@@ -53,14 +53,24 @@
                 <Button Click="CPUStepSingleCycle" Name="Button_CPUStepSingleCycle" IsEnabled="false">Step</Button>
             </StackPanel>
             
-            <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
-                <Label Grid.Row="0" Grid.Column="0">Source binary executable</Label>
+            <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Width="300">
+                    <ComboBox HorizontalAlignment="Left" SelectedIndex="0"
+                        Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
+                        <ComboBoxItem>Binary executable</ComboBoxItem>
+                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                    </ComboBox>
+                    <Button HorizontalAlignment="Right">Reset</Button>
+                    <Button HorizontalAlignment="Right">Override</Button>
+                </StackPanel>
                 <avaloniaHex:HexEditor
                 Grid.Row="1" Grid.Column="0"
                 MinHeight="500"
                 MinWidth="415"
                 FontFamily="{StaticResource SourceCodeProFont}"
-                Name="SourceBinaryHexEditor">
+                IsEnabled="False"
+                Name="HexEditor1">
                     <!-- Define columns to display -->
                     <avaloniaHex:HexEditor.Columns>
                         <rendering:OffsetColumn />
@@ -69,13 +79,23 @@
                     </avaloniaHex:HexEditor.Columns>
                 </avaloniaHex:HexEditor>
 
-                <Label Grid.Row="0" Grid.Column="1">Working memory (RAM)</Label>
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Width="300">
+                    <ComboBox HorizontalAlignment="Left" SelectedIndex="1"
+                        Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
+                        <ComboBoxItem>Binary executable</ComboBoxItem>
+                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                    </ComboBox>
+                    <Button HorizontalAlignment="Right">Reset</Button>
+                    <Button HorizontalAlignment="Right">Override</Button>
+                </StackPanel>
                 <avaloniaHex:HexEditor
                 Grid.Row="1" Grid.Column="1"
                 MinHeight="500"
                 MinWidth="415"
                 FontFamily="{StaticResource SourceCodeProFont}"
-                Name="WorkingMemoryHexEditor">
+                IsEnabled="True"
+                Name="HexEditor2">
                     <!-- Define columns to display -->
                     <avaloniaHex:HexEditor.Columns>
                         <rendering:OffsetColumn />
