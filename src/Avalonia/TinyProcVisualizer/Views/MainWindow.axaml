@@ -22,10 +22,37 @@
             <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
                 <TextBlock Name="TextBlock_Title" Text="CPU control panel"/>
                 <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
-                <TextBox Name="TextBox_BinarySourceFilePath" Watermark="Source file path..." />
-                <Button Click="ReloadExecutableBinaryFile" Name="Button_ReloadExecutable" IsEnabled="false">Reload binary executable</Button>
+
+                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto" Margin="0, 10, 0, 20">
+                    <TextBox Grid.Row="0" Grid.Column="0" Margin="5" Width="200"
+                        Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
+                    <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
+                    <Button Grid.Row="1" Grid.Column="0" Margin="5"
+                        Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
+                        == Compile ==
+                    </Button>
+                    <TextBox Grid.Row="2" Grid.Column="0" Margin="5" Width="200"
+                        Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
+                    <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
+                </Grid>
+
+                <Label>CPU status logging</Label>
+                <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
+                    Log debug messages
+                </CheckBox>
+                <CheckBox IsChecked="True" Name="CheckBox_LogInfoMessages" Click="CheckBox_LogInfoMessages_OnClick">
+                    Log info messages
+                </CheckBox>
+                <CheckBox IsChecked="True" Name="CheckBox_LogWarningMessages" Click="CheckBox_LogWarningMessages_OnClick">
+                    Log warning messages
+                </CheckBox>
+                <CheckBox IsChecked="True" Name="CheckBox_LogErrorMessages" Click="CheckBox_LogErrorMessages_OnClick">
+                    Log error messages
+                </CheckBox>
+
                 <Button Click="CPUStepSingleCycle" Name="Button_CPUStepSingleCycle" IsEnabled="false">Step</Button>
             </StackPanel>
+            
             <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
                 <Label Grid.Row="0" Grid.Column="0">Source binary executable</Label>
                 <avaloniaHex:HexEditor
