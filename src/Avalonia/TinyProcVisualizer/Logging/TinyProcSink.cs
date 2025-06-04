@@ -1,4 +1,3 @@
-using System;
 using Avalonia;
 using Avalonia.Logging;
 
@@ -11,14 +10,16 @@ public class TinyProcSink : ILogSink
 
     public void Log(LogEventLevel level, string area, object? source, string messageTemplate)
     {
-        Console.OpenStandardOutput().BeginWrite([45], 0, 1, null, null);
-        Console.WriteLine(messageTemplate);
+        // TODO: Continue testing on Windows
+        // On Linux, this prints a bunch of Avalonia stuff (very verbose, not useful)
+        //Console.OpenStandardOutput().BeginWrite([45], 0, 1, null, null);
+        //Console.WriteLine(messageTemplate);
     }
 
     public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues)
     {
-        Console.OpenStandardOutput().BeginWrite([45, 46, 47], 0, 1, null, null);
-        Console.WriteLine(messageTemplate);
+        //Console.OpenStandardOutput().BeginWrite([45, 46, 47], 0, 1, null, null);
+        //Console.WriteLine(messageTemplate);
     }
 }
 

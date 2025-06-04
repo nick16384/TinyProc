@@ -6,8 +6,7 @@ using System.Web;
 using System.Collections.Generic;
 using System.IO;
 using AvaloniaHex.Document;
-using AvaloniaHex;
-using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace TinyProcVisualizer.Views;
 
@@ -42,9 +41,9 @@ public partial class MainWindow : Window
         // TODO: Add real-time updating MemoryBinaryDocument for CPU RAM
     }
 
-    private void Button_OpenAssemblySourceFilePath_OnClick(object? sender, RoutedEventArgs e)
+    private async void Button_OpenAssemblySourceFilePath_OnClick(object? sender, RoutedEventArgs e)
     {
-        var files = OpenSingleFileSelectionDialog("Open Assembly Source Code file...");
+        var files = await OpenSingleFileSelectionDialog("Open Assembly Source Code file...");
 
         if (files.Count <= 0)
         {
@@ -55,9 +54,9 @@ public partial class MainWindow : Window
         TextBox_AssemblySourceFilePath.Text = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
         Button_CompileSourceAssemblerFile.IsEnabled = true;
     }
-    private void Button_OpenBinaryExecutableFilePath_OnClick(object? sender, RoutedEventArgs e)
+    private async void Button_OpenBinaryExecutableFilePath_OnClick(object? sender, RoutedEventArgs e)
     {
-        var files = OpenSingleFileSelectionDialog("Open Binary Executable file...");
+        var files = await OpenSingleFileSelectionDialog("Open Binary Executable file...");
         if (files.Count <= 0)
         {
             Console.WriteLine("Binary file selection cancelled.");
@@ -68,14 +67,14 @@ public partial class MainWindow : Window
         TextBox_BinaryExecutableFilePath.Text = binFilePath;
         SourceBinaryHexEditor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
     }
-    private IReadOnlyList<IStorageFile> OpenSingleFileSelectionDialog(string title)
+    private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
     {
         var topLevel = TopLevel.GetTopLevel(this);
-        var files = topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = title,
             AllowMultiple = false
-        }).Result;
+        });
         return files;
     }
 

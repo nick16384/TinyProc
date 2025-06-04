@@ -23,6 +23,7 @@ sealed class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace()
-            .LogToTinyProcSink();
+            .LogToTrace();
+            // See TinyProcSink.cs file for why this is commented out
+            //.LogToTinyProcSink();
 }
