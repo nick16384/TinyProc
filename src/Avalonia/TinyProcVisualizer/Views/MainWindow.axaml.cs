@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading.Tasks;
 using AvaloniaHex;
 using System.Diagnostics;
+using System.Threading;
 
 namespace TinyProcVisualizer.Views;
 
@@ -29,7 +30,7 @@ public partial class MainWindow : Window
 
     private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], TimeSpan.FromMilliseconds(1000));
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(1000);
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(500);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
 
     private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
@@ -205,20 +206,45 @@ public partial class MainWindow : Window
     }
 
     private volatile bool _haltCPUClock = false;
+    private volatile bool _haltCPUMemoryHexViewUpdater = false;
     private async void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
     {
-        while (!_haltCPUClock)
+        bool updateMemoryRT = CheckBox_UpdateMemoryRealtime.IsChecked.GetValueOrDefault(false);
+        if (!updateMemoryRT)
         {
-            TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
-            Stopwatch ramToBytesSW = Stopwatch.StartNew();
-            await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-            await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
-            Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
+            new Thread(async () =>
+            {
+                _haltCPUMemoryHexViewUpdater = false;
+                while (!_haltCPUMemoryHexViewUpdater)
+                {
+                    Thread.Sleep(UPDATE_INTERVAL_DOC_RAM);
+                    Stopwatch ramToBytesSW = Stopwatch.StartNew();
+                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+                    Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
+                }
+            }).Start();
         }
+        await Task.Run(async () =>
+        {
+            _haltCPUClock = false;
+            while (!_haltCPUClock)
+            {
+                TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
+                if (updateMemoryRT)
+                {
+                    Stopwatch ramToBytesSW = Stopwatch.StartNew();
+                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+                    Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
+                }
+            }
+        });
     }
 
     private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
     {
         _haltCPUClock = true;
+        _haltCPUMemoryHexViewUpdater = true;
     }
 }

@@ -58,34 +58,32 @@ public class ExecutionContainer
         => _mem1.WriteDirect(address, _mem1.ReadDirect(address) & ((uint)value << (uintOffset * 8)));
     // Returns the bytes that currently reside within the working memory.
     // Note that using a byte[] instead of a uint[][] is not guaranteed to return all RAM data (because of C# limitations).
+    // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
+    // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
     // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
-    public byte[] LiveRAMBytes
+    public byte[] LiveRAMBytes { get => UIntArrayToByteArray(_mem1.Data[0]); }
+    
+    private static byte[] UIntArrayToByteArray(uint[] uintArray)
     {
-        get
+        int byteArraySize;
+        if ((ulong)uintArray.Length * sizeof(uint) > int.MaxValue)
         {
-            int byteArraySize;
-            if ((ulong)_mem1._words * sizeof(uint) > int.MaxValue)
-            {
-                byteArraySize = int.MaxValue;
-                Logging.LogWarn(
-                    $"Accessing RAM bytes only allows {int.MaxValue} " +
-                    $"bytes to be read, however, the actual RAM is larger with {(ulong)_mem1._words * sizeof(uint)} " +
-                    "bytes. Only a partial amount is returned!");
-            }
-            else
-                byteArraySize = (int)_mem1._words * sizeof(uint);
-
-            byte[] ramBytes = new byte[byteArraySize];
-            // Using manual copy from uint[] to byte[], since Buffer.BlockCopy produces little-endian results.
-            for (int i = 0; i < byteArraySize / sizeof(uint); i++)
-            {
-                ramBytes[i * 4 + 0] = (byte)((_mem1.Data[0][i] & 0xFF000000) >> 24);
-                ramBytes[i * 4 + 1] = (byte)((_mem1.Data[0][i] & 0x00FF0000) >> 16);
-                ramBytes[i * 4 + 2] = (byte)((_mem1.Data[0][i] & 0x0000FF00) >> 8);
-                ramBytes[i * 4 + 3] = (byte)((_mem1.Data[0][i] & 0x000000FF) >> 0);
-            }
-            return ramBytes;
+            byteArraySize = int.MaxValue;
+            Logging.LogWarn(
+                $"Accessing a uint[] as byte[] only allows {int.MaxValue} " +
+                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArray.Length * sizeof(uint)} " +
+                "bytes. Only a partial amount is returned!");
         }
+        else
+            byteArraySize = uintArray.Length * sizeof(uint);
+
+        byte[] byteArray = new byte[byteArraySize];
+        Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
+        Parallel.For(0, byteArraySize / sizeof(uint), i =>
+        {
+            Array.Reverse(byteArray, i * 4, 4);
+        });
+        return byteArray;
     }
 
     public void LaunchMainLoop()
