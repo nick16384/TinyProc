@@ -13,6 +13,11 @@ public class RawMemory : IBusAttachable
     // of uints in total.
     // Externally, this appears as one continuous address space.
     private readonly uint[][] _data;
+    public uint[][] Data { get => _data; }
+    // Write directly to the memory without a bus attached;
+    // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
+    public void WriteDirect(uint address, uint value) => Write(address, value);
+    public uint ReadDirect(uint address) => Read(address);
 
     // Logic that allows only either write or read line to be set:
     private bool _readEnable;

@@ -5,9 +5,9 @@ using Avalonia.Platform.Storage;
 using System.Web;
 using System.Collections.Generic;
 using System.IO;
-using AvaloniaHex.Document;
 using System.Threading.Tasks;
 using AvaloniaHex;
+using System.Diagnostics;
 
 namespace TinyProcVisualizer.Views;
 
@@ -22,6 +22,55 @@ public partial class MainWindow : Window
         HexEditor2.HexView.BytesPerLine = 8;
     }
 
+    // Helper method: Updates a property, if its getter implements some sort of auto-update.
+    private static void ForceGetterUpdate(object obj) { object unused = obj; }
+
+    #region Hex Editor binary documents
+
+    private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], TimeSpan.FromMilliseconds(1000));
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(1000);
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
+
+    private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
+    private RealTimeFixedSizeBinaryDocument HexEditorDocumentBinaryExecutableFile
+    {
+        get
+        {
+            // Update contents from file and return
+            string? binFilePath = TextBox_BinaryExecutableFilePath?.Text;
+            if (string.IsNullOrWhiteSpace(binFilePath) || !File.Exists(binFilePath))
+                Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is invalid.");
+            else
+            {
+                _HexEditorDocumentBinaryExecutableFile
+                    = new RealTimeFixedSizeBinaryDocument(File.ReadAllBytes(binFilePath), UPDATE_INTERVAL_DOC_BINARY);
+            }
+            return _HexEditorDocumentBinaryExecutableFile;
+        }
+    }
+    private RealTimeFixedSizeBinaryDocument _HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
+    private RealTimeFixedSizeBinaryDocument HexEditorDocumentRAM
+    {
+        get
+        {
+            if (TinyProc.Application.ExecutionContainer.INSTANCE0 == null)
+                Console.Error.WriteLine("CPU not initialized yet, cannot read RAM.");
+            else
+            {
+                byte[] ramData = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes;
+                _HexEditorDocumentRAM.WriteNewDataToLiveBuffer(ramData);
+            }
+            return _HexEditorDocumentRAM;
+        }
+    }
+    private RealTimeFixedSizeBinaryDocument HexEditorDocumentCON
+    {
+        get => new([3, 4, 5], TimeSpan.FromMilliseconds(1000));
+    }
+
+    #endregion Hex Editor binary documents
+
     private void ComboBox_HexEditor1Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => ChangeHexEditorWithNewComboBoxSelection(sender as ComboBox, HexEditor1);
     private void ComboBox_HexEditor2Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -29,28 +78,31 @@ public partial class MainWindow : Window
     private const string COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE = "Binary executable";
     private const string COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY = "Working memory (RAM)";
     private const string COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY = "Console memory (CON)";
-    private void ChangeHexEditorWithNewComboBoxSelection(ComboBox? comboBox, HexEditor editor)
+    private async void ChangeHexEditorWithNewComboBoxSelection(ComboBox? comboBox, HexEditor editor)
     {
+        if (editor == null) return;
         switch ((comboBox?.SelectedItem as ComboBoxItem)?.Content)
         {
             case COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE:
-                string? binFilePath = TextBox_BinaryExecutableFilePath?.Text;
-                if (string.IsNullOrWhiteSpace(binFilePath))
-                {
-                    Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is null or whitespace.");
-                    break;
-                }
+                // FIXME: Make editor still scrollable while preventing edits.
                 editor.IsEnabled = false;
-                editor.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
+                editor.Document = HexEditorDocumentBinaryExecutableFile;
                 break;
-
+            case COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY:
+                editor.IsEnabled = true;
+                editor.Document = await Task.Run(() => HexEditorDocumentRAM);
+                break;
+            case COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY:
+                editor.IsEnabled = true;
+                editor.Document = await Task.Run(() => HexEditorDocumentCON);
+                break;
             default:
-                if (editor != null) editor.IsEnabled = true;
+                editor.IsEnabled = true;
                 return;
         }
     }
 
-    private void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
+    private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
     {
         Console.WriteLine("Initializing new CPU");
         string? binaryExecutableFilePath = TextBox_BinaryExecutableFilePath.Text;
@@ -64,10 +116,15 @@ public partial class MainWindow : Window
         TinyProc.Application.ExecutionContainer.Initialize(
             new TinyProc.Application.ExecutableWrapper(binaryExecutableFilePath));
 
+        _HexEditorDocumentRAM =
+            await Task.Run(() =>
+            new RealTimeFixedSizeBinaryDocument(new byte[TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes.Length],
+            UPDATE_INTERVAL_DOC_RAM));
+
         Button_InitCPU.IsEnabled = false;
         Button_CPUStepSingleCycle.IsEnabled = true;
-
-        // TODO: Add real-time updating MemoryBinaryDocument for CPU RAM
+        Button_CPURunIndefinitely.IsEnabled = true;
+        Button_CPUStop.IsEnabled = true;
     }
 
     private async void Button_OpenAssemblySourceFilePath_OnClick(object? sender, RoutedEventArgs e)
@@ -92,9 +149,8 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected binary executable file: " + files[0].Name);
-        string binFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        TextBox_BinaryExecutableFilePath.Text = binFilePath;
-        HexEditor1.Document = new MemoryBinaryDocument(File.ReadAllBytes(binFilePath));
+        TextBox_BinaryExecutableFilePath.Text = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
     }
     private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
     {
@@ -125,16 +181,11 @@ public partial class MainWindow : Window
         string outputBinaryFilePath = sourceFilePath + ".bin";
         if (sourceFilePath.EndsWith(".asm"))
             outputBinaryFilePath = sourceFilePath[..^4] + ".bin";
-        programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath);
+        await Task.Run(() => programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath));
 
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
-        // TODO: Make this more clean (add separate Update() method and real-time changing documents)
-        if ((ComboBox_HexEditor1Selector.SelectedItem as ComboBoxItem)?.Content == COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE)
-            HexEditor1.Document = new MemoryBinaryDocument(File.ReadAllBytes(outputBinaryFilePath));
-        if ((ComboBox_HexEditor2Selector.SelectedItem as ComboBoxItem)?.Content == COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE)
-            HexEditor2.Document = new MemoryBinaryDocument(File.ReadAllBytes(outputBinaryFilePath));
-        
+        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentBinaryExecutableFile));
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
@@ -146,6 +197,28 @@ public partial class MainWindow : Window
     private void CheckBox_LogErrorMessages_OnClick(object? sender, RoutedEventArgs e)
         => TinyProc.Application.Logging.SuppressErrorMessages = !CheckBox_LogErrorMessages.IsChecked.Value;
 
-    private void CPUStepSingleCycle(object? sender, RoutedEventArgs e)
-        => TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
+    private async void Button_CPUStepSingleCycle_OnClick(object? sender, RoutedEventArgs e)
+    {
+        TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
+        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+    }
+
+    private volatile bool _haltCPUClock = false;
+    private async void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
+    {
+        while (!_haltCPUClock)
+        {
+            TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
+            Stopwatch ramToBytesSW = Stopwatch.StartNew();
+            await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+            await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+            Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
+        }
+    }
+
+    private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _haltCPUClock = true;
+    }
 }

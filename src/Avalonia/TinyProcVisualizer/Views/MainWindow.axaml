@@ -21,7 +21,6 @@
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" MinHeight="500">
             <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
                 <TextBlock Name="TextBlock_Title" Text="CPU control panel"/>
-                <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
 
                 <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto" Margin="0, 10, 0, 20">
                     <TextBox Grid.Row="0" Grid.Column="0" Margin="5" Width="200"
@@ -50,7 +49,10 @@
                     Log error messages
                 </CheckBox>
 
-                <Button Click="CPUStepSingleCycle" Name="Button_CPUStepSingleCycle" IsEnabled="false">Step</Button>
+                <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
+                <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
+                <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
+                <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
             </StackPanel>
             
             <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
