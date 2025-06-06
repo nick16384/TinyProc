@@ -186,7 +186,7 @@ public partial class MainWindow : Window
 
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
-        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentBinaryExecutableFile));
+        ForceGetterUpdate(HexEditorDocumentBinaryExecutableFile);
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
