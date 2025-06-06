@@ -63,6 +63,7 @@
                         <ComboBoxItem>Binary executable</ComboBoxItem>
                         <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
                         <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                        <ComboBoxItem>Virtual memory</ComboBox>
                     </ComboBox>
                     <Button HorizontalAlignment="Right">Reset</Button>
                     <Button HorizontalAlignment="Right">Override</Button>
