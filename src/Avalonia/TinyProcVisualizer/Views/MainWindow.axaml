@@ -20,40 +20,51 @@
     <DockPanel HorizontalAlignment="Left" VerticalAlignment="Top">
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" MinHeight="500">
             <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
-                <TextBlock Name="TextBlock_Title" Text="CPU control panel"/>
 
-                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto" Margin="0, 20, 0, 20">
-                    <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                        Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
-                    <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
-                    <Button Grid.Row="1" Grid.Column="0" Margin="0, 5, 0, 5"
-                        Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
-                        == Compile ==
-                    </Button>
-                    <TextBox Grid.Row="2" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                        Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
-                    <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
-                </Grid>
+                <Label>File selection</Label>
+                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+                        <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
+                            Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
+                        <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
+                        <Button Grid.Row="1" Grid.Column="0" Margin="0, 5, 0, 5"
+                            Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
+                            == Compile ==
+                        </Button>
+                        <TextBox Grid.Row="2" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
+                            Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
+                        <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
+                    </Grid>
+                </Border>
 
-                <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
-                <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
-                <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">Update memory hex view in real-time</CheckBox>
-                <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
-                <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
+                <Label Margin="0, 20, 0, 0">CPU control panel</Label>
+                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                    <StackPanel>
+                        <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
+                        <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
+                        <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">Update memory hex view in real-time (slow)</CheckBox>
+                        <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
+                        <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
+                    </StackPanel>
+                </Border>
 
-                <Label Margin="0, 20, 0, 0">CPU status logging</Label>
-                <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
-                    Log debug messages
-                </CheckBox>
-                <CheckBox IsChecked="True" Name="CheckBox_LogInfoMessages" Click="CheckBox_LogInfoMessages_OnClick">
-                    Log info messages
-                </CheckBox>
-                <CheckBox IsChecked="True" Name="CheckBox_LogWarningMessages" Click="CheckBox_LogWarningMessages_OnClick">
-                    Log warning messages
-                </CheckBox>
-                <CheckBox IsChecked="True" Name="CheckBox_LogErrorMessages" Click="CheckBox_LogErrorMessages_OnClick">
-                    Log error messages
-                </CheckBox>
+                <Label Margin="0, 20, 0, 0">CPU logging</Label>
+                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                    <StackPanel>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
+                            Log debug messages
+                        </CheckBox>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogInfoMessages" Click="CheckBox_LogInfoMessages_OnClick">
+                            Log info messages
+                        </CheckBox>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogWarningMessages" Click="CheckBox_LogWarningMessages_OnClick">
+                            Log warning messages
+                        </CheckBox>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogErrorMessages" Click="CheckBox_LogErrorMessages_OnClick">
+                            Log error messages
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             
             <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
@@ -63,7 +74,7 @@
                         <ComboBoxItem>Binary executable</ComboBoxItem>
                         <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
                         <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                        <ComboBoxItem>Virtual memory</ComboBox>
+                        <ComboBoxItem>Virtual memory</ComboBoxItem>
                     </ComboBox>
                     <Button HorizontalAlignment="Right">Reset</Button>
                     <Button HorizontalAlignment="Right">Override</Button>

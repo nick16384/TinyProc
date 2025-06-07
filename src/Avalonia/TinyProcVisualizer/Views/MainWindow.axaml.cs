@@ -21,6 +21,8 @@ public partial class MainWindow : Window
 
         HexEditor1.HexView.BytesPerLine = 8;
         HexEditor2.HexView.BytesPerLine = 8;
+        HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
+        HexEditor2.Document = HexEditorDocumentRAM;
     }
 
     // Helper method: Updates a property, if its getter implements some sort of auto-update.
@@ -30,7 +32,7 @@ public partial class MainWindow : Window
 
     private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], TimeSpan.FromMilliseconds(1000));
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
 
     private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
@@ -79,6 +81,7 @@ public partial class MainWindow : Window
     private const string COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE = "Binary executable";
     private const string COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY = "Working memory (RAM)";
     private const string COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY = "Console memory (CON)";
+    private const string COMBOBOX_HEXEDITOR_SOURCE_VIRTUALMEMORY = "Virtual memory";
     private async void ChangeHexEditorWithNewComboBoxSelection(ComboBox? comboBox, HexEditor editor)
     {
         if (editor == null) return;
@@ -101,6 +104,13 @@ public partial class MainWindow : Window
                 editor.IsEnabled = true;
                 return;
         }
+    }
+    // Forces all hex editors to show updated documents, if their length has changed externally.
+    // Normal modifications are already handled by the RT updater inside the documents.
+    private void ReloadHexEditorDocuments()
+    {
+        ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor1Selector, HexEditor1);
+        ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor2Selector, HexEditor2);
     }
 
     private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
@@ -126,6 +136,7 @@ public partial class MainWindow : Window
         Button_CPUStepSingleCycle.IsEnabled = true;
         Button_CPURunIndefinitely.IsEnabled = true;
         Button_CPUStop.IsEnabled = true;
+        ReloadHexEditorDocuments();
     }
 
     private async void Button_OpenAssemblySourceFilePath_OnClick(object? sender, RoutedEventArgs e)
@@ -151,7 +162,7 @@ public partial class MainWindow : Window
         }
         Console.WriteLine("Selected binary executable file: " + files[0].Name);
         TextBox_BinaryExecutableFilePath.Text = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
+        ReloadHexEditorDocuments();
     }
     private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
     {
@@ -186,7 +197,7 @@ public partial class MainWindow : Window
 
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
-        ForceGetterUpdate(HexEditorDocumentBinaryExecutableFile);
+        ReloadHexEditorDocuments();
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)

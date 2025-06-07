@@ -25,4 +25,6 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
         // span.CopyTo(Memory.Span);
         OnChanged(new BinaryDocumentChange(BinaryDocumentChangeType.Modify, changedMemoryRange));
     }
+
+    public void ForceReload() => UpdateDocument(this, null);
 }
