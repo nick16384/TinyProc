@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using AvaloniaHex;
 using System.Diagnostics;
 using System.Threading;
+using Avalonia.Threading;
 
 namespace TinyProcVisualizer.Views;
 
@@ -17,7 +18,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = $"TinyProc CPU Emulator v{TinyProc.Application.GlobalData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
+        Title = $"TinyProc CPU Emulator v{TinyProc.Application.VersionData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
 
         HexEditor1.HexView.BytesPerLine = 8;
         HexEditor2.HexView.BytesPerLine = 8;
@@ -30,7 +31,7 @@ public partial class MainWindow : Window
 
     #region Hex Editor binary documents
 
-    private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], TimeSpan.FromMilliseconds(1000));
+    private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], null);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
@@ -198,6 +199,7 @@ public partial class MainWindow : Window
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
         ReloadHexEditorDocuments();
+        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
@@ -212,29 +214,34 @@ public partial class MainWindow : Window
     private async void Button_CPUStepSingleCycle_OnClick(object? sender, RoutedEventArgs e)
     {
         TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
+        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
         await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
         await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
     }
 
     private volatile bool _haltCPUClock = false;
-    private volatile bool _haltCPUMemoryHexViewUpdater = false;
+    private volatile bool _haltGUICPUDataUpdater = false;
     private async void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
     {
         bool updateMemoryRT = CheckBox_UpdateMemoryRealtime.IsChecked.GetValueOrDefault(false);
         if (!updateMemoryRT)
         {
-            new Thread(async () =>
+            // Ok this is ugly af, do this better (either run this thread all the time or make properties independent and bound to their sources)
+            Thread GUICPUDataUpdater = new(async () =>
             {
-                _haltCPUMemoryHexViewUpdater = false;
-                while (!_haltCPUMemoryHexViewUpdater)
+                await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
-                    Thread.Sleep(UPDATE_INTERVAL_DOC_RAM);
-                    Stopwatch ramToBytesSW = Stopwatch.StartNew();
-                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
-                    Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
-                }
-            }).Start();
+                    _haltGUICPUDataUpdater = false;
+                    while (!_haltGUICPUDataUpdater)
+                    {
+                        Thread.Sleep(UPDATE_INTERVAL_DOC_RAM);
+                        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
+                        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+                        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+                    }
+                });
+            });
+            GUICPUDataUpdater.Start();
         }
         await Task.Run(async () =>
         {
@@ -244,10 +251,9 @@ public partial class MainWindow : Window
                 TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
                 if (updateMemoryRT)
                 {
-                    Stopwatch ramToBytesSW = Stopwatch.StartNew();
+                    TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
                     await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
                     await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
-                    Console.WriteLine($"Converting uints to bytes took {ramToBytesSW.ElapsedMilliseconds}ms");
                 }
             }
         });
@@ -256,6 +262,6 @@ public partial class MainWindow : Window
     private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
     {
         _haltCPUClock = true;
-        _haltCPUMemoryHexViewUpdater = true;
+        _haltGUICPUDataUpdater = true;
     }
 }

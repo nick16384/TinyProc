@@ -21,6 +21,7 @@
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" MinHeight="500">
             <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="10, 10, 10, 10">
 
+                <!-- File selectors, "compile" button -->
                 <Label>File selection</Label>
                 <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
                     <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
@@ -37,18 +38,29 @@
                     </Grid>
                 </Border>
 
-                <Label Margin="0, 20, 0, 0">CPU control panel</Label>
-                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
-                    <StackPanel>
-                        <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
-                        <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
-                        <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">Update memory hex view in real-time (slow)</CheckBox>
-                        <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
-                        <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
-                    </StackPanel>
-                </Border>
+                <!-- CPU control and status -->
+                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto" Margin="0, 20, 0, 0">
+                    <Label Grid.Row="0" Grid.Column="0">CPU control panel</Label>
+                    <Border Grid.Row="1" Grid.Column="0" BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                        <StackPanel>
+                            <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
+                            <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
+                            <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">Update memory hex view in real-time (slow)</CheckBox>
+                            <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
+                            <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
+                        </StackPanel>
+                    </Border>
+                    <Label Grid.Row="0" Grid.Column="1">CPU status</Label>
+                    <Border Grid.Row="1" Grid.Column="1" BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                        <StackPanel>
+                            <Label>Current cycle:</Label><TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <Label>Registers...</Label>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
-                <Label Margin="0, 20, 0, 0">CPU logging</Label>
+                <!-- Logging -->
+                <Label Margin="0, 20, 0, 0">Logging</Label>
                 <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
                     <StackPanel>
                         <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
@@ -67,6 +79,7 @@
                 </Border>
             </StackPanel>
             
+            <!-- Hex editors -->
             <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
                 <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Width="300">
                     <ComboBox HorizontalAlignment="Left" SelectedIndex="0"

@@ -14,8 +14,8 @@ class Program
         Logging.SuppressErrorMessages = false;
 
         Logging.LogInfo(
-            $"TinyProc ver. {GlobalData.TINYPROC_PROGRAM_VERSION_STR} " +
-            $"Processor revision {GlobalData.PROCESSOR_REVISION_VERSION_STR}");
+            $"TinyProc ver. {VersionData.TINYPROC_PROGRAM_VERSION_STR} " +
+            $"Processor revision {VersionData.PROCESSOR_REVISION_VERSION_STR}");
 
         Logging.LogDebug($"Arguments: {args.Length}");
 

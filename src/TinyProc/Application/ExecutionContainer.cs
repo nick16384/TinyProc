@@ -14,6 +14,24 @@ public class ExecutionContainer
     private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
 
+    private ulong _currentCycle = 0;
+    public ulong CurrentCycle { get => _currentCycle; }
+
+    public static bool IsClockAuto { get; set; } = false;
+    public static uint ClockRateHz { get; set; } = 1;
+
+    private static uint _cyclesUntilHalt;
+    public static uint CyclesUntilHalt
+    {
+        get => _cyclesUntilHalt;
+        set
+        {
+            if (value == 0)
+                IsClockAuto = false;
+            _cyclesUntilHalt = value;
+        }
+    }
+
     public static ExecutionContainer Initialize(ExecutableWrapper mainProgramWrapper)
     {
         INSTANCE0 = new ExecutionContainer(mainProgramWrapper);
@@ -86,25 +104,23 @@ public class ExecutionContainer
         return byteArray;
     }
 
-    public void LaunchMainLoop()
+    public void LaunchCycleLoop()
     {
         for (ulong cycle = 0; ; cycle++)
         {
-            TimeSpan cycleTime = StepSingleCycle(cycle);
-            Thread.Sleep((int)(1000.0 / GlobalData.ClockRateHz) - cycleTime.Milliseconds);
+            TimeSpan cycleTime = StepSingleCycle();
+            Thread.Sleep((int)(1000.0 / ClockRateHz) - cycleTime.Milliseconds);
         }
     }
 
-    public TimeSpan StepSingleCycle(ulong? cycle = null)
+    public TimeSpan StepSingleCycle()
     {
+        _currentCycle++;
         Stopwatch cycleTimer = Stopwatch.StartNew();
         _cpu.NextClock();
         cycleTimer.Stop();
         long cycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
-        if (cycle == null)
-            Logging.LogDebug($"Cycle took {cycleTimeMicroseconds}us");
-        else
-            Logging.LogDebug($"Cycle {cycle} took {cycleTimeMicroseconds}us");
+        Logging.LogDebug($"Cycle {CurrentCycle} took {cycleTimeMicroseconds}us");
         return cycleTimer.Elapsed;
     }
 }

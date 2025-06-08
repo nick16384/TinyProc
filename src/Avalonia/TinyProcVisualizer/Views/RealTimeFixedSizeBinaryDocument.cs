@@ -6,10 +6,12 @@ namespace TinyProcVisualizer.Views;
 
 public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
 {
-    public RealTimeFixedSizeBinaryDocument(byte[] bytes, TimeSpan updateInterval) : base(bytes)
+    private static readonly TimeSpan DEFAULT_UPDATE_INTERVAL = TimeSpan.FromMilliseconds(100);
+    public RealTimeFixedSizeBinaryDocument(byte[] bytes, TimeSpan? updateInterval) : base(bytes)
     {
-        var timer = new DispatcherTimer(updateInterval, DispatcherPriority.Background, UpdateDocument);
-        timer.Start();
+        updateInterval ??= DEFAULT_UPDATE_INTERVAL;
+        var updateTimer = new DispatcherTimer(updateInterval.Value, DispatcherPriority.Background, UpdateDocument);
+        updateTimer.Start();
     }
 
     public void WriteNewDataToLiveBuffer(byte[] bytes)
