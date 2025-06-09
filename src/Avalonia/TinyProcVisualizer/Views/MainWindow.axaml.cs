@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AvaloniaHex;
-using System.Diagnostics;
 using System.Threading;
 using Avalonia.Threading;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace TinyProcVisualizer.Views;
 
@@ -24,6 +24,49 @@ public partial class MainWindow : Window
         HexEditor2.HexView.BytesPerLine = 8;
         HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
         HexEditor2.Document = HexEditorDocumentRAM;
+
+        // TODO: This could maybe be made more beautiful
+        // Thread that periodically synchronizes the data from the CPU (ExecutionContainer)
+        // with the data shown on screen to the user via the GUI.
+        Thread CPUGUIDataSyncThread = new(() =>
+        {
+            _haltCPUGUIDataSyncThread = false;
+            while (!_haltCPUGUIDataSyncThread)
+            {
+                Thread.Sleep(SYNC_INTERVAL_CPU_GUI);
+                SyncCPUandGUIData();
+            }
+        });
+        // TODO: Launch updater thread as daemon
+        CPUGUIDataSyncThread.Start();
+    }
+
+    private static readonly TimeSpan SYNC_INTERVAL_CPU_GUI = TimeSpan.FromMilliseconds(200);
+    private volatile bool _haltCPUGUIDataSyncThread = false;
+
+    private void SyncCPUandGUIData()
+    {
+        // Check if the CPU is already initialized. If not, synchronization is unnecessary.
+        if (TinyProc.Application.ExecutionContainer.INSTANCE0 == null)
+            return;
+        // Sync & update current CPU cycle TextBox
+        string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
+        var uiUpdateCPUCycleTextBox = Dispatcher.UIThread.InvokeAsync(() => TextBox_CurrentCPUCycle.Text = currentCPUCycle);
+
+        // Sync RAM and CON hex view (They update themselves)
+        var syncRAM = Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
+        var syncCON = Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+
+        // FIXME: Fix "Task cancelled" exception when closing Window.
+        // It means, there are still some update tasks running when they clearly should not.
+        Task.WaitAll([uiUpdateCPUCycleTextBox.GetTask(), syncRAM, syncCON]);
+    }
+
+    public void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        Console.WriteLine("App exit called.");
+        _haltCPUGUIDataSyncThread = true;
+        _haltCPUClock = true; // Not necessary
     }
 
     // Helper method: Updates a property, if its getter implements some sort of auto-update.
@@ -220,41 +263,16 @@ public partial class MainWindow : Window
     }
 
     private volatile bool _haltCPUClock = false;
-    private volatile bool _haltGUICPUDataUpdater = false;
     private async void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
     {
         bool updateMemoryRT = CheckBox_UpdateMemoryRealtime.IsChecked.GetValueOrDefault(false);
-        if (!updateMemoryRT)
-        {
-            // Ok this is ugly af, do this better (either run this thread all the time or make properties independent and bound to their sources)
-            Thread GUICPUDataUpdater = new(async () =>
-            {
-                await Dispatcher.UIThread.InvokeAsync(async () =>
-                {
-                    _haltGUICPUDataUpdater = false;
-                    while (!_haltGUICPUDataUpdater)
-                    {
-                        Thread.Sleep(UPDATE_INTERVAL_DOC_RAM);
-                        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
-                        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-                        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-                    }
-                });
-            });
-            GUICPUDataUpdater.Start();
-        }
-        await Task.Run(async () =>
+        await Task.Run(() =>
         {
             _haltCPUClock = false;
             while (!_haltCPUClock)
             {
                 TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
-                if (updateMemoryRT)
-                {
-                    TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
-                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-                    await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
-                }
+                if (updateMemoryRT) SyncCPUandGUIData();
             }
         });
     }
@@ -262,6 +280,5 @@ public partial class MainWindow : Window
     private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
     {
         _haltCPUClock = true;
-        _haltGUICPUDataUpdater = true;
     }
 }
