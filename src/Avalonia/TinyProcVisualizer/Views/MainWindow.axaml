@@ -48,8 +48,8 @@
                             <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
                             <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">
                                 <StackPanel>
-                                    <TextBlock>Update memory hex</TextBlock>
-                                    <TextBlock>view in real-time (slow)</TextBlock>
+                                    <TextBlock>Update CPU data</TextBlock>
+                                    <TextBlock>in real-time (slow)</TextBlock>
                                 </StackPanel>
                             </CheckBox>
                             <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
