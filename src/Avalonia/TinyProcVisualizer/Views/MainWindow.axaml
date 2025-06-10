@@ -23,7 +23,7 @@
 
                 <!-- File selectors, "compile" button -->
                 <Label>File selection</Label>
-                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                     <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
                         <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
                             Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
@@ -38,30 +38,39 @@
                     </Grid>
                 </Border>
 
-                <!-- CPU control and status -->
+                <!-- CPU control and global status -->
                 <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto" Margin="0, 20, 0, 0">
                     <Label Grid.Row="0" Grid.Column="0">CPU control panel</Label>
-                    <Border Grid.Row="1" Grid.Column="0" BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                    <Border Grid.Row="1" Grid.Column="0"
+                        BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                         <StackPanel>
                             <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
                             <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
-                            <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">Update memory hex view in real-time (slow)</CheckBox>
+                            <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">
+                                <StackPanel>
+                                    <TextBlock>Update memory hex</TextBlock>
+                                    <TextBlock>view in real-time (slow)</TextBlock>
+                                </StackPanel>
+                            </CheckBox>
                             <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
                             <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
                         </StackPanel>
                     </Border>
-                    <Label Grid.Row="0" Grid.Column="1">CPU status</Label>
-                    <Border Grid.Row="1" Grid.Column="1" BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                    <Label Grid.Row="0" Grid.Column="1">Global status</Label>
+                    <Border Grid.Row="1" Grid.Column="1"
+                        BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                         <StackPanel>
-                            <Label>Current cycle:</Label><TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
-                            <Label>Registers...</Label>
+                            <Label>Current cycle:</Label>
+                            <TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <Label>Cycle time:</Label>
+                            <TextBox Name="TextBox_LastCPUCycleTime" IsEnabled="False" TextAlignment="Right">-</TextBox>
                         </StackPanel>
                     </Border>
                 </Grid>
 
                 <!-- Logging -->
                 <Label Margin="0, 20, 0, 0">Logging</Label>
-                <Border BorderThickness="2" BorderBrush="Blue" CornerRadius="10" Padding="10">
+                <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                     <StackPanel>
                         <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
                             Log debug messages
@@ -78,60 +87,133 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
-            
-            <!-- Hex editors -->
-            <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
-                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Width="300">
-                    <ComboBox HorizontalAlignment="Left" SelectedIndex="0"
-                        Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
-                        <ComboBoxItem>Binary executable</ComboBoxItem>
-                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                        <ComboBoxItem>Virtual memory</ComboBoxItem>
-                    </ComboBox>
-                    <Button HorizontalAlignment="Right">Reset</Button>
-                    <Button HorizontalAlignment="Right">Override</Button>
-                </StackPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="0"
-                MinHeight="500"
-                MinWidth="415"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                IsEnabled="False"
-                Name="HexEditor1">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
 
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Width="300">
-                    <ComboBox HorizontalAlignment="Left" SelectedIndex="1"
-                        Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
-                        <ComboBoxItem>Binary executable</ComboBoxItem>
-                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                    </ComboBox>
-                    <Button HorizontalAlignment="Right">Reset</Button>
-                    <Button HorizontalAlignment="Right">Override</Button>
+            <!-- CPU status (memory, registers etc.) -->
+            <StackPanel>
+                <!-- Hex editors -->
+                <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
+                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Width="300">
+                        <ComboBox HorizontalAlignment="Left" SelectedIndex="0"
+                            Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
+                            <ComboBoxItem>Binary executable</ComboBoxItem>
+                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                            <ComboBoxItem>Virtual memory</ComboBoxItem>
+                        </ComboBox>
+                        <Button HorizontalAlignment="Right">Reset</Button>
+                        <Button HorizontalAlignment="Right">Override</Button>
+                    </StackPanel>
+                    <avaloniaHex:HexEditor
+                    Grid.Row="1" Grid.Column="0"
+                    MinHeight="450"
+                    MinWidth="415"
+                    FontFamily="{StaticResource SourceCodeProFont}"
+                    IsEnabled="False"
+                    Name="HexEditor1">
+                        <!-- Define columns to display -->
+                        <avaloniaHex:HexEditor.Columns>
+                            <rendering:OffsetColumn />
+                            <rendering:HexColumn />
+                            <rendering:AsciiColumn />
+                        </avaloniaHex:HexEditor.Columns>
+                    </avaloniaHex:HexEditor>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Width="300">
+                        <ComboBox HorizontalAlignment="Left" SelectedIndex="1"
+                            Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
+                            <ComboBoxItem>Binary executable</ComboBoxItem>
+                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                        </ComboBox>
+                        <Button HorizontalAlignment="Right">Reset</Button>
+                        <Button HorizontalAlignment="Right">Override</Button>
+                    </StackPanel>
+                    <avaloniaHex:HexEditor
+                    Grid.Row="1" Grid.Column="1"
+                    MinHeight="450"
+                    MinWidth="415"
+                    FontFamily="{StaticResource SourceCodeProFont}"
+                    IsEnabled="True"
+                    Name="HexEditor2">
+                        <!-- Define columns to display -->
+                        <avaloniaHex:HexEditor.Columns>
+                            <rendering:OffsetColumn />
+                            <rendering:HexColumn />
+                            <rendering:AsciiColumn />
+                        </avaloniaHex:HexEditor.Columns>
+                    </avaloniaHex:HexEditor>
+                </Grid>
+
+                <!-- CPU registers -->
+                <StackPanel Orientation="Horizontal">
+                    <!-- Special-purpose registers -->
+                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto">
+                        <Label Grid.Row="0" Grid.Column="0">PC</Label>
+                        <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterPC}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterPC" />
+                        </Border>
+                        <Label Grid.Row="1" Grid.Column="0">MAR</Label>
+                        <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterMAR}" BorderThickness="2">
+                            <TextBlock Width="80" TextAlignment="Center" Name="TextBlock_RegisterMAR" />
+                        </Border>
+                        <Label Grid.Row="2" Grid.Column="0">MDR</Label>
+                        <Border Grid.Row="2" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterMDR}" BorderThickness="2">
+                            <TextBlock Width="80" TextAlignment="Center" Name="TextBlock_RegisterMDR" />
+                        </Border>
+                        <Label Grid.Row="3" Grid.Column="0">SR</Label>
+                        <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterSR}" BorderThickness="2">
+                            <TextBlock Width="80" TextAlignment="Center" Name="TextBlock_RegisterSR" />
+                        </Border>
+                    </Grid>
+                    <!-- General-purpose registers (GPRs) -->
+                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto" Margin="20, 0, 0, 0">
+                        <Label Grid.Row="0" Grid.Column="0">GPR 1</Label>
+                        <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR1" />
+                        </Border>
+                        <Label Grid.Row="1" Grid.Column="0">GPR 2</Label>
+                        <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR2" />
+                        </Border>
+                        <Label Grid.Row="2" Grid.Column="0">GPR 3</Label>
+                        <Border Grid.Row="2" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR3" />
+                        </Border>
+                        <Label Grid.Row="3" Grid.Column="0">GPR 4</Label>
+                        <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR4" />
+                        </Border>
+                        <Label Grid.Row="4" Grid.Column="0">GPR 5</Label>
+                        <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR5" />
+                        </Border>
+                        <Label Grid.Row="5" Grid.Column="0">GPR 6</Label>
+                        <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR6" />
+                        </Border>
+                        <Label Grid.Row="6" Grid.Column="0">GPR 7</Label>
+                        <Border Grid.Row="6" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR7" />
+                        </Border>
+                        <Label Grid.Row="7" Grid.Column="0">GPR 8</Label>
+                        <Border Grid.Row="7" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR8" />
+                        </Border>
+                    </Grid>
                 </StackPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="1"
-                MinHeight="500"
-                MinWidth="415"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                IsEnabled="True"
-                Name="HexEditor2">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
-            </Grid>
+            </StackPanel>
         </StackPanel>
         <!-- Add console memory hex editor and vmem display (video buffer 0/1) -->
     </DockPanel>

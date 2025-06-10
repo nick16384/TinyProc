@@ -9,6 +9,7 @@ public partial class CPU
     {
         // Program counter
         private readonly Register PC = new(0, true);
+        public uint Debug_PCValue { get => PC.ValueDirect; }
         // Instruction register 1
         private readonly Register IRA = new(0, true);
         // Instruction register 2

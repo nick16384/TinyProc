@@ -14,6 +14,17 @@ public partial class CPU
     private readonly Register GP7;
     private readonly Register GP8;
 
+    public uint Debug_GP1Value { get => GP1.ValueDirect; }
+    public uint Debug_GP2Value { get => GP2.ValueDirect; }
+    public uint Debug_GP3Value { get => GP3.ValueDirect; }
+    public uint Debug_GP4Value { get => GP4.ValueDirect; }
+    public uint Debug_GP5Value { get => GP5.ValueDirect; }
+    public uint Debug_GP6Value { get => GP6.ValueDirect; }
+    public uint Debug_GP7Value { get => GP7.ValueDirect; }
+    public uint Debug_GP8Value { get => GP8.ValueDirect; }
+    public uint Debug_PCValue { get => _CU.Debug_PCValue; }
+    public uint Debug_SRValue { get => _ALU.SR.ValueDirect; }
+
     private static readonly Register CONST_POS1_SPECIAL_REG = new(1u, true, false, false, true, true);
     private static readonly Register CONST_NEG1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
     private static readonly Register CONST_POS2_SPECIAL_REG = new(2u, true, false, false, true, true);

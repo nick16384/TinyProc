@@ -16,6 +16,8 @@ public class ExecutionContainer
 
     private ulong _currentCycle = 0;
     public ulong CurrentCycle { get => _currentCycle; }
+    private long _lastCycleTimeMicroseconds = 0;
+    public long LastCycleTimeMicroseconds { get => _lastCycleTimeMicroseconds; }
 
     public static bool IsClockAuto { get; set; } = false;
     public static uint ClockRateHz { get; set; } = 1;
@@ -104,6 +106,19 @@ public class ExecutionContainer
         return byteArray;
     }
 
+    public uint Debug_CPU_GP1Value { get => _cpu.Debug_GP1Value; }
+    public uint Debug_CPU_GP2Value { get => _cpu.Debug_GP2Value; }
+    public uint Debug_CPU_GP3Value { get => _cpu.Debug_GP3Value; }
+    public uint Debug_CPU_GP4Value { get => _cpu.Debug_GP4Value; }
+
+    public uint Debug_CPU_GP5Value { get => _cpu.Debug_GP5Value; }
+    public uint Debug_CPU_GP6Value { get => _cpu.Debug_GP6Value; }
+    public uint Debug_CPU_GP7Value { get => _cpu.Debug_GP7Value; }
+    public uint Debug_CPU_GP8Value { get => _cpu.Debug_GP8Value; }
+
+    public uint Debug_CPU_PCValue { get => _cpu.Debug_PCValue; }
+    public uint Debug_CPU_SRValue { get => _cpu.Debug_SRValue; }
+
     public void LaunchCycleLoop()
     {
         for (ulong cycle = 0; ; cycle++)
@@ -119,8 +134,8 @@ public class ExecutionContainer
         Stopwatch cycleTimer = Stopwatch.StartNew();
         _cpu.NextClock();
         cycleTimer.Stop();
-        long cycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
-        Logging.LogDebug($"Cycle {CurrentCycle} took {cycleTimeMicroseconds}us");
+        _lastCycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
+        Logging.LogDebug($"Cycle {CurrentCycle} took {_lastCycleTimeMicroseconds}us");
         return cycleTimer.Elapsed;
     }
 }
