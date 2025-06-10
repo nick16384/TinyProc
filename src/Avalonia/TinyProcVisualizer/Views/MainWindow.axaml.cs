@@ -86,24 +86,33 @@ public partial class MainWindow : Window
         var syncCON = Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
 
         // Wait for all update tasks to complete
-        // FIXME: Fix "Task cancelled" exception when closing Window.
-        // It means, there are still some update tasks running when they clearly should not.
-        Task.WaitAll([
-            updateTextBox_CurrentCPUCycle.GetTask(),
-            updateTextBox_LastCycleTime.GetTask(),
-            updateTextBlock_GP1.GetTask(),
-            updateTextBlock_GP2.GetTask(),
-            updateTextBlock_GP3.GetTask(),
-            updateTextBlock_GP4.GetTask(),
-            updateTextBlock_GP5.GetTask(),
-            updateTextBlock_GP6.GetTask(),
-            updateTextBlock_GP7.GetTask(),
-            updateTextBlock_GP8.GetTask(),
-            updateTextBlock_PC.GetTask(),
-            updateTextBlock_SR.GetTask(),
-            syncRAM,
-            syncCON
-        ]);
+        try
+        {
+            Task.WaitAll([
+                updateTextBox_CurrentCPUCycle.GetTask(),
+                updateTextBox_LastCycleTime.GetTask(),
+                updateTextBlock_GP1.GetTask(),
+                updateTextBlock_GP2.GetTask(),
+                updateTextBlock_GP3.GetTask(),
+                updateTextBlock_GP4.GetTask(),
+                updateTextBlock_GP5.GetTask(),
+                updateTextBlock_GP6.GetTask(),
+                updateTextBlock_GP7.GetTask(),
+                updateTextBlock_GP8.GetTask(),
+                updateTextBlock_PC.GetTask(),
+                updateTextBlock_SR.GetTask(),
+                syncRAM,
+                syncCON
+            ]);
+        }
+        catch (AggregateException ae)
+        {
+            // Only rethrow the exception if any of the inner exceptions is not a TaskCanceledException.
+            // Otherwise, the exception was probably caused by the user exiting the app and therefore cancelling all tasks.
+            foreach (Exception exception in ae.InnerExceptions)
+                if (exception.GetType() != typeof(TaskCanceledException))
+                    throw;
+        }
     }
 
     #endregion CPU -> GUI data synchronization
@@ -290,7 +299,6 @@ public partial class MainWindow : Window
         // Set binary file in GUI
         TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
         ReloadHexEditorDocuments();
-        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
     }
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
