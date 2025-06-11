@@ -7,9 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AvaloniaHex;
-using System.Threading;
-using Avalonia.Threading;
 using Avalonia.Controls.ApplicationLifetimes;
+using TinyProcVisualizer.ViewModels;
 
 namespace TinyProcVisualizer.Views;
 
@@ -18,6 +17,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = new MainWindowViewModel();
         Title = $"TinyProc CPU Emulator v{TinyProc.Application.VersionData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
 
         HexEditor1.HexView.BytesPerLine = 8;
@@ -25,97 +25,10 @@ public partial class MainWindow : Window
         HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
         HexEditor2.Document = HexEditorDocumentRAM;
 
-        // TODO: This could maybe be made more beautiful
-        // Thread that periodically synchronizes the data from the CPU (ExecutionContainer)
-        // with the data shown on screen to the user via the GUI.
-        Thread CPUGUIDataSyncThread = new(() =>
-        {
-            _haltCPUGUIDataSyncThread = false;
-            while (!_haltCPUGUIDataSyncThread)
-            {
-                Thread.Sleep(SYNC_INTERVAL_CPU_GUI);
-                SyncCPUandGUIData();
-            }
-        });
         // TODO: Launch updater thread as daemon
+        InitCPUGUIDataSyncThread();
         CPUGUIDataSyncThread.Start();
     }
-
-    #region CPU -> GUI data synchronization
-
-    private static readonly TimeSpan SYNC_INTERVAL_CPU_GUI = TimeSpan.FromMilliseconds(200);
-    private volatile bool _haltCPUGUIDataSyncThread = false;
-
-    private void SyncCPUandGUIData()
-    {
-        // Check if the CPU is already initialized. If not, synchronization is unnecessary.
-        if (TinyProc.Application.ExecutionContainer.INSTANCE0 == null)
-            return;
-        // Sync & update current CPU cycle TextBox
-        string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
-        var updateTextBox_CurrentCPUCycle = Dispatcher.UIThread.InvokeAsync(() => TextBox_CurrentCPUCycle.Text = currentCPUCycle);
-
-        // Sync and update last CPU cycle time
-        string lastCycleTime = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.LastCycleTimeMicroseconds}us";
-        var updateTextBox_LastCycleTime = Dispatcher.UIThread.InvokeAsync(() => TextBox_LastCPUCycleTime.Text = lastCycleTime);
-
-        // Sync and update register text blocks
-        string gp1Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP1Value:x8}";
-        string gp2Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP2Value:x8}";
-        string gp3Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP3Value:x8}";
-        string gp4Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP4Value:x8}";
-        string gp5Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP5Value:x8}";
-        string gp6Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP6Value:x8}";
-        string gp7Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP7Value:x8}";
-        string gp8Value = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP8Value:x8}";
-        string pcValue = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue:x8}";
-        string srValue = $"0x{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_SRValue:x8}";
-        var updateTextBlock_GP1 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR1.Text = gp1Value);
-        var updateTextBlock_GP2 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR2.Text = gp2Value);
-        var updateTextBlock_GP3 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR3.Text = gp3Value);
-        var updateTextBlock_GP4 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR4.Text = gp4Value);
-        var updateTextBlock_GP5 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR5.Text = gp5Value);
-        var updateTextBlock_GP6 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR6.Text = gp6Value);
-        var updateTextBlock_GP7 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR7.Text = gp7Value);
-        var updateTextBlock_GP8 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR8.Text = gp8Value);
-        var updateTextBlock_PC = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterPC.Text = pcValue);
-        var updateTextBlock_SR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterSR.Text = srValue);
-
-        // Sync RAM and CON hex view (They update themselves)
-        var syncRAM = Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-        var syncCON = Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
-
-        // Wait for all update tasks to complete
-        try
-        {
-            Task.WaitAll([
-                updateTextBox_CurrentCPUCycle.GetTask(),
-                updateTextBox_LastCycleTime.GetTask(),
-                updateTextBlock_GP1.GetTask(),
-                updateTextBlock_GP2.GetTask(),
-                updateTextBlock_GP3.GetTask(),
-                updateTextBlock_GP4.GetTask(),
-                updateTextBlock_GP5.GetTask(),
-                updateTextBlock_GP6.GetTask(),
-                updateTextBlock_GP7.GetTask(),
-                updateTextBlock_GP8.GetTask(),
-                updateTextBlock_PC.GetTask(),
-                updateTextBlock_SR.GetTask(),
-                syncRAM,
-                syncCON
-            ]);
-        }
-        catch (AggregateException ae)
-        {
-            // Only rethrow the exception if any of the inner exceptions is not a TaskCanceledException.
-            // Otherwise, the exception was probably caused by the user exiting the app and therefore cancelling all tasks.
-            foreach (Exception exception in ae.InnerExceptions)
-                if (exception.GetType() != typeof(TaskCanceledException))
-                    throw;
-        }
-    }
-
-    #endregion CPU -> GUI data synchronization
 
     // Helper method: Updates a property, if its getter implements some sort of auto-update.
     private static void ForceGetterUpdate(object obj) { object unused = obj; }
@@ -161,6 +74,8 @@ public partial class MainWindow : Window
             else
             {
                 byte[] ramData = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes;
+                if ((ulong)ramData.Length != _HexEditorDocumentRAM.Length)
+                    _HexEditorDocumentRAM = new RealTimeFixedSizeBinaryDocument(ramData, UPDATE_INTERVAL_DOC_RAM);
                 _HexEditorDocumentRAM.WriteNewDataToLiveBuffer(ramData);
             }
             return _HexEditorDocumentRAM;
