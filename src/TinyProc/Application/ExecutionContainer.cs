@@ -98,11 +98,26 @@ public class ExecutionContainer
             byteArraySize = uintArray.Length * sizeof(uint);
 
         byte[] byteArray = new byte[byteArraySize];
+        // Copies the entire memory chunk of the uint array to the byte array
         Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
-        Parallel.For(0, byteArraySize / sizeof(uint), i =>
+
+        // Note: Parallel.For just makes this much slower
+        for (int i = 0; i < byteArraySize / sizeof(uint); i++)
         {
+            // Don't reverse bytes that are all zero (fast check, required pointers)
+            // Makes the endian reversing a LOT faster
+            unsafe
+            {
+                fixed (byte* byteArrayPtr = &byteArray[i * 4])
+                {
+                    // Since most of the memory is usually large zeroed sections, this branch is taken most of the time,
+                    // biasing the branch predictor to end this loop cycle here and not slowing down this if-statement.
+                    if (*(uint*)byteArrayPtr == 0) break;
+                }
+            }
             Array.Reverse(byteArray, i * 4, 4);
-        });
+        }
+
         return byteArray;
     }
 

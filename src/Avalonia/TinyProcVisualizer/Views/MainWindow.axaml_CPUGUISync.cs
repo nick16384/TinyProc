@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using System.Threading.Tasks;
 using System.Threading;
 using Avalonia.Threading;
+using AvaloniaHex.Document;
 
 namespace TinyProcVisualizer.Views;
 
@@ -32,9 +33,16 @@ public partial class MainWindow : Window
 
     private void SyncCPUandGUIData()
     {
+        // Nomenclature:
+        // Sync: Data from the CPU is fetched and stored in this class
+        // Update: The updated local data is updated visually in the GUI
+
         // Check if the CPU is already initialized. If not, synchronization is unnecessary.
         if (TinyProc.Application.ExecutionContainer.INSTANCE0 == null)
             return;
+
+        // TODO: Check if the CPU cycle has finished before updating
+
         // Sync & update current CPU cycle TextBox
         string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
         var updateTextBox_CurrentCPUCycle = Dispatcher.UIThread.InvokeAsync(() => TextBox_CurrentCPUCycle.Text = currentCPUCycle);
@@ -65,6 +73,14 @@ public partial class MainWindow : Window
         var updateTextBlock_PC = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterPC.Text = pcValue);
         var updateTextBlock_SR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterSR.Text = srValue);
 
+        // Sync and update register address highlighters
+        HexEditorPCHighlighter.Ranges.Clear();
+        ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue * sizeof(uint);
+        ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue + 2) * sizeof(uint);
+        HexEditorPCHighlighter.Ranges.Add(new BitRange(pcStartByte, pcEndByte));
+        var updateHexEditor1Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor1.HexView.InvalidateVisualLines);
+        var updateHexEditor2Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor2.HexView.InvalidateVisualLines);
+
         // Sync RAM and CON hex view (They update themselves)
         var syncRAM = Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
         var syncCON = Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
@@ -85,6 +101,8 @@ public partial class MainWindow : Window
                 updateTextBlock_GP8.GetTask(),
                 updateTextBlock_PC.GetTask(),
                 updateTextBlock_SR.GetTask(),
+                updateHexEditor1Highlight.GetTask(),
+                updateHexEditor2Highlight.GetTask(),
                 syncRAM,
                 syncCON
             ]);
@@ -96,6 +114,10 @@ public partial class MainWindow : Window
             foreach (Exception exception in ae.InnerExceptions)
                 if (exception.GetType() != typeof(TaskCanceledException))
                     throw;
+        }
+        catch (TaskCanceledException)
+        {
+            // Same as above, only rethrow if not a TaskCanceledException, so do nothing here.
         }
     }
 

@@ -14,6 +14,13 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
         updateTimer.Start();
     }
 
+    public void SetLiveUpdateRanges(BitRange[] ranges)
+    {
+        // Not implemented
+        // Used when e.g. the user changes some bytes and doesnt want
+        // them to be overriden back when the thread updates from real memory
+    }
+
     public void WriteNewDataToLiveBuffer(byte[] bytes)
     {
         bytes.CopyTo(Memory.Span);

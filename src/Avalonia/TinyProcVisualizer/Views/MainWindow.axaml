@@ -6,6 +6,8 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        Width="1200"
+        Height="700"
         x:Class="TinyProcVisualizer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -17,13 +19,26 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-        <StackPanel Orientation="Vertical" Margin="10, 10, 10, 10">
+    <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <!-- Star (*) sizing doesn*t work for some reason, so fixed size is required. -->
+            <RowDefinition Height="685" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Margin="10, 10, 10, 10">
             
             <!-- File selectors, "compile" button -->
             <Label>File selection</Label>
             <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                 <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+
+                    <!-- TODO: Implement file drag and drop -->
                     <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
                         Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
                     <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
@@ -63,6 +78,8 @@
                         <TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
                         <Label>Cycle time:</Label>
                         <TextBox Name="TextBox_LastCPUCycleTime" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                        <Label>UI overhead:</Label>
+                        <TextBox Name="TextBox_CycleTimeGUIOverhead" IsEnabled="False" TextAlignment="Right">-</TextBox>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -88,16 +105,25 @@
         </StackPanel>
 
         <!-- Source assembly editor and compiler -->
-        <StackPanel>
-            <TextBox Name="SourceCodeEditor">
-            </TextBox>
-            <TextBlock Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
+        <StackPanel Grid.Row="0" Grid.Column="1">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" Width="100" Height="200">
+                <TextBox Name="SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True" Width="100" Height="300">
+                    Source code text placeholder
+                </TextBox>
+            </ScrollViewer>
+            <!-- Add button: Load assembly source file... (opens file selection dialog) -->
+            <!-- Add button: Open binary file... (opens selection dialog) -->
+            <!-- Add button: Decompile from [source] -->
+            <!-- Add decompilation [source] selector (ComboBox) -->
+            <!-- Add button: Compile and save to... (opens save dialog) -->
+            <!-- Add button: Compile and load to memory (also resets CPU state) -->
+            <!-- After all above completed: Remove file selection (asm, bin), compile button, and "Init CPU" button -->
         </StackPanel>
 
         <!-- CPU status (memory, registers etc.) -->
-        <StackPanel>
+        <StackPanel Grid.Row="0" Grid.Column="2">
             <!-- Hex editors -->
-            <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
+            <Grid Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
                 <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
                     <ComboBox DockPanel.Dock="Left" SelectedIndex="0"
                         Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
@@ -227,7 +253,7 @@
                     </Border>
                 </Grid>
                 <!-- General-purpose registers (GPRs) -->
-                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, *, *, *, *, *, *, *" Margin="20, 0, 0, 0">
+                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto" Margin="20, 0, 0, 0">
                     <Label Grid.Row="0" Grid.Column="0">GPR 1</Label>
                     <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
                         BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
@@ -367,7 +393,10 @@
                 </Grid>
             </StackPanel>
         </StackPanel>
+
         <!-- Add console memory hex editor and vmem display (video buffer 0/1) -->
-    </StackPanel>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
+    </Grid>
 
 </Window>

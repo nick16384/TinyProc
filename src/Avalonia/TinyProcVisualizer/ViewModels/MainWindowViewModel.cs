@@ -66,8 +66,8 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     #region Auto-updated properties
 
-    private string _memoryUsage = "0MiB";
-    public string MemoryUsage { get => _memoryUsage; }
+    private long _memoryUsageMebibytes = 0;
+    public string MemoryUsage { get => $"RAM Usage: {_memoryUsageMebibytes}MiB"; }
 
     public MainWindowViewModel() : base()
     {
@@ -80,11 +80,11 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void OnMemoryUsageUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        _memoryUsage = $"{Process.GetCurrentProcess().PrivateMemorySize64 / (1024 * 1024)}MiB";
+        _memoryUsageMebibytes = Process.GetCurrentProcess().PrivateMemorySize64 / (1024 * 1024);
         OnPropertyChanged(nameof(MemoryUsage));
     }
 
-    public new event PropertyChangedEventHandler PropertyChanged;
+    public new event PropertyChangedEventHandler? PropertyChanged;
 
     protected new virtual void OnPropertyChanged(string? propertyName)
     {

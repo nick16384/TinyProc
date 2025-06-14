@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 using AvaloniaHex;
 using Avalonia.Controls.ApplicationLifetimes;
 using TinyProcVisualizer.ViewModels;
+using AvaloniaHex.Rendering;
+using Avalonia.Media;
+using System.Diagnostics;
+using Avalonia.Threading;
 
 namespace TinyProcVisualizer.Views;
 
@@ -25,6 +29,9 @@ public partial class MainWindow : Window
         HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
         HexEditor2.Document = HexEditorDocumentRAM;
 
+        HexEditor1.HexView.LineTransformers.Add(HexEditorPCHighlighter);
+        HexEditor2.HexView.LineTransformers.Add(HexEditorPCHighlighter);
+
         // TODO: Launch updater thread as daemon
         InitCPUGUIDataSyncThread();
         CPUGUIDataSyncThread.Start();
@@ -40,12 +47,17 @@ public partial class MainWindow : Window
         _haltCPUClock = true; // Not necessary
     }
 
-    #region Hex Editor binary documents
+    #region Hex Editors
 
     private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], null);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
+
+    private readonly RangesHighlighter HexEditorPCHighlighter = new()
+    {
+        Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 255), 1.0)
+    };
 
     private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
     private RealTimeFixedSizeBinaryDocument HexEditorDocumentBinaryExecutableFile
@@ -86,7 +98,7 @@ public partial class MainWindow : Window
         get => new([3, 4, 5], TimeSpan.FromMilliseconds(1000));
     }
 
-    #endregion Hex Editor binary documents
+    #endregion Hex Editors
 
     #region User event handlers
 
@@ -101,6 +113,7 @@ public partial class MainWindow : Window
     private async void ChangeHexEditorWithNewComboBoxSelection(ComboBox? comboBox, HexEditor editor)
     {
         if (editor == null) return;
+        editor.HexView.LineTransformers.Clear();
         switch ((comboBox?.SelectedItem as ComboBoxItem)?.Content)
         {
             case COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE:
@@ -111,6 +124,7 @@ public partial class MainWindow : Window
             case COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY:
                 editor.IsEnabled = true;
                 editor.Document = await Task.Run(() => HexEditorDocumentRAM);
+                editor.HexView.LineTransformers.Add(HexEditorPCHighlighter);
                 break;
             case COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY:
                 editor.IsEnabled = true;
@@ -227,25 +241,43 @@ public partial class MainWindow : Window
 
     private async void Button_CPUStepSingleCycle_OnClick(object? sender, RoutedEventArgs e)
     {
+        Button_CPUStepSingleCycle.IsEnabled = false;
+        Stopwatch cycleStopwatch = Stopwatch.StartNew();
         TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
-        TextBox_CurrentCPUCycle.Text = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
-        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-        await Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+        await Task.Run(SyncCPUandGUIData);
+        TextBox_CycleTimeGUIOverhead.Text = $"+{cycleStopwatch.ElapsedMilliseconds * 1000 + cycleStopwatch.Elapsed.Microseconds}us";
+        Button_CPUStepSingleCycle.IsEnabled = true;
     }
 
     private volatile bool _haltCPUClock = false;
     private async void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
     {
+        Button_CPURunIndefinitely.IsEnabled = false;
         bool updateMemoryRT = CheckBox_UpdateMemoryRealtime.IsChecked.GetValueOrDefault(false);
-        await Task.Run(() =>
+        if (!updateMemoryRT)
+            TextBox_CycleTimeGUIOverhead.Text = "-";
+            
+        Stopwatch cycleStopwatch = Stopwatch.StartNew();
+        await Task.Run(async () =>
         {
             _haltCPUClock = false;
             while (!_haltCPUClock)
             {
                 TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
-                if (updateMemoryRT) SyncCPUandGUIData();
+                if (updateMemoryRT)
+                {
+                    cycleStopwatch.Restart();
+                    SyncCPUandGUIData();
+                    Dispatcher.UIThread.Invoke(() =>
+                    {
+                        TextBox_CycleTimeGUIOverhead.Text =
+                            $"+{cycleStopwatch.ElapsedMilliseconds * 1000 + cycleStopwatch.Elapsed.Microseconds}us";
+                    });
+                    
+                }
             }
         });
+        Button_CPURunIndefinitely.IsEnabled = true;
     }
 
     private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
