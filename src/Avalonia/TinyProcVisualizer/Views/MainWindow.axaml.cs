@@ -13,6 +13,8 @@ using AvaloniaHex.Rendering;
 using Avalonia.Media;
 using System.Diagnostics;
 using Avalonia.Threading;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 
 namespace TinyProcVisualizer.Views;
 
@@ -31,6 +33,8 @@ public partial class MainWindow : Window
 
         HexEditor1.HexView.LineTransformers.Add(HexEditorPCHighlighter);
         HexEditor2.HexView.LineTransformers.Add(HexEditorPCHighlighter);
+        HexEditor1.HexView.LineTransformers.Add(HexEditorMARHighlighter);
+        HexEditor2.HexView.LineTransformers.Add(HexEditorMARHighlighter);
 
         // TODO: Launch updater thread as daemon
         InitCPUGUIDataSyncThread();
@@ -58,6 +62,11 @@ public partial class MainWindow : Window
     {
         Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 255), 1.0)
     };
+    private readonly RangesHighlighter HexEditorMARHighlighter = new()
+    {
+        Foreground = new SolidColorBrush(Color.FromRgb(255, 0, 255), 1.0)
+    };
+    // TODO: Make arbitrary register contents be interpretable as addresses and highlight them.
 
     private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
     private RealTimeFixedSizeBinaryDocument HexEditorDocumentBinaryExecutableFile
@@ -123,6 +132,7 @@ public partial class MainWindow : Window
             case COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY:
                 editor.Document = await Task.Run(() => HexEditorDocumentRAM);
                 editor.HexView.LineTransformers.Add(HexEditorPCHighlighter);
+                editor.HexView.LineTransformers.Add(HexEditorMARHighlighter);
                 break;
             case COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY:
                 editor.Document = await Task.Run(() => HexEditorDocumentCON);
@@ -146,9 +156,10 @@ public partial class MainWindow : Window
         string? binaryExecutableFilePath = TextBox_BinaryExecutableFilePath.Text;
         if (binaryExecutableFilePath == null)
         {
-            // TODO: Show error in message dialog
-            // See https://github.com/AvaloniaCommunity/MessageBox.Avalonia
-            Console.Error.WriteLine("Cannot initialize CPU: Missing binary file.");
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Unable to initialize CPU",
+                "Cannot initialize CPU: Missing binary file.",
+                ButtonEnum.Ok).ShowAsync();
             return;
         }
         TinyProc.Application.ExecutionContainer.Initialize(
@@ -208,14 +219,34 @@ public partial class MainWindow : Window
         string? sourceFilePath = TextBox_AssemblySourceFilePath.Text;
         if (string.IsNullOrWhiteSpace(sourceFilePath))
         {
-            Console.Error.WriteLine("No assembly file selection found. Aborting compilation.");
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Compile error",
+                "No assembly file selection found. Aborting compilation.",
+                ButtonEnum.Ok).ShowAsync();
             return;
         }
         string sourceFileText = File.ReadAllText(sourceFilePath);
 
         // Compile source file to binary and save to binary file
-        // Using async await, since the compilation process might take a long time
-        uint[] compiledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceFileText));
+        uint[] compiledBinary;
+        try
+        {
+            // Using async await, since the compilation process might take a long time
+            compiledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceFileText));
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Compile error",
+                $"Runtime compilation error. Message: {ex.Message}\nStacktrace:\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+
+            // TODO: Show SR contents as flags (text (e.g. ZR, NO, etc.), which is either highlighted or not)
+            // Add autofollow PC / MAR checkboxes
+            // CPU diagram with arrows (CU, ALU, GPRs, flags, busses->Add bus data and source/target to debug port)
+            // See other TODOs esp. in WindowMain.axaml
+        }
         TinyProc.Application.ExecutableWrapper programWrapper = new(compiledBinary);
         string outputBinaryFilePath = sourceFilePath + ".bin";
         if (sourceFilePath.EndsWith(".asm"))

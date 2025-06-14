@@ -179,7 +179,7 @@
             <!-- CPU registers -->
             <StackPanel Orientation="Horizontal">
                 <!-- Special-purpose registers -->
-                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto">
+                <Grid ColumnDefinitions="Auto, Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
                     <Label Grid.Row="0" Grid.Column="0">PC</Label>
                     <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
                         BorderBrush="{Binding BorderColorRegisterPC}" BorderThickness="2">
@@ -189,7 +189,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_PC_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_PC_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -198,15 +198,48 @@
                             </ToolTip.Tip>
                         </TextBlock>
                     </Border>
-                    <Label Grid.Row="1" Grid.Column="0">MAR</Label>
+                    <Label Grid.Row="1" Grid.Column="0">IR</Label>
                     <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                        BorderBrush="{Binding BorderColorRegisterIRA}" BorderThickness="2">
+                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRA"
+                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                            <ToolTip.Tip>
+                                <TextBlock TextAlignment="Left">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                            <Binding Path="ToolTip_IRA_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            <Binding Path="ToolTip_IRA_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </ToolTip.Tip>
+                        </TextBlock>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="2" Width="{Binding RegisterTextWidth}"
+                        BorderBrush="{Binding BorderColorRegisterIRB}" BorderThickness="2">
+                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRB"
+                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                            <ToolTip.Tip>
+                                <TextBlock TextAlignment="Left">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                            <Binding Path="ToolTip_IRB_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            <Binding Path="ToolTip_IRB_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </ToolTip.Tip>
+                        </TextBlock>
+                    </Border>
+                    <Label Grid.Row="3" Grid.Column="0">MAR</Label>
+                    <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
                         BorderBrush="{Binding BorderColorRegisterMAR}" BorderThickness="2">
                         <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMAR"
                                 FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_MAR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_MAR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -215,15 +248,15 @@
                             </ToolTip.Tip>
                         </TextBlock>
                     </Border>
-                    <Label Grid.Row="2" Grid.Column="0">MDR</Label>
-                    <Border Grid.Row="2" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                    <Label Grid.Row="4" Grid.Column="0">MDR</Label>
+                    <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
                         BorderBrush="{Binding BorderColorRegisterMDR}" BorderThickness="2">
                         <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMDR"
                                 FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_MDR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_MDR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -232,15 +265,15 @@
                             </ToolTip.Tip>
                         </TextBlock>
                     </Border>
-                    <Label Grid.Row="3" Grid.Column="0">SR</Label>
-                    <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                    <Label Grid.Row="5" Grid.Column="0">SR</Label>
+                    <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
                         BorderBrush="{Binding BorderColorRegisterSR}" BorderThickness="2">
                         <TextBlock TextAlignment="Center" Name="TextBlock_RegisterSR"
                                 FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_SR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_SR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -260,7 +293,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP1_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP1_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -277,7 +310,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP2_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP2_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -294,7 +327,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP3_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP3_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -311,7 +344,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP4_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP4_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -328,7 +361,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP5_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP5_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -345,7 +378,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP6_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP6_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -362,7 +395,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP7_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP7_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>
@@ -379,7 +412,7 @@
                             <ToolTip.Tip>
                                 <TextBlock TextAlignment="Left">
                                     <TextBlock.Text>
-                                        <MultiBinding StringFormat="Dec: {0} &#x0a;ASCII: {1}">
+                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
                                             <Binding Path="ToolTip_GP8_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                             <Binding Path="ToolTip_GP8_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
                                         </MultiBinding>

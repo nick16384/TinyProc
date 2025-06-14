@@ -12,10 +12,12 @@ public partial class CPU
         public uint Debug_PCValue { get => PC.ValueDirect; }
         // Instruction register 1
         private readonly Register IRA = new(0, true);
+        public uint Debug_IRAValue { get => IRA.ValueDirect; }
         // Instruction register 2
         // Two 32 bit instruction registers necessary, since an entire instruction
         // is double-word-aligned, meaning it occupies 64 bits.
         private readonly Register IRB = new(0, true);
+        public uint Debug_IRBValue { get => IRB.ValueDirect; }
         
         private readonly Dictionary<InternalRegisterCode, Register> CU_ADDRESSABLE_REGISTERS;
 

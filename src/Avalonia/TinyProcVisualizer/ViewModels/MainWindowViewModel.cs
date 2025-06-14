@@ -12,10 +12,12 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     public static int RegisterTextWidth { get => 80; }
     public static string BorderColorRegisterPC { get => "#00aaaa"; }
-    public static string BorderColorRegisterMAR { get => "#aa00aa"; }
-    public static string BorderColorRegisterMDR { get => "#aaaa00"; }
+    public static string BorderColorRegisterIRA { get => "#aa00aa"; }
+    public static string BorderColorRegisterIRB { get => BorderColorRegisterIRA; }
     public static string BorderColorRegisterSR { get => "#dd5500"; }
     public static string BorderColorRegisterGPR { get => "#333333"; }
+    public static string BorderColorRegisterMAR { get => "#993333"; }
+    public static string BorderColorRegisterMDR { get => "#bb3333"; }
 
     public static int HexEditorHeight { get => 450; }
     public static int HexEditorWidth { get => 365; }
@@ -25,14 +27,22 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public static double RegisterFontSize { get => 15.0; }
 
     public static string ToolTip_Register_Fallback { get => "None"; }
+
+    // Special-value registers
     public static string ToolTip_PC_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue); }
     public static string ToolTip_PC_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:D10}"; }
-    public static string ToolTip_MAR_ASCII { get => ToolTip_Register_Fallback; }
-    public static string ToolTip_MAR_Decimal { get => ToolTip_Register_Fallback; }
-    public static string ToolTip_MDR_ASCII { get => ToolTip_Register_Fallback; }
-    public static string ToolTip_MDR_Decimal { get => ToolTip_Register_Fallback; }
+    public static string ToolTip_IRA_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRAValue); }
+    public static string ToolTip_IRA_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRAValue:D10}"; }
+    public static string ToolTip_IRB_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRBValue); }
+    public static string ToolTip_IRB_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRBValue:D10}"; }
     public static string ToolTip_SR_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue); }
     public static string ToolTip_SR_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:D10}"; }
+    public static string ToolTip_MAR_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue); }
+    public static string ToolTip_MAR_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue:D10}"; }
+    public static string ToolTip_MDR_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MDRValue); }
+    public static string ToolTip_MDR_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MDRValue:D10}"; }
+
+    // General-purpose registers
     public static string ToolTip_GP1_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value); }
     public static string ToolTip_GP1_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value:D10}"; }
     public static string ToolTip_GP2_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value); }

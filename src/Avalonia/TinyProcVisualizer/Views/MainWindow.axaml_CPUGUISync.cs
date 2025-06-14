@@ -52,6 +52,7 @@ public partial class MainWindow : Window
         var updateTextBox_LastCycleTime = Dispatcher.UIThread.InvokeAsync(() => TextBox_LastCPUCycleTime.Text = lastCycleTime);
 
         // Sync and update register text blocks
+        // General-purpose registers
         string gp1Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value:X8}";
         string gp2Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value:X8}";
         string gp3Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP3Value:X8}";
@@ -60,8 +61,14 @@ public partial class MainWindow : Window
         string gp6Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP6Value:X8}";
         string gp7Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP7Value:X8}";
         string gp8Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP8Value:X8}";
+        // Special registers
         string pcValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:X8}";
+        string iraValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRAValue:X8}";
+        string irbValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.IRBValue:X8}";
         string srValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:X8}";
+        string marValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue:X8}";
+        string mdrValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MDRValue:X8}";
+        // General-purpose registers
         var updateTextBlock_GP1 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR1.Text = gp1Value);
         var updateTextBlock_GP2 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR2.Text = gp2Value);
         var updateTextBlock_GP3 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR3.Text = gp3Value);
@@ -70,14 +77,23 @@ public partial class MainWindow : Window
         var updateTextBlock_GP6 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR6.Text = gp6Value);
         var updateTextBlock_GP7 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR7.Text = gp7Value);
         var updateTextBlock_GP8 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR8.Text = gp8Value);
+        // Special registers
         var updateTextBlock_PC = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterPC.Text = pcValue);
+        var updateTextBlock_IRA = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterIRA.Text = iraValue);
+        var updateTextBlock_IRB = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterIRB.Text = irbValue);
         var updateTextBlock_SR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterSR.Text = srValue);
+        var updateTextBlock_MAR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterMAR.Text = marValue);
+        var updateTextBlock_MDR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterMDR.Text = mdrValue);
 
         // Sync and update register address highlighters
         HexEditorPCHighlighter.Ranges.Clear();
+        HexEditorMARHighlighter.Ranges.Clear();
         ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue * sizeof(uint);
         ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue + 2) * sizeof(uint);
         HexEditorPCHighlighter.Ranges.Add(new BitRange(pcStartByte, pcEndByte));
+        ulong marStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue * sizeof(uint);
+        ulong marEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue + 1) * sizeof(uint);
+        HexEditorMARHighlighter.Ranges.Add(new BitRange(marStartByte, marEndByte));
         var updateHexEditor1Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor1.HexView.InvalidateVisualLines);
         var updateHexEditor2Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor2.HexView.InvalidateVisualLines);
 
@@ -100,7 +116,11 @@ public partial class MainWindow : Window
                 updateTextBlock_GP7.GetTask(),
                 updateTextBlock_GP8.GetTask(),
                 updateTextBlock_PC.GetTask(),
+                updateTextBlock_IRA.GetTask(),
+                updateTextBlock_IRB.GetTask(),
                 updateTextBlock_SR.GetTask(),
+                updateTextBlock_MAR.GetTask(),
+                updateTextBlock_MDR.GetTask(),
                 updateHexEditor1Highlight.GetTask(),
                 updateHexEditor2Highlight.GetTask(),
                 syncRAM,
