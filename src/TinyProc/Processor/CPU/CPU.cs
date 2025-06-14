@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using TinyProc.Application;
 using TinyProc.Memory;
 
@@ -13,17 +14,6 @@ public partial class CPU
     private readonly Register GP6;
     private readonly Register GP7;
     private readonly Register GP8;
-
-    public uint Debug_GP1Value { get => GP1.ValueDirect; }
-    public uint Debug_GP2Value { get => GP2.ValueDirect; }
-    public uint Debug_GP3Value { get => GP3.ValueDirect; }
-    public uint Debug_GP4Value { get => GP4.ValueDirect; }
-    public uint Debug_GP5Value { get => GP5.ValueDirect; }
-    public uint Debug_GP6Value { get => GP6.ValueDirect; }
-    public uint Debug_GP7Value { get => GP7.ValueDirect; }
-    public uint Debug_GP8Value { get => GP8.ValueDirect; }
-    public uint Debug_PCValue { get => _CU.Debug_PCValue; }
-    public uint Debug_SRValue { get => _ALU.SR.ValueDirect; }
 
     private static readonly Register CONST_POS1_SPECIAL_REG = new(1u, true, false, false, true, true);
     private static readonly Register CONST_NEG1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
@@ -69,6 +59,8 @@ public partial class CPU
     private readonly ControlUnit _CU;
     private readonly ALU _ALU;
     private readonly MMU _MMU;
+    private readonly CPUDebugPort _debugPort;
+    public CPUDebugPort DebugPort { get => _debugPort; }
 
     public CPU(Dictionary<(uint, uint), RawMemory> rams, uint entryPoint)
     {
@@ -84,6 +76,7 @@ public partial class CPU
         _ALU = new ALU();
         _MMU = new MMU(null, (0x0, 0x0), rams);
         _CU = new ControlUnit(this, entryPoint, _ALU, _MMU);
+        _debugPort = new CPUDebugPort(this);
     }
 
     public void NextClock()

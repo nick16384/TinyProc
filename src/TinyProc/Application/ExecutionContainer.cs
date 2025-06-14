@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
+using static TinyProc.Processor.CPU.CPU;
 
 namespace TinyProc.Application;
 
@@ -13,6 +14,7 @@ public class ExecutionContainer
     private readonly RawMemory _mem1;
     private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
+    public CPUDebugPort CPUDebugPort { get => _cpu.DebugPort; }
 
     private ulong _currentCycle = 0;
     public ulong CurrentCycle { get => _currentCycle; }
@@ -125,19 +127,6 @@ public class ExecutionContainer
 
         return byteArray;
     }
-
-    public uint Debug_CPU_GP1Value { get => _cpu.Debug_GP1Value; }
-    public uint Debug_CPU_GP2Value { get => _cpu.Debug_GP2Value; }
-    public uint Debug_CPU_GP3Value { get => _cpu.Debug_GP3Value; }
-    public uint Debug_CPU_GP4Value { get => _cpu.Debug_GP4Value; }
-
-    public uint Debug_CPU_GP5Value { get => _cpu.Debug_GP5Value; }
-    public uint Debug_CPU_GP6Value { get => _cpu.Debug_GP6Value; }
-    public uint Debug_CPU_GP7Value { get => _cpu.Debug_GP7Value; }
-    public uint Debug_CPU_GP8Value { get => _cpu.Debug_GP8Value; }
-
-    public uint Debug_CPU_PCValue { get => _cpu.Debug_PCValue; }
-    public uint Debug_CPU_SRValue { get => _cpu.Debug_SRValue; }
 
     public void LaunchCycleLoop()
     {

@@ -25,30 +25,30 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public static double RegisterFontSize { get => 15.0; }
 
     public static string ToolTip_Register_Fallback { get => "None"; }
-    public static string ToolTip_PC_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue); }
-    public static string ToolTip_PC_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue:D10}"; }
+    public static string ToolTip_PC_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue); }
+    public static string ToolTip_PC_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:D10}"; }
     public static string ToolTip_MAR_ASCII { get => ToolTip_Register_Fallback; }
     public static string ToolTip_MAR_Decimal { get => ToolTip_Register_Fallback; }
     public static string ToolTip_MDR_ASCII { get => ToolTip_Register_Fallback; }
     public static string ToolTip_MDR_Decimal { get => ToolTip_Register_Fallback; }
-    public static string ToolTip_SR_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_SRValue); }
-    public static string ToolTip_SR_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_SRValue:D10}"; }
-    public static string ToolTip_GP1_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP1Value); }
-    public static string ToolTip_GP1_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP1Value:D10}"; }
-    public static string ToolTip_GP2_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP2Value); }
-    public static string ToolTip_GP2_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP2Value:D10}"; }
-    public static string ToolTip_GP3_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP3Value); }
-    public static string ToolTip_GP3_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP3Value:D10}"; }
-    public static string ToolTip_GP4_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP4Value); }
-    public static string ToolTip_GP4_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP4Value:D10}"; }
-    public static string ToolTip_GP5_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP5Value); }
-    public static string ToolTip_GP5_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP5Value:D10}"; }
-    public static string ToolTip_GP6_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP6Value); }
-    public static string ToolTip_GP6_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP6Value:D10}"; }
-    public static string ToolTip_GP7_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP7Value); }
-    public static string ToolTip_GP7_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP7Value:D10}"; }
-    public static string ToolTip_GP8_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP8Value); }
-    public static string ToolTip_GP8_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP8Value:D10}"; }
+    public static string ToolTip_SR_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue); }
+    public static string ToolTip_SR_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:D10}"; }
+    public static string ToolTip_GP1_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value); }
+    public static string ToolTip_GP1_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value:D10}"; }
+    public static string ToolTip_GP2_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value); }
+    public static string ToolTip_GP2_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value:D10}"; }
+    public static string ToolTip_GP3_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP3Value); }
+    public static string ToolTip_GP3_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP3Value:D10}"; }
+    public static string ToolTip_GP4_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP4Value); }
+    public static string ToolTip_GP4_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP4Value:D10}"; }
+    public static string ToolTip_GP5_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP5Value); }
+    public static string ToolTip_GP5_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP5Value:D10}"; }
+    public static string ToolTip_GP6_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP6Value); }
+    public static string ToolTip_GP6_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP6Value:D10}"; }
+    public static string ToolTip_GP7_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP7Value); }
+    public static string ToolTip_GP7_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP7Value:D10}"; }
+    public static string ToolTip_GP8_ASCII { get => ConvertWordToASCII(TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP8Value); }
+    public static string ToolTip_GP8_Decimal { get => $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP8Value:D10}"; }
 
     private static string ConvertWordToASCII(uint word)
     {

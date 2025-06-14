@@ -52,16 +52,16 @@ public partial class MainWindow : Window
         var updateTextBox_LastCycleTime = Dispatcher.UIThread.InvokeAsync(() => TextBox_LastCPUCycleTime.Text = lastCycleTime);
 
         // Sync and update register text blocks
-        string gp1Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP1Value:X8}";
-        string gp2Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP2Value:X8}";
-        string gp3Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP3Value:X8}";
-        string gp4Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP4Value:X8}";
-        string gp5Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP5Value:X8}";
-        string gp6Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP6Value:X8}";
-        string gp7Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP7Value:X8}";
-        string gp8Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_GP8Value:X8}";
-        string pcValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue:X8}";
-        string srValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_SRValue:X8}";
+        string gp1Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value:X8}";
+        string gp2Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value:X8}";
+        string gp3Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP3Value:X8}";
+        string gp4Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP4Value:X8}";
+        string gp5Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP5Value:X8}";
+        string gp6Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP6Value:X8}";
+        string gp7Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP7Value:X8}";
+        string gp8Value = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.GP8Value:X8}";
+        string pcValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:X8}";
+        string srValue = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:X8}";
         var updateTextBlock_GP1 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR1.Text = gp1Value);
         var updateTextBlock_GP2 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR2.Text = gp2Value);
         var updateTextBlock_GP3 = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterGPR3.Text = gp3Value);
@@ -75,8 +75,8 @@ public partial class MainWindow : Window
 
         // Sync and update register address highlighters
         HexEditorPCHighlighter.Ranges.Clear();
-        ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue * sizeof(uint);
-        ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.Debug_CPU_PCValue + 2) * sizeof(uint);
+        ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue * sizeof(uint);
+        ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue + 2) * sizeof(uint);
         HexEditorPCHighlighter.Ranges.Add(new BitRange(pcStartByte, pcEndByte));
         var updateHexEditor1Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor1.HexView.InvalidateVisualLines);
         var updateHexEditor2Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor2.HexView.InvalidateVisualLines);
