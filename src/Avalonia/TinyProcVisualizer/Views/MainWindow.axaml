@@ -141,7 +141,6 @@
                 MinWidth="{Binding HexEditorWidth}"
                 FontFamily="{StaticResource SourceCodeProFont}"
                 FontSize="{Binding HexEditorFontSize}"
-                IsEnabled="False"
                 Name="HexEditor1">
                     <!-- Define columns to display -->
                     <avaloniaHex:HexEditor.Columns>
@@ -167,7 +166,6 @@
                 MinWidth="{Binding HexEditorWidth}"
                 FontFamily="{StaticResource SourceCodeProFont}"
                 FontSize="{Binding HexEditorFontSize}"
-                IsEnabled="True"
                 Name="HexEditor2">
                     <!-- Define columns to display -->
                     <avaloniaHex:HexEditor.Columns>

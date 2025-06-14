@@ -104,9 +104,11 @@ public class ExecutionContainer
         // Note: Parallel.For just makes this much slower
         for (int i = 0; i < byteArraySize / sizeof(uint); i++)
         {
+            // Original check for avoiding reverse when unnecessary. Has proven to be not much faster
+            // than the usual approach currently in use. However, I am keeping this here just in case I need it later.
             // Don't reverse bytes that are all zero (fast check, required pointers)
             // Makes the endian reversing a LOT faster
-            unsafe
+            /*unsafe
             {
                 fixed (byte* byteArrayPtr = &byteArray[i * 4])
                 {
@@ -114,7 +116,10 @@ public class ExecutionContainer
                     // biasing the branch predictor to end this loop cycle here and not slowing down this if-statement.
                     if (*(uint*)byteArrayPtr == 0) break;
                 }
-            }
+            }*/
+            // If all bytes are equal, no reverse is needed
+            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
+                break;
             Array.Reverse(byteArray, i * 4, 4);
         }
 

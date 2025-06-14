@@ -118,20 +118,17 @@ public partial class MainWindow : Window
         {
             case COMBOBOX_HEXEDITOR_SOURCE_BINARYEXECUTABLE:
                 // FIXME: Make editor still scrollable while preventing edits.
-                editor.IsEnabled = false;
                 editor.Document = HexEditorDocumentBinaryExecutableFile;
                 break;
             case COMBOBOX_HEXEDITOR_SOURCE_WORKINGMEMORY:
-                editor.IsEnabled = true;
                 editor.Document = await Task.Run(() => HexEditorDocumentRAM);
                 editor.HexView.LineTransformers.Add(HexEditorPCHighlighter);
                 break;
             case COMBOBOX_HEXEDITOR_SOURCE_CONSOLEMEMORY:
-                editor.IsEnabled = true;
                 editor.Document = await Task.Run(() => HexEditorDocumentCON);
                 break;
             default:
-                editor.IsEnabled = true;
+                // Default actions (e.g. reenable edits (see FIXME above))
                 return;
         }
     }
@@ -239,13 +236,23 @@ public partial class MainWindow : Window
     private void CheckBox_LogErrorMessages_OnClick(object? sender, RoutedEventArgs e)
         => TinyProc.Application.Logging.SuppressErrorMessages = !CheckBox_LogErrorMessages.IsChecked.Value;
 
+    // Update the TextBox, that shows the GUIs processing overhead time for a cycle
+    private void UpdateGUIOverheadTimeTextBox(TimeSpan overheadTime)
+    {
+        int overheadTimeMicrosecondsTotal = overheadTime.Milliseconds * 1000 + overheadTime.Microseconds;
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            TextBox_CycleTimeGUIOverhead.Text = $"+{overheadTimeMicrosecondsTotal:N0}us";
+        });
+    }
+
     private async void Button_CPUStepSingleCycle_OnClick(object? sender, RoutedEventArgs e)
     {
         Button_CPUStepSingleCycle.IsEnabled = false;
         Stopwatch cycleStopwatch = Stopwatch.StartNew();
         TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
         await Task.Run(SyncCPUandGUIData);
-        TextBox_CycleTimeGUIOverhead.Text = $"+{cycleStopwatch.ElapsedMilliseconds * 1000 + cycleStopwatch.Elapsed.Microseconds}us";
+        UpdateGUIOverheadTimeTextBox(cycleStopwatch.Elapsed);
         Button_CPUStepSingleCycle.IsEnabled = true;
     }
 
@@ -256,9 +263,9 @@ public partial class MainWindow : Window
         bool updateMemoryRT = CheckBox_UpdateMemoryRealtime.IsChecked.GetValueOrDefault(false);
         if (!updateMemoryRT)
             TextBox_CycleTimeGUIOverhead.Text = "-";
-            
-        Stopwatch cycleStopwatch = Stopwatch.StartNew();
-        await Task.Run(async () =>
+
+        Stopwatch cycleStopwatch = new();
+        await Task.Run(() =>
         {
             _haltCPUClock = false;
             while (!_haltCPUClock)
@@ -268,12 +275,7 @@ public partial class MainWindow : Window
                 {
                     cycleStopwatch.Restart();
                     SyncCPUandGUIData();
-                    Dispatcher.UIThread.Invoke(() =>
-                    {
-                        TextBox_CycleTimeGUIOverhead.Text =
-                            $"+{cycleStopwatch.ElapsedMilliseconds * 1000 + cycleStopwatch.Elapsed.Microseconds}us";
-                    });
-                    
+                    UpdateGUIOverheadTimeTextBox(cycleStopwatch.Elapsed);
                 }
             }
         });
