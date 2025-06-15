@@ -22,22 +22,6 @@ STORI (Store immediate value at address in register)
 
 Add bus and register for ALU Opcode instead of directly setting from CU.
 
-Today:
-- Change ALU opcode struct to be more usable [done]
-- Add one abstract Instruction class, which all instruction type classes derive from [done]
-- Remove Register ReadWriteAccess enum; Add the following bools and actually handle their cases: [done]
-1. WriteAllowed (default true)
-2. ErrorOnIllegalWrite (default true)
-3. ReadAllowed (default true)
-4. ErrorOnIllegalRead (default true)
-- Change memory to use an uint[] array instead of a bool[] array [done]
-- Register codes: Pack into enum with "enum RegisterCode : uint" header [done]
-- Reformat internal bus code [done]
-- Rename e.g. CV_P1 register to more understandable Const_Pos1 [done]
-- Attach RawMemory and ConsoleMemory to Bus [done]
--> Fix memory being completely filled with zeroes.
-- Convert hex numbers and some logging to lowercase [done]
-
 - Make code C# language rule conform and as uniform as possible
 -> Case of variables, preceding underscore, etc.
 
@@ -55,3 +39,18 @@ https://github.com/dotnet/runtime/issues/110502
 Temporary fix: Run "reset" after the error occurs
 
 Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
+
+Today:
+- Replace run/step/stop buttons with play/step/pause buttons with icons [in progress]
+-> Place run/pause/stop/ff buttons in toolbar above everything
+1. play / resume button
+2. pause button
+3. step button
+4. fast-forward (ff) button: same as play, but without live updating
+- Work on unsafe uint->byte conversion
+- Add more options to running
+1. run / ff until memory address X has value Y
+2. run / ff until register X has value Y
+3. run / ff for N cycles
+5. wait N.M ms between cycles (exclude / include cycle runtime + GUI overhead)
+- Add source code view component

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
@@ -75,15 +76,19 @@ public class ExecutionContainer
         if (INSTANCE0 == null)
             INSTANCE0 = this;
     }
+
+    public uint ReadRAMDirect(uint address) => _mem1.ReadDirect(address);
     
     public void WriteRAMDirect(uint address, int uintOffset, byte value)
         => _mem1.WriteDirect(address, _mem1.ReadDirect(address) & ((uint)value << (uintOffset * 8)));
     // Returns the bytes that currently reside within the working memory.
     // Note that using a byte[] instead of a uint[][] is not guaranteed to return all RAM data (because of C# limitations).
+    // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     public byte[] LiveRAMBytes { get => UIntArrayToByteArray(_mem1.Data[0]); }
+
+    private static List<long> timesEndian = [];
     
     private static byte[] UIntArrayToByteArray(uint[] uintArray)
     {
@@ -103,27 +108,67 @@ public class ExecutionContainer
         // Copies the entire memory chunk of the uint array to the byte array
         Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
 
-        // Note: Parallel.For just makes this much slower
-        for (int i = 0; i < byteArraySize / sizeof(uint); i++)
+        Stopwatch sw = Stopwatch.StartNew();
+
+        /*for (int i = 0; i < byteArraySize / sizeof(uint); i++)
         {
-            // Original check for avoiding reverse when unnecessary. Has proven to be not much faster
-            // than the usual approach currently in use. However, I am keeping this here just in case I need it later.
-            // Don't reverse bytes that are all zero (fast check, required pointers)
-            // Makes the endian reversing a LOT faster
+            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
+                continue;
+            Array.Reverse(byteArray, i * 4, 4);
+        }*/
+        
+        // TODO: Make this pointer magic work
+        /*unsafe
+        {
+            fixed (byte* byteArrayPtr = byteArray)
+            {
+                uint[] uintArray2 = new uint[uintArray.Length];
+                Buffer.BlockCopy(uintArray, 0, uintArray2, 0, uintArray.Length * sizeof(uint));
+                BinaryPrimitives.ReverseEndianness(uintArray, uintArray2);
+                fixed (uint* uintArrayPtr = uintArray2)
+                {
+                    return (byte[])(byte*)uintArrayPtr;
+                }
+            }
+        }*/
+
+        Parallel.For(0, byteArraySize / sizeof(uint), i =>
+        {
+            // If all bytes are equal, no reverse is needed
+            // Reduces runtime by around 30%
+            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
+                return;
+            Array.Reverse(byteArray, i * 4, 4);
+
+            // Unused method for unsafe endian reversing
+            // Sometimes faster, sometimes slower than safe endian reverse
+            // Some timing tests below; ST = Single-threaded (no Parallel.For); AOT = Ahead-of-time compiled
+            // Avg safe:          17.5ms
+            // Avg safe AOT:      07.6ms
+            // Avg safe ST:       46.8ms
+            // Avg safe ST AOT:   18.5ms
+            // Avg unsafe:        16.6ms
+            // Avg unsafe AOT:    07.6ms
+            // Avg unsafe ST:     52.9ms
+            // Avg unsafe ST AOT: 14.6ms
             /*unsafe
             {
                 fixed (byte* byteArrayPtr = &byteArray[i * 4])
                 {
-                    // Since most of the memory is usually large zeroed sections, this branch is taken most of the time,
-                    // biasing the branch predictor to end this loop cycle here and not slowing down this if-statement.
-                    if (*(uint*)byteArrayPtr == 0) break;
+                    uint* uintLittleEndianPtr = (uint*)byteArrayPtr;
+                    uint uintLittleEndian = *uintLittleEndianPtr;
+                    if (uintLittleEndian == 0 || uintLittleEndian == 0xFFFFFFFF) return;
+                    uint uintBigEndian =
+                        ((uintLittleEndian & 0xFF000000) >> 24) |
+                        ((uintLittleEndian & 0x00FF0000) >> 08) |
+                        ((uintLittleEndian & 0x0000FF00) << 08) |
+                        ((uintLittleEndian & 0x000000FF) << 24);
+                    *uintLittleEndianPtr = uintBigEndian;
                 }
             }*/
-            // If all bytes are equal, no reverse is needed
-            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
-                break;
-            Array.Reverse(byteArray, i * 4, 4);
-        }
+        });
+        timesEndian.Add(sw.ElapsedMilliseconds);
+        Console.WriteLine($"Endian {sw.ElapsedMilliseconds}ms Avg {timesEndian.Average()}ms");
 
         return byteArray;
     }

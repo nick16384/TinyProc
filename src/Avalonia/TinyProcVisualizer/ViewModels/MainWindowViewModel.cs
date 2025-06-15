@@ -74,10 +74,12 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         return new string([c1, c2, c3, c4]);
     }
 
+    public static int Buttons_CycleControl_SizeXY { get => 16; }
+
     #region Auto-updated properties
 
     private long _memoryUsageMebibytes = 0;
-    public string MemoryUsage { get => $"RAM Usage: {_memoryUsageMebibytes}MiB"; }
+    public string MemoryUsage { get => $"Host RAM Usage: {_memoryUsageMebibytes}MiB"; }
 
     public MainWindowViewModel() : base()
     {

@@ -6,8 +6,8 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="1200"
-        Height="700"
+        Width="1350"
+        Height="732"
         x:Class="TinyProcVisualizer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -19,415 +19,493 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <!-- Star (*) sizing doesn*t work for some reason, so fixed size is required. -->
-            <RowDefinition Height="685" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <StackPanel>
+        <!-- Toolbar -->
+        <StackPanel Orientation="Horizontal" Margin="2">
+            <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="True" Margin="0, 0, 20, 0">Init CPU</Button>
+            <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop"
+                IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                    Source="avares://TinyProcVisualizer/Resources/Icons/button_pause.png"
+                    RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Button>
+            <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely"
+                IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                    Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
+                    RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Button>
+            <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle"
+                IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                    Source="avares://TinyProcVisualizer/Resources/Icons/button_step.png"
+                    RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Button>
+            <Button Click="Button_CPUFastForwardIndefinitely_OnClick" Name="Button_CPUFastForwardIndefinitely"
+                IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                    Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
+                    RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Button>
+        </StackPanel>
 
-        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Margin="10, 10, 10, 10">
-            
-            <!-- File selectors, "compile" button -->
-            <Label>File selection</Label>
-            <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
-                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+        <!-- Main grid -->
+        <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <!-- Star (*) sizing doesn*t work for some reason, so fixed size is required. -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-                    <!-- TODO: Implement file drag and drop -->
-                    <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                        Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
-                    <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
-                    <Button Grid.Row="1" Grid.Column="0" Margin="0, 5, 0, 5"
-                        Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
-                        == Compile ==
-                    </Button>
-                    <TextBox Grid.Row="2" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                        Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
-                    <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
-                </Grid>
-            </Border>
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Margin="10, 10, 10, 10">
 
-            <!-- CPU control and global status -->
-            <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto" Margin="0, 20, 0, 0">
-                <Label Grid.Row="0" Grid.Column="0">CPU control panel</Label>
-                <Border Grid.Row="1" Grid.Column="0"
-                    BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
-                    <StackPanel>
-                        <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="true">Initialize CPU</Button>
-                        <Button Click="Button_CPUStepSingleCycle_OnClick" Name="Button_CPUStepSingleCycle" IsEnabled="False">Step</Button>
-                        <CheckBox Name="CheckBox_UpdateMemoryRealtime" IsChecked="False">
-                            <StackPanel>
-                                <TextBlock>Update CPU data</TextBlock>
-                                <TextBlock>in real-time (slow)</TextBlock>
+                <!-- CPU control and global status -->
+                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto" Margin="0, 20, 0, 0">
+                    <Label Grid.Row="0" Grid.Column="0">Advanced cycle control</Label>
+                    <Border Grid.Row="1" Grid.Column="0"
+                        BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
+                        <StackPanel>
+                            <!-- Fine-grained CPU cycling control the toolbar does not provide -->
+                            <!-- Run CPU for N cycles -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Click="Button_CPURunForNCycles_OnClick" Name="Button_CPURunForNCycles"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
+                                </Button>
+                                <Button Click="Button_CPUFFForNCycles_OnClick" Name="Button_CPUFFForNCycles"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" />
+                                </Button>
+                                <Label Margin="20, 0, 0, 0">Cycles:</Label>
+                                <!-- TODO: Make this work with a spinner instead of a TextBox -->
+                                <TextBox Name="TextBox_CPURunForNCycles_CycleCount" />
                             </StackPanel>
-                        </CheckBox>
-                        <Button Click="Button_CPURunIndefinitely_OnClick" Name="Button_CPURunIndefinitely" IsEnabled="False">Run</Button>
-                        <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop" IsEnabled="False">Stop</Button>
-                    </StackPanel>
+                            <!-- Run CPU until memory address X has value Y -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Click="Button_CPURunUntil_MemEqValue_OnClick" Name="Button_CPURunUntil_MemEqValue"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
+                                </Button>
+                                <Button Click="Button_CPUFFUntil_MemEqValue_OnClick" Name="Button_CPUFFUntil_MemEqValue"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" />
+                                </Button>
+                                <Label Margin="20, 0, 0, 0">Addr:</Label>
+                                <TextBox Name="TextBox_CPURunUntil_MemEqValue_Address" Width="90" />
+                                <Label>Value:</Label>
+                                <TextBox Name="TextBox_CPURunUntil_MemEqValue_Value" Width="90" />
+                            </StackPanel>
+                            <!-- Run CPU until register X has value Y -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Click="Button_CPURunUntil_RegEqValue_OnClick" Name="Button_CPURunUntil_RegEqValue"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
+                                </Button>
+                                <Button Click="Button_CPUFFUntil_RegEqValue_OnClick" Name="Button_CPUFFUntil_RegEqValue"
+                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                    <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
+                                        Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" />
+                                </Button>
+                                <ComboBox Margin="20, 0, 0, 0">
+                                    <ComboBoxItem>GPR 1</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1"
+                        BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
+                        <StackPanel>
+                            <Label>Cycle count:</Label>
+                            <TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <Label>Cycle time:</Label>
+                            <TextBox Name="TextBox_LastCPUCycleTime" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <Label>UI overhead:</Label>
+                            <TextBox Name="TextBox_CycleTimeGUIOverhead" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+                
+                <!-- File selectors, "compile" button -->
+                <Label>File selection</Label>
+                <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
+                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+
+                        <!-- TODO: Implement file drag and drop -->
+                        <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
+                            Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
+                        <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
+                        <Button Grid.Row="1" Grid.Column="0" Margin="0, 5, 0, 5"
+                            Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
+                            == Compile ==
+                        </Button>
+                        <TextBox Grid.Row="2" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
+                            Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
+                        <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
+                    </Grid>
                 </Border>
-                <Label Grid.Row="0" Grid.Column="1">Global status</Label>
-                <Border Grid.Row="1" Grid.Column="1"
-                    BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
+
+                <!-- Logging -->
+                <Label Margin="0, 20, 0, 0">Logging</Label>
+                <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                     <StackPanel>
-                        <Label>Cycle count:</Label>
-                        <TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
-                        <Label>Cycle time:</Label>
-                        <TextBox Name="TextBox_LastCPUCycleTime" IsEnabled="False" TextAlignment="Right">-</TextBox>
-                        <Label>UI overhead:</Label>
-                        <TextBox Name="TextBox_CycleTimeGUIOverhead" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                        <CheckBox IsChecked="False" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
+                            Log debug messages
+                        </CheckBox>
+                        <CheckBox IsChecked="False" Name="CheckBox_LogInfoMessages" Click="CheckBox_LogInfoMessages_OnClick">
+                            Log info messages
+                        </CheckBox>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogWarningMessages" Click="CheckBox_LogWarningMessages_OnClick">
+                            Log warning messages
+                        </CheckBox>
+                        <CheckBox IsChecked="True" Name="CheckBox_LogErrorMessages" Click="CheckBox_LogErrorMessages_OnClick">
+                            Log error messages
+                        </CheckBox>
                     </StackPanel>
                 </Border>
-            </Grid>
-
-            <!-- Logging -->
-            <Label Margin="0, 20, 0, 0">Logging</Label>
-            <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
-                <StackPanel>
-                    <CheckBox IsChecked="True" Name="CheckBox_LogDebugMessages" Click="CheckBox_LogDebugMessages_OnClick">
-                        Log debug messages
-                    </CheckBox>
-                    <CheckBox IsChecked="True" Name="CheckBox_LogInfoMessages" Click="CheckBox_LogInfoMessages_OnClick">
-                        Log info messages
-                    </CheckBox>
-                    <CheckBox IsChecked="True" Name="CheckBox_LogWarningMessages" Click="CheckBox_LogWarningMessages_OnClick">
-                        Log warning messages
-                    </CheckBox>
-                    <CheckBox IsChecked="True" Name="CheckBox_LogErrorMessages" Click="CheckBox_LogErrorMessages_OnClick">
-                        Log error messages
-                    </CheckBox>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-
-        <!-- Source assembly editor and compiler -->
-        <StackPanel Grid.Row="0" Grid.Column="1">
-            <ScrollViewer VerticalScrollBarVisibility="Visible" Width="100" Height="200">
-                <TextBox Name="SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True" Width="100" Height="300">
-                    Source code text placeholder
-                </TextBox>
-            </ScrollViewer>
-            <!-- Add button: Load assembly source file... (opens file selection dialog) -->
-            <!-- Add button: Open binary file... (opens selection dialog) -->
-            <!-- Add button: Decompile from [source] -->
-            <!-- Add decompilation [source] selector (ComboBox) -->
-            <!-- Add button: Compile and save to... (opens save dialog) -->
-            <!-- Add button: Compile and load to memory (also resets CPU state) -->
-            <!-- After all above completed: Remove file selection (asm, bin), compile button, and "Init CPU" button -->
-        </StackPanel>
-
-        <!-- CPU status (memory, registers etc.) -->
-        <StackPanel Grid.Row="0" Grid.Column="2">
-            <!-- Hex editors -->
-            <Grid Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
-                <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
-                    <ComboBox DockPanel.Dock="Left" SelectedIndex="0"
-                        Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
-                        <ComboBoxItem>Binary executable</ComboBoxItem>
-                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                        <ComboBoxItem>Virtual memory</ComboBoxItem>
-                    </ComboBox>
-                    <Button DockPanel.Dock="Right">Override</Button>
-                    <Button DockPanel.Dock="Right">Refresh</Button>
-                </DockPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="0"
-                MinHeight="{Binding HexEditorHeight}"
-                MinWidth="{Binding HexEditorWidth}"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                FontSize="{Binding HexEditorFontSize}"
-                Name="HexEditor1">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
-
-                <DockPanel Grid.Row="0" Grid.Column="1" Margin="5, 0, 5, 5" LastChildFill="False">
-                    <ComboBox DockPanel.Dock="Left" SelectedIndex="1"
-                        Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
-                        <ComboBoxItem>Binary executable</ComboBoxItem>
-                        <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                        <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                    </ComboBox>
-                    <Button DockPanel.Dock="Right">Override</Button>
-                    <Button DockPanel.Dock="Right">Refresh</Button>
-                </DockPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="1"
-                MinHeight="{Binding HexEditorHeight}"
-                MinWidth="{Binding HexEditorWidth}"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                FontSize="{Binding HexEditorFontSize}"
-                Name="HexEditor2">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
-            </Grid>
-
-            <!-- CPU registers -->
-            <StackPanel Orientation="Horizontal">
-                <!-- Special-purpose registers -->
-                <Grid ColumnDefinitions="Auto, Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
-                    <Label Grid.Row="0" Grid.Column="0">PC</Label>
-                    <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterPC}" BorderThickness="2">
-                        <!-- TODO: Make this more elegant / compact -->
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterPC"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_PC_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_PC_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="1" Grid.Column="0">IR</Label>
-                    <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterIRA}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRA"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_IRA_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_IRA_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Border Grid.Row="1" Grid.Column="2" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterIRB}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRB"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_IRB_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_IRB_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="3" Grid.Column="0">MAR</Label>
-                    <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterMAR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMAR"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_MAR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_MAR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="4" Grid.Column="0">MDR</Label>
-                    <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterMDR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMDR"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_MDR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_MDR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="5" Grid.Column="0">SR</Label>
-                    <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterSR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterSR"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_SR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_SR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                </Grid>
-                <!-- General-purpose registers (GPRs) -->
-                <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto" Margin="20, 0, 0, 0">
-                    <Label Grid.Row="0" Grid.Column="0">GPR 1</Label>
-                    <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR1"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP1_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP1_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="1" Grid.Column="0">GPR 2</Label>
-                    <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR2"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP2_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP2_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="2" Grid.Column="0">GPR 3</Label>
-                    <Border Grid.Row="2" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR3"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP3_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP3_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="3" Grid.Column="0">GPR 4</Label>
-                    <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR4"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP4_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP4_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="4" Grid.Column="0">GPR 5</Label>
-                    <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR5"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP5_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP5_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="5" Grid.Column="0">GPR 6</Label>
-                    <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR6"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP6_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP6_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="6" Grid.Column="0">GPR 7</Label>
-                    <Border Grid.Row="6" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR7"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP7_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP7_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                    <Label Grid.Row="7" Grid.Column="0">GPR 8</Label>
-                    <Border Grid.Row="7" Grid.Column="1" Width="{Binding RegisterTextWidth}"
-                        BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
-                        <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR8"
-                                FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
-                            <ToolTip.Tip>
-                                <TextBlock TextAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
-                                            <Binding Path="ToolTip_GP8_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                            <Binding Path="ToolTip_GP8_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </ToolTip.Tip>
-                        </TextBlock>
-                    </Border>
-                </Grid>
             </StackPanel>
-        </StackPanel>
 
-        <!-- Add console memory hex editor and vmem display (video buffer 0/1) -->
+            <!-- Source assembly editor and compiler -->
+            <StackPanel Grid.Row="0" Grid.Column="1">
+                <ScrollViewer VerticalScrollBarVisibility="Visible" Width="100" Height="200">
+                    <TextBox Name="SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True" Width="100" Height="300">
+                        Source code text placeholder
+                    </TextBox>
+                </ScrollViewer>
+                <!-- Add button: Load assembly source file... (opens file selection dialog) -->
+                <!-- Add button: Open binary file... (opens selection dialog) -->
+                <!-- Add button: Decompile from [source] -->
+                <!-- Add decompilation [source] selector (ComboBox) -->
+                <!-- Add button: Compile and save to... (opens save dialog) -->
+                <!-- Add button: Compile and load to memory (also resets CPU state) -->
+                <!-- After all above completed: Remove file selection (asm, bin), compile button, and "Init CPU" button -->
+            </StackPanel>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
-    </Grid>
+            <!-- CPU status (memory, registers etc.) -->
+            <StackPanel Grid.Row="0" Grid.Column="2">
+                <!-- Hex editors -->
+                <Grid Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
+                    <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
+                        <ComboBox DockPanel.Dock="Left" SelectedIndex="0"
+                            Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
+                            <ComboBoxItem>Binary executable</ComboBoxItem>
+                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                            <ComboBoxItem>Virtual memory</ComboBoxItem>
+                        </ComboBox>
+                        <Button DockPanel.Dock="Right">Override</Button>
+                        <Button DockPanel.Dock="Right">Refresh</Button>
+                    </DockPanel>
+                    <avaloniaHex:HexEditor
+                    Grid.Row="1" Grid.Column="0"
+                    MinHeight="{Binding HexEditorHeight}"
+                    MinWidth="{Binding HexEditorWidth}"
+                    FontFamily="{StaticResource SourceCodeProFont}"
+                    FontSize="{Binding HexEditorFontSize}"
+                    Name="HexEditor1">
+                        <!-- Define columns to display -->
+                        <avaloniaHex:HexEditor.Columns>
+                            <rendering:OffsetColumn />
+                            <rendering:HexColumn />
+                            <rendering:AsciiColumn />
+                        </avaloniaHex:HexEditor.Columns>
+                    </avaloniaHex:HexEditor>
+
+                    <DockPanel Grid.Row="0" Grid.Column="1" Margin="5, 0, 5, 5" LastChildFill="False">
+                        <ComboBox DockPanel.Dock="Left" SelectedIndex="1"
+                            Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
+                            <ComboBoxItem>Binary executable</ComboBoxItem>
+                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
+                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
+                        </ComboBox>
+                        <Button DockPanel.Dock="Right">Override</Button>
+                        <Button DockPanel.Dock="Right">Refresh</Button>
+                    </DockPanel>
+                    <avaloniaHex:HexEditor
+                    Grid.Row="1" Grid.Column="1"
+                    MinHeight="{Binding HexEditorHeight}"
+                    MinWidth="{Binding HexEditorWidth}"
+                    FontFamily="{StaticResource SourceCodeProFont}"
+                    FontSize="{Binding HexEditorFontSize}"
+                    Name="HexEditor2">
+                        <!-- Define columns to display -->
+                        <avaloniaHex:HexEditor.Columns>
+                            <rendering:OffsetColumn />
+                            <rendering:HexColumn />
+                            <rendering:AsciiColumn />
+                        </avaloniaHex:HexEditor.Columns>
+                    </avaloniaHex:HexEditor>
+                </Grid>
+
+                <!-- CPU registers -->
+                <StackPanel Orientation="Horizontal">
+                    <!-- Special-purpose registers -->
+                    <Grid ColumnDefinitions="Auto, Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
+                        <Label Grid.Row="0" Grid.Column="0">PC</Label>
+                        <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterPC}" BorderThickness="2">
+                            <!-- TODO: Make this more elegant / compact -->
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterPC"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_PC_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_PC_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="1" Grid.Column="0">IR</Label>
+                        <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterIRA}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRA"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_IRA_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_IRA_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="2" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterIRB}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterIRB"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_IRB_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_IRB_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="3" Grid.Column="0">MAR</Label>
+                        <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterMAR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMAR"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_MAR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_MAR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="4" Grid.Column="0">MDR</Label>
+                        <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterMDR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterMDR"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_MDR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_MDR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="5" Grid.Column="0">SR</Label>
+                        <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterSR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterSR"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_SR_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_SR_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                    </Grid>
+                    <!-- General-purpose registers (GPRs) -->
+                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto" Margin="20, 0, 0, 0">
+                        <Label Grid.Row="0" Grid.Column="0">GPR 1</Label>
+                        <Border Grid.Row="0" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR1"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP1_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP1_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="1" Grid.Column="0">GPR 2</Label>
+                        <Border Grid.Row="1" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR2"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP2_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP2_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="2" Grid.Column="0">GPR 3</Label>
+                        <Border Grid.Row="2" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR3"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP3_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP3_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="3" Grid.Column="0">GPR 4</Label>
+                        <Border Grid.Row="3" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR4"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP4_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP4_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="4" Grid.Column="0">GPR 5</Label>
+                        <Border Grid.Row="4" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR5"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP5_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP5_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="5" Grid.Column="0">GPR 6</Label>
+                        <Border Grid.Row="5" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR6"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP6_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP6_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="6" Grid.Column="0">GPR 7</Label>
+                        <Border Grid.Row="6" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR7"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP7_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP7_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                        <Label Grid.Row="7" Grid.Column="0">GPR 8</Label>
+                        <Border Grid.Row="7" Grid.Column="1" Width="{Binding RegisterTextWidth}"
+                            BorderBrush="{Binding BorderColorRegisterGPR}" BorderThickness="2">
+                            <TextBlock TextAlignment="Center" Name="TextBlock_RegisterGPR8"
+                                    FontFamily="{StaticResource SevenSegmentFont}" FontSize="{Binding RegisterFontSize}">
+                                <ToolTip.Tip>
+                                    <TextBlock TextAlignment="Left">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="UInt32: {0} &#x0a;ASCII: {1}">
+                                                <Binding Path="ToolTip_GP8_Decimal" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                                <Binding Path="ToolTip_GP8_ASCII" FallbackValue="{Binding ToolTip_Register_Fallback}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Add console memory hex editor and vmem display (video buffer 0/1) -->
+
+        </Grid>
+
+        <Line StartPoint="0, 0" EndPoint="1, 0" Stroke="#333333" StrokeThickness="2" Stretch="Fill" Margin="0,5,0,5" />
+        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Left" Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
+    </StackPanel>
 
 </Window>
