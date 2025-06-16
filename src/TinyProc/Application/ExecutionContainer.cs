@@ -87,8 +87,6 @@ public class ExecutionContainer
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
     public byte[] LiveRAMBytes { get => UIntArrayToByteArray(_mem1.Data[0]); }
-
-    private static List<long> timesEndian = [];
     
     private static byte[] UIntArrayToByteArray(uint[] uintArray)
     {
@@ -108,8 +106,6 @@ public class ExecutionContainer
         // Copies the entire memory chunk of the uint array to the byte array
         //Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
 
-        Stopwatch sw = Stopwatch.StartNew();
-
         /*for (int i = 0; i < byteArraySize / sizeof(uint); i++)
         {
             if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
@@ -118,9 +114,9 @@ public class ExecutionContainer
         }*/
         
         // TODO: Make this pointer magic work
-        uint[] uintArray2 = new uint[uintArray.Length];
-        BinaryPrimitives.ReverseEndianness(uintArray, uintArray2);
-        Buffer.BlockCopy(uintArray2, 0, byteArray, 0, byteArray.Length);
+        uint[] uintArrayReversedEndian = new uint[uintArray.Length];
+        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayReversedEndian);
+        Buffer.BlockCopy(uintArrayReversedEndian, 0, byteArray, 0, byteArraySize);
 
         //Parallel.For(0, byteArraySize / sizeof(uint), i =>
         //{
@@ -157,8 +153,6 @@ public class ExecutionContainer
                 }
             }*/
         //});
-        timesEndian.Add(sw.ElapsedMilliseconds);
-        Console.WriteLine($"Endian {sw.ElapsedMilliseconds}ms Avg {timesEndian.Average()}ms");
 
         return byteArray;
     }

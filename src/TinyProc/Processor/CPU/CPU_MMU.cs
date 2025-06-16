@@ -32,7 +32,9 @@ public partial class CPU
             {
                 get
                 {
-                    // Synchronization required, because external thread might mess up things.
+                    // Synchronization is required, because read / write operations are not atomic, meaning
+                    // that any external thread could input wrong address data while the CPU might still want
+                    // to read from another address it wrote to the MAR earlier.
                     lock (readWriteLock)
                     {
                         _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
