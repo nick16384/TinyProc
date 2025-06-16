@@ -106,7 +106,7 @@ public class ExecutionContainer
 
         byte[] byteArray = new byte[byteArraySize];
         // Copies the entire memory chunk of the uint array to the byte array
-        Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
+        //Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
 
         Stopwatch sw = Stopwatch.StartNew();
 
@@ -118,27 +118,17 @@ public class ExecutionContainer
         }*/
         
         // TODO: Make this pointer magic work
-        /*unsafe
-        {
-            fixed (byte* byteArrayPtr = byteArray)
-            {
-                uint[] uintArray2 = new uint[uintArray.Length];
-                Buffer.BlockCopy(uintArray, 0, uintArray2, 0, uintArray.Length * sizeof(uint));
-                BinaryPrimitives.ReverseEndianness(uintArray, uintArray2);
-                fixed (uint* uintArrayPtr = uintArray2)
-                {
-                    return (byte[])(byte*)uintArrayPtr;
-                }
-            }
-        }*/
+        uint[] uintArray2 = new uint[uintArray.Length];
+        BinaryPrimitives.ReverseEndianness(uintArray, uintArray2);
+        Buffer.BlockCopy(uintArray2, 0, byteArray, 0, byteArray.Length);
 
-        Parallel.For(0, byteArraySize / sizeof(uint), i =>
-        {
+        //Parallel.For(0, byteArraySize / sizeof(uint), i =>
+        //{
             // If all bytes are equal, no reverse is needed
             // Reduces runtime by around 30%
-            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
+            /*if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
                 return;
-            Array.Reverse(byteArray, i * 4, 4);
+            Array.Reverse(byteArray, i * 4, 4);*/
 
             // Unused method for unsafe endian reversing
             // Sometimes faster, sometimes slower than safe endian reverse
@@ -166,7 +156,7 @@ public class ExecutionContainer
                     *uintLittleEndianPtr = uintBigEndian;
                 }
             }*/
-        });
+        //});
         timesEndian.Add(sw.ElapsedMilliseconds);
         Console.WriteLine($"Endian {sw.ElapsedMilliseconds}ms Avg {timesEndian.Average()}ms");
 

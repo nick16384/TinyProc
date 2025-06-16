@@ -26,24 +26,32 @@ public partial class CPU
         }
         public class MemoryDataRegister(MMU mmu) : Register(0, true)
         {
+            private object readWriteLock = new();
             private readonly MMU _mmu = mmu;
             private protected override uint Value
             {
                 get
                 {
-                    _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
-                    _mmu.RAM.ReadEnable = true;
-                    _storedValue = Bus.BoolArrayToUInt(_mmu.MemoryDataBus.Data, 0);
-                    _mmu.RAM.ReadEnable = false;
-                    return _storedValue;
+                    // Synchronization required, because external thread might mess up things.
+                    lock (readWriteLock)
+                    {
+                        _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
+                        _mmu.RAM.ReadEnable = true;
+                        _storedValue = Bus.BoolArrayToUInt(_mmu.MemoryDataBus.Data, 0);
+                        _mmu.RAM.ReadEnable = false;
+                        return _storedValue;
+                    }
                 }
                 set
                 {
-                    _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
-                    _mmu.MemoryDataBus.Data = Bus.UIntToBoolArray(value);
-                    _mmu.RAM.WriteEnable = true;
-                    _mmu.RAM.WriteEnable = false;
-                    _storedValue = value;
+                    lock (readWriteLock)
+                    {
+                        _mmu.MemoryAddressBus.Data = Bus.UIntToBoolArray(_mmu.GetRelativeAddress(_mmu.MAR.ValueDirect, _mmu.RAM));
+                        _mmu.MemoryDataBus.Data = Bus.UIntToBoolArray(value);
+                        _mmu.RAM.WriteEnable = true;
+                        _mmu.RAM.WriteEnable = false;
+                        _storedValue = value;
+                    }
                 }
             }
         }
