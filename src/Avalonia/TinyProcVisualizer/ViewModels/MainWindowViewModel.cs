@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Timers;
+using Avalonia.Controls;
 using Timer = System.Timers.Timer;
 
 namespace TinyProcVisualizer.ViewModels;
@@ -75,6 +77,24 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     }
 
     public static int Buttons_CycleControl_SizeXY { get => 16; }
+
+    public static List<ComboBoxItem> RegisterSelectionValues { get; } = [
+        new() { Content = "GPR 1" },
+        new() { Content = "GPR 2" },
+        new() { Content = "GPR 3" },
+        new() { Content = "GPR 4" },
+        new() { Content = "GPR 5" },
+        new() { Content = "GPR 6" },
+        new() { Content = "GPR 7" },
+        new() { Content = "GPR 8" },
+        new() { Content = "PC" },
+        new() { Content = "IRA" },
+        new() { Content = "IRB" },
+        // MAR and MDR change multiple times during a single cycle, so MT would mess things up (probably).
+        /*new() { Content = "MAR" },
+        new() { Content = "MDR" },*/
+        new() { Content = "SR" },
+        ];
 
     #region Auto-updated properties
 

@@ -57,7 +57,6 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <!-- Star (*) sizing doesn*t work for some reason, so fixed size is required. -->
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -68,74 +67,86 @@
                     <Label Grid.Row="0" Grid.Column="0">Advanced cycle control</Label>
                     <Border Grid.Row="1" Grid.Column="0"
                         BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
-                        <StackPanel>
+                        <StackPanel Name="StackPanel_AdvancedCycleControl" IsEnabled="False">
                             <!-- Fine-grained CPU cycling control the toolbar does not provide -->
-                            <!-- Run CPU for N cycles -->
-                            <StackPanel Orientation="Horizontal">
-                                <Button Click="Button_CPURunForNCycles_OnClick" Name="Button_CPURunForNCycles"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto, Auto, Auto, Auto, Auto, Auto" RowDefinitions="Auto, Auto, Auto">
+
+                                <!-- Run CPU for N cycles -->
+                                <Button Grid.Row="0" Grid.Column="0" Click="Button_CPURunForNCycles_OnClick" Name="Button_CPURunForNCycles"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
                                         RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
                                 </Button>
-                                <Button Click="Button_CPUFFForNCycles_OnClick" Name="Button_CPUFFForNCycles"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                <Button Grid.Row="0" Grid.Column="1" Click="Button_CPUFFForNCycles_OnClick" Name="Button_CPUFFForNCycles"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
                                         RenderOptions.BitmapInterpolationMode="HighQuality" />
                                 </Button>
-                                <Label Margin="20, 0, 0, 0">Cycles:</Label>
+                                <Label Grid.Row="0" Grid.Column="2">Cycles:</Label>
                                 <!-- TODO: Make this work with a spinner instead of a TextBox -->
-                                <TextBox Name="TextBox_CPURunForNCycles_CycleCount" />
-                            </StackPanel>
-                            <!-- Run CPU until memory address X has value Y -->
-                            <StackPanel Orientation="Horizontal">
-                                <Button Click="Button_CPURunUntil_MemEqValue_OnClick" Name="Button_CPURunUntil_MemEqValue"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                <TextBox Grid.Row="0" Grid.Column="3" Name="TextBox_CPURunForNCycles_CycleCount" />
+
+                                <!-- Run CPU until memory address X has value Y -->
+                                <Button Grid.Row="1" Grid.Column="0"
+                                    Click="Button_CPURunUntil_MemEqValue_OnClick" Name="Button_CPURunUntil_MemEqValue"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
                                         RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
                                 </Button>
-                                <Button Click="Button_CPUFFUntil_MemEqValue_OnClick" Name="Button_CPUFFUntil_MemEqValue"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                <Button Grid.Row="1" Grid.Column="1"
+                                    Click="Button_CPUFFUntil_MemEqValue_OnClick" Name="Button_CPUFFUntil_MemEqValue"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
                                         RenderOptions.BitmapInterpolationMode="HighQuality" />
                                 </Button>
-                                <Label Margin="20, 0, 0, 0">Addr:</Label>
-                                <TextBox Name="TextBox_CPURunUntil_MemEqValue_Address" Width="90" />
-                                <Label>Value:</Label>
-                                <TextBox Name="TextBox_CPURunUntil_MemEqValue_Value" Width="90" />
-                            </StackPanel>
-                            <!-- Run CPU until register X has value Y -->
-                            <StackPanel Orientation="Horizontal">
-                                <Button Click="Button_CPURunUntil_RegEqValue_OnClick" Name="Button_CPURunUntil_RegEqValue"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                <Label Grid.Row="1" Grid.Column="2">Addr:</Label>
+                                <TextBox Grid.Row="1" Grid.Column="3" Name="TextBox_CPURunUntil_MemEqValue_Address" Width="90" />
+                                <Label Grid.Row="1" Grid.Column="4">Value:</Label>
+                                <TextBox Grid.Row="1" Grid.Column="5" Name="TextBox_CPURunUntil_MemEqValue_Value" Width="90" />
+
+                                <!-- Run CPU until register X has value Y -->
+                                <Button Grid.Row="2" Grid.Column="0"
+                                    Click="Button_CPURunUntil_RegEqValue_OnClick" Name="Button_CPURunUntil_RegEqValue"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_play.png"
-                                        RenderOptions.BitmapInterpolationMode="HighQuality" Opacity="1.0"/>
+                                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                                 </Button>
-                                <Button Click="Button_CPUFFUntil_RegEqValue_OnClick" Name="Button_CPUFFUntil_RegEqValue"
-                                    IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                <Button Grid.Row="2" Grid.Column="1"
+                                    Click="Button_CPUFFUntil_RegEqValue_OnClick" Name="Button_CPUFFUntil_RegEqValue"
+                                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                                     <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
                                         Source="avares://TinyProcVisualizer/Resources/Icons/button_fast_forward.png"
                                         RenderOptions.BitmapInterpolationMode="HighQuality" />
                                 </Button>
-                                <ComboBox Margin="20, 0, 0, 0">
-                                    <ComboBoxItem>GPR 1</ComboBoxItem>
-                                </ComboBox>
+                                <Label Grid.Row="2" Grid.Column="2" >Reg:</Label>
+                                <ComboBox Grid.Row="2" Grid.Column="3" Name="ComboBox_CPURunUntil_RegEqValue_Register" 
+                                    ItemsSource="{Binding RegisterSelectionValues}" Width="90" />
+                                <Label Grid.Row="2" Grid.Column="4">Value:</Label>
+                                <TextBox Grid.Row="2" Grid.Column="5" Name="TextBox_CPURunUntil_RegEqValue_Value" />
+                            </Grid>
+                            <!-- Pause for N milliseconds between cycles -->
+                            <StackPanel Orientation="Vertical" Margin="0, 20, 0, 0">
+                                <Label>Cycle sleep (ms):</Label>
+                                <TextBox Name="TextBox_CycleSleep_SleepTime" Width="150" HorizontalAlignment="Left" TextAlignment="Right" />
+                                <CheckBox Name="CheckBox_CycleSleep_IncludeRuntime" IsChecked="True">Include cycle runtime</CheckBox>
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <!-- Current status -->
                     <Border Grid.Row="1" Grid.Column="1"
                         BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                         <StackPanel>
                             <Label>Cycle count:</Label>
-                            <TextBox Name="TextBox_CurrentCPUCycle" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <TextBox Name="TextBox_CurrentCPUCycle" IsReadOnly="True" Focusable="False" TextAlignment="Right">-</TextBox>
                             <Label>Cycle time:</Label>
-                            <TextBox Name="TextBox_LastCPUCycleTime" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <TextBox Name="TextBox_LastCPUCycleTime" IsReadOnly="True" Focusable="False" TextAlignment="Right">-</TextBox>
                             <Label>UI overhead:</Label>
-                            <TextBox Name="TextBox_CycleTimeGUIOverhead" IsEnabled="False" TextAlignment="Right">-</TextBox>
+                            <TextBox Name="TextBox_CycleTimeGUIOverhead" IsReadOnly="True" Focusable="False" TextAlignment="Right">-</TextBox>
                         </StackPanel>
                     </Border>
                 </Grid>

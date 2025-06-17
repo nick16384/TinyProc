@@ -41,16 +41,14 @@ Temporary fix: Run "reset" after the error occurs
 Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
 
 Today:
-- Replace run/step/stop buttons with play/step/pause buttons with icons [in progress]
--> Place run/pause/stop/ff buttons in toolbar above everything
-1. play / resume button
-2. pause button
-3. step button
-4. fast-forward (ff) button: same as play, but without live updating
-- Work on unsafe uint->byte conversion
-- Add more options to running
+- Replace run/step/stop buttons with play/step/pause buttons with icons [done]
+- Add more options to running [in progress]
 1. run / ff until memory address X has value Y
 2. run / ff until register X has value Y
 3. run / ff for N cycles
 5. wait N.M ms between cycles (exclude / include cycle runtime + GUI overhead)
+- when printing Compiler error in GUI, also attach assembly line number
+- set hex view selectors to have item sources from lists
+- set fixed width on all text fields and comboboxes
+- fix a bunch of newlines appearing once when running the CPU
 - Add source code view component

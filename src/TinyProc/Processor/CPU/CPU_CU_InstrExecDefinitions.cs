@@ -28,7 +28,7 @@ public partial class CPU
                 "Arithmetic register operation: " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
-                $"<{_currentInstruction.R_GetALUOpcode}> " +
+                $"<{_currentInstruction.R_GetALUOpcode()}> " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpcode = _currentInstruction.R_GetALUOpcode();
