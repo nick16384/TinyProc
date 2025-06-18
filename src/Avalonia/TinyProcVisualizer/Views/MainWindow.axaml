@@ -22,7 +22,15 @@
     <StackPanel>
         <!-- Toolbar -->
         <StackPanel Orientation="Horizontal" Margin="2">
-            <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="True" Margin="0, 0, 20, 0">Init CPU</Button>
+            <Menu>
+                <!-- File selection -->
+                <MenuItem Header="File" BorderThickness="1">
+                    <!-- TODO: Implement file drag and drop -->
+                    <MenuItem Header="Load and compile assembly source file..." Click="Menu_File_AssemblySourceFileSelectAndCompile_OnClick" />
+                    <MenuItem Header="Select binary executable file..." Click="Menu_File_BinaryExecutableFileSelect_OnClick" />
+                </MenuItem>
+            </Menu>
+            <Button Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="True" Margin="20, 0, 20, 0">Init CPU</Button>
             <Button Click="Button_CPUStop_OnClick" Name="Button_CPUStop"
                 IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
                 <Image Width="{Binding Buttons_CycleControl_SizeXY}" Height="{Binding Buttons_CycleControl_SizeXY}"
@@ -150,25 +158,6 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-                
-                <!-- File selectors, "compile" button -->
-                <Label>File selection</Label>
-                <Border BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
-                    <Grid ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto">
-
-                        <!-- TODO: Implement file drag and drop -->
-                        <TextBox Grid.Row="0" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                            Name="TextBox_AssemblySourceFilePath" Watermark="Assembly source file path..." />
-                        <Button Grid.Row="0" Grid.Column="1" Click="Button_OpenAssemblySourceFilePath_OnClick">...</Button>
-                        <Button Grid.Row="1" Grid.Column="0" Margin="0, 5, 0, 5"
-                            Name="Button_CompileSourceAssemblerFile" Click="Button_CompileSourceAssemblerFile_OnClick" IsEnabled="False">
-                            == Compile ==
-                        </Button>
-                        <TextBox Grid.Row="2" Grid.Column="0" Margin="0, 5, 0, 5" Width="200"
-                            Name="TextBox_BinaryExecutableFilePath" Watermark="Binary executable file path..." />
-                        <Button Grid.Row="2" Grid.Column="1" Click="Button_OpenBinaryExecutableFilePath_OnClick">...</Button>
-                    </Grid>
-                </Border>
 
                 <!-- Logging -->
                 <Label Margin="0, 20, 0, 0">Logging</Label>

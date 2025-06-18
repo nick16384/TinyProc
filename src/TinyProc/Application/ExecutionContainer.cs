@@ -16,6 +16,13 @@ public class ExecutionContainer
     private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
     public CPUDebugPort CPUDebugPort { get => _cpu.DebugPort; }
+    // An invalid CPU state is raised, when the CPU is unable to execute the next instruction,
+    // since an attempt would cause an immediate exception to be thrown.
+    // This could be caused by e.g. the PC pointing to unmapped memory.
+    // If this flag is set, the CPU will be locked and is not able to execute any further instructions
+    // inside this ExecutionContainer.
+    private bool _isCPUInInvalidState = false;
+    public bool IsCPUInInvalidState { get => _isCPUInInvalidState; }
 
     private ulong _currentCycle = 0;
     public ulong CurrentCycle { get => _currentCycle; }
@@ -168,9 +175,12 @@ public class ExecutionContainer
 
     public TimeSpan StepSingleCycle()
     {
+        if (IsCPUInInvalidState)
+            return TimeSpan.Zero;
         _currentCycle++;
         Stopwatch cycleTimer = Stopwatch.StartNew();
-        _cpu.NextClock();
+        try { _cpu.NextClock(); }
+        catch (Exception) { _isCPUInInvalidState = true; throw; }
         cycleTimer.Stop();
         _lastCycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
         Logging.LogDebug($"Cycle {CurrentCycle} took {_lastCycleTimeMicroseconds}us");

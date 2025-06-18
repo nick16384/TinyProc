@@ -23,7 +23,11 @@ public partial class MainWindow : Window
             while (!_haltCPUGUIDataSyncThread)
             {
                 Thread.Sleep(SYNC_INTERVAL_CPU_GUI);
-                SyncCPUandGUIData();
+                try { SyncCPUandGUIData(); }
+                catch (Exception)
+                {
+                    Console.Error.WriteLine("CPU -> GUI Data sync failed.");
+                }
             }
         });
     }

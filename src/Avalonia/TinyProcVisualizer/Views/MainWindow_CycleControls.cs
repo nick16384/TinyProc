@@ -278,7 +278,7 @@ public partial class MainWindow : Window
         Stopwatch cycleStopwatch = new();
         Task cpuRunTask = Task.Run(async () =>
         {
-            while (!haltCondition() && !_haltCPUClock)
+            while (!haltCondition() && !_haltCPUClock && !TinyProc.Application.ExecutionContainer.INSTANCE0.IsCPUInInvalidState)
             {
                 TinyProc.Application.ExecutionContainer.INSTANCE0.StepSingleCycle();
                 // Ignoring cycle runtime, since it is comparatively low to the GUI overhead
@@ -305,6 +305,17 @@ public partial class MainWindow : Window
         {
             Console.Error.WriteLine("CPU execution prematurely canceled. It may be remaining in an unstable state!");
             cpuRunTaskCancellationTokenSource = new CancellationTokenSource();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("CPU runtime exception");
+            _haltCPUGUIDataSyncThread = true;
+            await MessageBoxManager.GetMessageBoxStandard(
+                "CPU runtime exception",
+                "A CPU runtime exception occurred.\n" +
+                "The CPU has now entered an invalid state, in which it is unable to execute any further instructions.\n\n" +
+                $"Stacktrace:\n{ex.Message}\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
         }
         _isCPURunning = false;
         TextBox_CurrentCPUCycle.BorderThickness = previousTextBoxBorderThickness;

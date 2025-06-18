@@ -47,5 +47,7 @@ Today:
 - set hex view selectors to have item sources from lists [done]
 - set fixed width on all text fields and comboboxes [basically done]
 - fix a bunch of newlines appearing once when running the CPU [done]
-- Move file selection to toolbar [in progress]
+- Move file selection to toolbar [done]
 - Add source code view component [in progress]
+- Add some stuff to the toolbar
+- Fix IndexOutOfBounds (or similar) exception when scrolling through HexEditor

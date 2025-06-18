@@ -76,7 +76,7 @@ public partial class MainWindow : Window
         get
         {
             // Update contents from file and return
-            string? binFilePath = TextBox_BinaryExecutableFilePath?.Text;
+            string? binFilePath = _binaryExecutableFilePath;
             if (string.IsNullOrWhiteSpace(binFilePath) || !File.Exists(binFilePath))
                 Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is invalid.");
             else
@@ -155,7 +155,7 @@ public partial class MainWindow : Window
     private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
     {
         Console.WriteLine("Initializing new CPU");
-        string? binaryExecutableFilePath = TextBox_BinaryExecutableFilePath.Text;
+        string? binaryExecutableFilePath = _binaryExecutableFilePath;
         if (binaryExecutableFilePath == null)
         {
             await MessageBoxManager.GetMessageBoxStandard(
@@ -195,8 +195,12 @@ public partial class MainWindow : Window
         ReloadHexEditorDocuments();
     }
 
-    private async void Button_OpenAssemblySourceFilePath_OnClick(object? sender, RoutedEventArgs e)
+    private string? _assemblySourceFilePath;
+    private string? _binaryExecutableFilePath;
+
+    private async void Menu_File_AssemblySourceFileSelectAndCompile_OnClick(object? sender, RoutedEventArgs e)
     {
+        // Load assembly file
         var files = await OpenSingleFileSelectionDialog("Open Assembly Source Code file...");
 
         if (files.Count <= 0)
@@ -205,36 +209,11 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected assembly source file: " + files[0].Name);
-        TextBox_AssemblySourceFilePath.Text = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        Button_CompileSourceAssemblerFile.IsEnabled = true;
-    }
-    private async void Button_OpenBinaryExecutableFilePath_OnClick(object? sender, RoutedEventArgs e)
-    {
-        var files = await OpenSingleFileSelectionDialog("Open Binary Executable file...");
-        if (files.Count <= 0)
-        {
-            Console.WriteLine("Binary file selection cancelled.");
-            return;
-        }
-        Console.WriteLine("Selected binary executable file: " + files[0].Name);
-        TextBox_BinaryExecutableFilePath.Text = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        ReloadHexEditorDocuments();
-    }
-    private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = title,
-            AllowMultiple = false
-        });
-        return files;
-    }
+        _assemblySourceFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
 
-    private async void Button_CompileSourceAssemblerFile_OnClick(object? sender, RoutedEventArgs e)
-    {
+        // Compile loaded assembly file
         // Read assembly source file contents
-        string? sourceFilePath = TextBox_AssemblySourceFilePath.Text;
+        string? sourceFilePath = _assemblySourceFilePath;
         if (string.IsNullOrWhiteSpace(sourceFilePath))
         {
             await MessageBoxManager.GetMessageBoxStandard(
@@ -272,8 +251,30 @@ public partial class MainWindow : Window
         await Task.Run(() => programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath));
 
         // Set binary file in GUI
-        TextBox_BinaryExecutableFilePath.Text = outputBinaryFilePath;
+        _binaryExecutableFilePath = outputBinaryFilePath;
         ReloadHexEditorDocuments();
+    }
+    private async void Menu_File_BinaryExecutableFileSelect_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var files = await OpenSingleFileSelectionDialog("Open Binary Executable file...");
+        if (files.Count <= 0)
+        {
+            Console.WriteLine("Binary file selection cancelled.");
+            return;
+        }
+        Console.WriteLine("Selected binary executable file: " + files[0].Name);
+        _binaryExecutableFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        ReloadHexEditorDocuments();
+    }
+    private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false
+        });
+        return files;
     }
 
     #region Logging
