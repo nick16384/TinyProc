@@ -81,9 +81,24 @@ public class Logging
     }
     public static void LogError(string message) => LogErrorWithoutNewline(message + "\n");
 
-    public static void Newline()
+    public static void NewlineDebug()
     {
-        if (!(SuppressDebugMessages && SuppressInfoMessages && SuppressWarningMessages && SuppressErrorMessages))
+        if (!SuppressDebugMessages)
             PrintMessageToPipe("\n", Pipe.STDOUT);
+    }
+    public static void NewlineInfo()
+    {
+        if (!SuppressInfoMessages)
+            PrintMessageToPipe("\n", Pipe.STDOUT);
+    }
+    public static void NewlineWarning()
+    {
+        if (!SuppressWarningMessages)
+            PrintMessageToPipe("\n", Pipe.STDERR);
+    }
+    public static void NewlineError()
+    {
+        if (!SuppressErrorMessages)
+            PrintMessageToPipe("\n", Pipe.STDERR);
     }
 }

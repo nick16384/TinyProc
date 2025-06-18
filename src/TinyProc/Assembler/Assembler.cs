@@ -126,7 +126,7 @@ public partial class Assembler()
                     }
                     throw new ArgumentException($"Unknown memory region type {words[1]}");
                 }
-                
+
                 // Checks current line for occurrences of relative addresses
                 for (int i = 0; i < words.Length; i++)
                 {
@@ -168,7 +168,7 @@ public partial class Assembler()
                     {
                         if (!words[i].EndsWith('\"'))
                             throw new ArgumentException($"Unescaped string literal: {words[i]}");
-                        
+
                         // Trim quotes of string literal
                         string stringLiteral = words[i][1..^1];
                         char[] stringLiteralChars = stringLiteral.ToCharArray();
@@ -178,7 +178,7 @@ public partial class Assembler()
                         for (int cIdx = 0; cIdx < charCount; cIdx++)
                         {
                             char c = stringLiteralChars[cIdx];
-                            stringLiteralAsUInt |= ((uint)c) << ((3 - cIdx) * sizeof(byte)*8);
+                            stringLiteralAsUInt |= ((uint)c) << ((3 - cIdx) * sizeof(byte) * 8);
                         }
 
                         words[i] = Convert.ToString(stringLiteralAsUInt);
@@ -193,10 +193,9 @@ public partial class Assembler()
                 currentAddress += 0x2;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Logging.LogError($"Error on line {currentLine} \"{currentLineStr}\":");
-            throw;
+            throw new Exception($"Error on line {currentLine} \"{currentLineStr}\": ", ex);
         }
 
         // Check valid memory regions

@@ -44,11 +44,11 @@ public partial class MainWindow : Window
         // TODO: Check if the CPU cycle has finished before updating
 
         // Sync & update current CPU cycle TextBox
-        string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle}";
+        string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle:N0}";
         var updateTextBox_CurrentCPUCycle = Dispatcher.UIThread.InvokeAsync(() => TextBox_CurrentCPUCycle.Text = currentCPUCycle);
 
         // Sync and update last CPU cycle time
-        string lastCycleTime = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.LastCycleTimeMicroseconds}us";
+        string lastCycleTime = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.LastCycleTimeMicroseconds:N0}us";
         var updateTextBox_LastCycleTime = Dispatcher.UIThread.InvokeAsync(() => TextBox_LastCPUCycleTime.Text = lastCycleTime);
 
         // Sync and update register text blocks

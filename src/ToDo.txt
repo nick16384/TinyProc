@@ -42,13 +42,10 @@ Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox
 
 Today:
 - Replace run/step/stop buttons with play/step/pause buttons with icons [done]
-- Add more options to running [in progress]
-1. run / ff until memory address X has value Y
-2. run / ff until register X has value Y
-3. run / ff for N cycles
-5. wait N.M ms between cycles (exclude / include cycle runtime + GUI overhead)
-- when printing Compiler error in GUI, also attach assembly line number
-- set hex view selectors to have item sources from lists
-- set fixed width on all text fields and comboboxes
-- fix a bunch of newlines appearing once when running the CPU
-- Add source code view component
+- Add more options to running [done]
+- when printing Compiler error in GUI, also attach assembly line number [done]
+- set hex view selectors to have item sources from lists [done]
+- set fixed width on all text fields and comboboxes [basically done]
+- fix a bunch of newlines appearing once when running the CPU [done]
+- Move file selection to toolbar [in progress]
+- Add source code view component [in progress]

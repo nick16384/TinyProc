@@ -28,6 +28,6 @@ public class ConsoleMemory(uint words) : RawMemory(words, [])
             if (c3 >= 0x20 && c3 <= 0x7E) { Logging.PrintInfo($"{c3}"); } else { Logging.PrintInfo("."); }
             if (c4 >= 0x20 && c4 <= 0x7E) { Logging.PrintInfo($"{c4}"); } else { Logging.PrintInfo("."); }
         }
-        Logging.Newline();
+        Logging.NewlineInfo();
     }
 }

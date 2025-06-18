@@ -29,24 +29,21 @@ public partial class MainWindow : Window
     private void Button_CPUStepSingleCycle_OnClick(object? sender, RoutedEventArgs e)
     {
         ulong startCycles = TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle;
-        _haltCPUClock = false;
         RunCPUUntil(() => TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle - startCycles >= 1, true);
     }
 
     private void Button_CPURunIndefinitely_OnClick(object? sender, RoutedEventArgs e)
-    {
-        _haltCPUClock = false;
-        RunCPUUntil(() => _haltCPUClock, true);
-    }
+        => RunCPUUntil(() => _haltCPUClock, true);
 
     private void Button_CPUFastForwardIndefinitely_OnClick(object? sender, RoutedEventArgs e)
-    {
-        _haltCPUClock = false;
-        RunCPUUntil(() => _haltCPUClock);
-    }
+        => RunCPUUntil(() => _haltCPUClock);
 
-    private void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
-        => _haltCPUClock = true;
+    private async void Button_CPUStop_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _haltCPUClock = true;
+        // If the CPU is in cycle sleep, cause it to cancel (to avoid very long waiting times)
+        cpuRunTaskCancellationTokenSource.Cancel();
+    }
 
     private void Button_CPURunUntil_MemEqValue_OnClick(object? sender, RoutedEventArgs e)
         => RunCPUUntilMemoryAddressHasValue(true);
@@ -66,7 +63,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Unable to parse memory address and/or memory value",
+                "Unable to parse memory address and/or memory value",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -74,11 +71,18 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Empty memory address and/or value",
+                "Empty memory address and/or value",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        _haltCPUClock = false;
+        catch (OverflowException)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Parse error",
+                "Memory address or value overflowed (must by <= 2^32)",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
         RunCPUUntil(() =>
             TinyProc.Application.ExecutionContainer.INSTANCE0.ReadRAMDirect(memAddress) == memValueRequired,
             updateGUIInRealtime);
@@ -112,7 +116,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Unable to parse number of cycles to run for",
+                "Unable to parse number of cycles to run for",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -120,11 +124,18 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Empty number of cycles to run for",
+                "Empty number of cycles to run for",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        _haltCPUClock = false;
+        catch (OverflowException)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Parse error",
+                "Cycle number overflowed (must by <= 2^32)",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
         RunCPUUntil(() =>
             TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle - startCycleCount >= cyclesToRun,
             updateGUIInRealtime);
@@ -148,7 +159,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Unable to parse desired register value",
+                "Unable to parse desired register value",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -156,11 +167,18 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Parse error",
-                $"Empty register value",
+                "Empty register value",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        _haltCPUClock = false;
+        catch (OverflowException)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Parse error",
+                "Register value overflowed (must by <= 2^32)",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
         switch (registerName)
         {
             case "GPR 1":
@@ -228,6 +246,7 @@ public partial class MainWindow : Window
 
     private volatile bool _isCPURunning = false;
     private volatile bool _haltCPUClock = false;
+    CancellationTokenSource cpuRunTaskCancellationTokenSource = new();
     private async void RunCPUUntil(Func<bool> haltCondition, bool updateGUIInRealtime = false)
     {
         if (_isCPURunning)
@@ -253,8 +272,11 @@ public partial class MainWindow : Window
         }
         catch (Exception) { }
 
+        _haltCPUClock = false;
+        
+
         Stopwatch cycleStopwatch = new();
-        await Task.Run(() =>
+        Task cpuRunTask = Task.Run(async () =>
         {
             while (!haltCondition() && !_haltCPUClock)
             {
@@ -275,9 +297,15 @@ public partial class MainWindow : Window
                 // the largest error margin, which usually lies in the single digit millisecond range.
                 long sleepTimeMillis = Math.Max(0,
                     requestedCycleSleepMillis - (sleepIncludeCycleTime ? cycleStopwatch.ElapsedMilliseconds : 0));
-                Thread.Sleep((int)sleepTimeMillis);
+                await Task.Delay((int)sleepTimeMillis, cpuRunTaskCancellationTokenSource.Token);
             }
         });
+        try { await cpuRunTask; }
+        catch (TaskCanceledException)
+        {
+            Console.Error.WriteLine("CPU execution prematurely canceled. It may be remaining in an unstable state!");
+            cpuRunTaskCancellationTokenSource = new CancellationTokenSource();
+        }
         _isCPURunning = false;
         TextBox_CurrentCPUCycle.BorderThickness = previousTextBoxBorderThickness;
         TextBox_CurrentCPUCycle.BorderBrush = previousTextBoxBorderBrush;

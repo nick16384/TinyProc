@@ -13,7 +13,6 @@ using AvaloniaHex.Rendering;
 using Avalonia.Media;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
-using Avalonia.Input;
 
 namespace TinyProcVisualizer.Views;
 
@@ -29,6 +28,8 @@ public partial class MainWindow : Window
 
         HexEditor1.HexView.BytesPerLine = 8;
         HexEditor2.HexView.BytesPerLine = 8;
+        ComboBox_HexEditor1Selector.SelectedItem = MainWindowViewModel.HexViewSourceSelectionValues[0];
+        ComboBox_HexEditor2Selector.SelectedItem = MainWindowViewModel.HexViewSourceSelectionValues[1];
         HexEditor1.Document = HexEditorDocumentBinaryExecutableFile;
         HexEditor2.Document = HexEditorDocumentRAM;
 
@@ -163,8 +164,19 @@ public partial class MainWindow : Window
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        TinyProc.Application.ExecutionContainer.Initialize(
-            new TinyProc.Application.ExecutableWrapper(binaryExecutableFilePath));
+        try
+        {
+            TinyProc.Application.ExecutionContainer.Initialize(
+                new TinyProc.Application.ExecutableWrapper(binaryExecutableFilePath));
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Unable to initialize CPU",
+                $"Cannot initialize CPU: Error during initialization phase.\nMessage: {ex.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
 
         _HexEditorDocumentRAM =
             await Task.Run(() =>
@@ -244,7 +256,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Compile error",
-                $"Runtime compilation error. Message: {ex.Message}\nStacktrace:\n{ex.StackTrace}",
+                $"Runtime compilation error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
 

@@ -121,7 +121,7 @@ public class RawMemory : IBusAttachable
                 if (c3 >= 0x20 && c3 <= 0x7E) { Logging.PrintDebug($" {c3} "); } else { Logging.PrintDebug(" . "); }
                 if (c4 >= 0x20 && c4 <= 0x7E) { Logging.PrintDebug($" {c4} "); } else { Logging.PrintDebug(" . "); }
             }
-            Logging.Newline();
+            Logging.NewlineDebug();
         }
     }
 

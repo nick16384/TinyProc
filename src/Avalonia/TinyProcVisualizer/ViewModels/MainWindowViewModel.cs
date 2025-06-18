@@ -78,6 +78,16 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     public static int Buttons_CycleControl_SizeXY { get => 16; }
 
+    // TODO: Make ComboBoxItems constant and add them to an enum (or equivalent)
+    // so that checking the selected element in MainWindow has a single reference here.
+
+    public static List<ComboBoxItem> HexViewSourceSelectionValues { get; } = [
+        new() { Content = "Binary executable" },
+        new() { Content = "Working memory (RAM)" },
+        new() { Content = "Console memory (CON)" },
+        new() { Content = "Virtual memory" }
+    ];
+
     public static List<ComboBoxItem> RegisterSelectionValues { get; } = [
         new() { Content = "GPR 1" },
         new() { Content = "GPR 2" },

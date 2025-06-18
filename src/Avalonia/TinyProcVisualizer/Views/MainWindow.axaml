@@ -86,7 +86,7 @@
                                 </Button>
                                 <Label Grid.Row="0" Grid.Column="2">Cycles:</Label>
                                 <!-- TODO: Make this work with a spinner instead of a TextBox -->
-                                <TextBox Grid.Row="0" Grid.Column="3" Name="TextBox_CPURunForNCycles_CycleCount" />
+                                <TextBox Grid.Row="0" Grid.Column="3" Width="90" Name="TextBox_CPURunForNCycles_CycleCount" />
 
                                 <!-- Run CPU until memory address X has value Y -->
                                 <Button Grid.Row="1" Grid.Column="0"
@@ -127,7 +127,7 @@
                                 <ComboBox Grid.Row="2" Grid.Column="3" Name="ComboBox_CPURunUntil_RegEqValue_Register" 
                                     ItemsSource="{Binding RegisterSelectionValues}" Width="90" />
                                 <Label Grid.Row="2" Grid.Column="4">Value:</Label>
-                                <TextBox Grid.Row="2" Grid.Column="5" Name="TextBox_CPURunUntil_RegEqValue_Value" />
+                                <TextBox Grid.Row="2" Grid.Column="5" Width="90" Name="TextBox_CPURunUntil_RegEqValue_Value" />
                             </Grid>
                             <!-- Pause for N milliseconds between cycles -->
                             <StackPanel Orientation="Vertical" Margin="0, 20, 0, 0">
@@ -211,13 +211,8 @@
                 <!-- Hex editors -->
                 <Grid Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
                     <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
-                        <ComboBox DockPanel.Dock="Left" SelectedIndex="0"
-                            Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged">
-                            <ComboBoxItem>Binary executable</ComboBoxItem>
-                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                            <ComboBoxItem>Virtual memory</ComboBoxItem>
-                        </ComboBox>
+                        <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
+                            Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged" />
                         <Button DockPanel.Dock="Right">Override</Button>
                         <Button DockPanel.Dock="Right">Refresh</Button>
                     </DockPanel>
@@ -237,12 +232,8 @@
                     </avaloniaHex:HexEditor>
 
                     <DockPanel Grid.Row="0" Grid.Column="1" Margin="5, 0, 5, 5" LastChildFill="False">
-                        <ComboBox DockPanel.Dock="Left" SelectedIndex="1"
-                            Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged">
-                            <ComboBoxItem>Binary executable</ComboBoxItem>
-                            <ComboBoxItem>Working memory (RAM)</ComboBoxItem>
-                            <ComboBoxItem>Console memory (CON)</ComboBoxItem>
-                        </ComboBox>
+                        <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
+                            Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged" />
                         <Button DockPanel.Dock="Right">Override</Button>
                         <Button DockPanel.Dock="Right">Refresh</Button>
                     </DockPanel>
