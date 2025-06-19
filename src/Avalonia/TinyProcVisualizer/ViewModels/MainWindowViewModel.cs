@@ -21,6 +21,26 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public static string BorderColorRegisterMAR { get => "#993333"; }
     public static string BorderColorRegisterMDR { get => "#bb3333"; }
 
+    // TODO: Move this scaling code into a separate class
+    #region Element scaling
+    public static int WindowWidth { get; } = 800;
+    public static int WindowHeight { get; } = 600;
+
+    public static double ToolbarScaleWidth { get; } = 1.0;
+    public static double ToolbarScaleHeight { get; } = 0.1;
+
+    public static double Grid_AdvancedCPUCycling_ScaleWidth { get; } = 0.3;
+    public static double Grid_AdvancedCPUCycling_Column0_ScaleWidth { get; } = 0.2;
+
+    // TODO: Implement this style of relative scaling for all window elements
+    // This is because of varying resolutions and I want the app to be fullscreen
+    public static double ToolbarWidth { get => WindowWidth * ToolbarScaleWidth; }
+    public static double ToolbarHeight { get => WindowWidth * ToolbarScaleHeight; }
+    public static double Grid_AdvancedCPUCycling_Width { get => WindowWidth * Grid_AdvancedCPUCycling_ScaleWidth; }
+    public static double Grid_AdvancedCPUCycling_Column0_Width { get => Grid_AdvancedCPUCycling_Column0_Width * Grid_AdvancedCPUCycling_Column0_ScaleWidth; }
+
+    #endregion Element scaling
+
     public static int HexEditorHeight { get => 450; }
     public static int HexEditorWidth { get => 365; }
 
