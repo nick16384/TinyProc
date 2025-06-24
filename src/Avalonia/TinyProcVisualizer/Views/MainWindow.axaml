@@ -149,6 +149,8 @@
                     <Border Grid.Row="1" Grid.Column="1"
                         BorderThickness="2" BorderBrush="{Binding BorderColorDefault}" CornerRadius="10" Padding="10">
                         <StackPanel>
+                            <Label>Clock rate:</Label>
+                            <TextBox Name="TextBox_ClockRate" IsReadOnly="True" Focusable="False" TextAlignment="Right">-</TextBox>
                             <Label>Cycle count:</Label>
                             <TextBox Name="TextBox_CurrentCPUCycle" IsReadOnly="True" Focusable="False" TextAlignment="Right">-</TextBox>
                             <Label>Cycle time:</Label>

@@ -7,7 +7,7 @@ namespace TinyProcVisualizer.Views;
 public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
 {
     private static readonly TimeSpan DEFAULT_UPDATE_INTERVAL = TimeSpan.FromMilliseconds(100);
-    public RealTimeFixedSizeBinaryDocument(byte[] bytes, TimeSpan? updateInterval) : base(bytes)
+    public RealTimeFixedSizeBinaryDocument(ReadOnlySpan<byte> bytes, TimeSpan? updateInterval) : base(bytes.ToArray())
     {
         updateInterval ??= DEFAULT_UPDATE_INTERVAL;
         var updateTimer = new DispatcherTimer(updateInterval.Value, DispatcherPriority.Background, UpdateDocument);
@@ -21,7 +21,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
         // them to be overriden back when the thread updates from real memory
     }
 
-    public void WriteNewDataToLiveBuffer(byte[] bytes)
+    public void WriteNewDataToLiveBuffer(ReadOnlySpan<byte> bytes)
     {
         bytes.CopyTo(Memory.Span);
     }

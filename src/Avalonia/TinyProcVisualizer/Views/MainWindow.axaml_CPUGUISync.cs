@@ -32,6 +32,9 @@ public partial class MainWindow : Window
         });
     }
 
+    private static ulong _cycleCountDuringLastUpdate;
+    private static long _tickCountDuringLastUpdate;
+
     private static readonly TimeSpan SYNC_INTERVAL_CPU_GUI = TimeSpan.FromMilliseconds(200);
     private static volatile bool _haltCPUGUIDataSyncThread = false;
 
@@ -50,6 +53,14 @@ public partial class MainWindow : Window
         // Sync & update current CPU cycle TextBox
         string currentCPUCycle = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle:N0}";
         var updateTextBox_CurrentCPUCycle = Dispatcher.UIThread.InvokeAsync(() => TextBox_CurrentCPUCycle.Text = currentCPUCycle);
+
+        // Sync & update clock rate
+        ulong cyclesSinceLastUpdate = TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle - _cycleCountDuringLastUpdate;
+        long ticksSinceLastUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - _tickCountDuringLastUpdate;
+        _cycleCountDuringLastUpdate = TinyProc.Application.ExecutionContainer.INSTANCE0.CurrentCycle;
+        _tickCountDuringLastUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        string clockRateHz = $"{(double)cyclesSinceLastUpdate / ticksSinceLastUpdate:N3}kHz";
+        var updateTextBox_ClockRate = Dispatcher.UIThread.InvokeAsync(() => TextBox_ClockRate.Text = clockRateHz);
 
         // Sync and update last CPU cycle time
         string lastCycleTime = $"{TinyProc.Application.ExecutionContainer.INSTANCE0.LastCycleTimeMicroseconds:N0}us";
@@ -110,6 +121,7 @@ public partial class MainWindow : Window
         {
             Task.WaitAll([
                 updateTextBox_CurrentCPUCycle.GetTask(),
+                updateTextBox_ClockRate.GetTask(),
                 updateTextBox_LastCycleTime.GetTask(),
                 updateTextBlock_GP1.GetTask(),
                 updateTextBlock_GP2.GetTask(),

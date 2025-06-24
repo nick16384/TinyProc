@@ -259,6 +259,8 @@ public partial class MainWindow : Window
         IBrush? previousTextBoxBorderBrush = TextBox_CurrentCPUCycle.BorderBrush;
         TextBox_CurrentCPUCycle.BorderThickness = Thickness.Parse("2.0");
         TextBox_CurrentCPUCycle.BorderBrush = Brushes.Lime;
+        TextBox_ClockRate.BorderThickness = Thickness.Parse("2.0");
+        TextBox_ClockRate.BorderBrush = Brushes.Lime;
 
         if (!updateGUIInRealtime)
             TextBox_CycleTimeGUIOverhead.Text = "-";
@@ -273,7 +275,7 @@ public partial class MainWindow : Window
         catch (Exception) { }
 
         _haltCPUClock = false;
-        
+
 
         Stopwatch cycleStopwatch = new();
         Task cpuRunTask = Task.Run(async () =>
@@ -320,6 +322,8 @@ public partial class MainWindow : Window
         _isCPURunning = false;
         TextBox_CurrentCPUCycle.BorderThickness = previousTextBoxBorderThickness;
         TextBox_CurrentCPUCycle.BorderBrush = previousTextBoxBorderBrush;
+        TextBox_ClockRate.BorderThickness = previousTextBoxBorderThickness;
+        TextBox_ClockRate.BorderBrush = previousTextBoxBorderBrush;
     }
 
     #endregion CPU cycle controls

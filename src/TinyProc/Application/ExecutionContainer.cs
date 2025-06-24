@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
@@ -93,84 +94,25 @@ public class ExecutionContainer
     // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    public byte[] LiveRAMBytes { get => UIntArrayToByteArray(_mem1.Data[0]); }
+    public ReadOnlySpan<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
     
-    private static byte[] UIntArrayToByteArray(uint[] uintArray)
+    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
     {
-        int byteArraySize;
         if ((ulong)uintArray.Length * sizeof(uint) > int.MaxValue)
         {
-            byteArraySize = int.MaxValue;
             Logging.LogWarn(
                 $"Accessing a uint[] as byte[] only allows {int.MaxValue} " +
                 $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArray.Length * sizeof(uint)} " +
                 "bytes. Only a partial amount is returned!");
         }
-        else
-            byteArraySize = uintArray.Length * sizeof(uint);
 
-        byte[] byteArray = new byte[byteArraySize];
-        // Copies the entire memory chunk of the uint array to the byte array
-        //Buffer.BlockCopy(uintArray, 0, byteArray, 0, byteArraySize);
+        uint[] uintArrayBigEndian = new uint[uintArray.Length];
+        // This method is the fastest way for endian reversal, since it already utilizes
+        // bitwise manipulations using advanced AVX / AVX2 SIMD instructions supported by most modern x86 CPUs.
+        // There is no need to implement anything faster by hand.
+        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayBigEndian);
 
-        /*for (int i = 0; i < byteArraySize / sizeof(uint); i++)
-        {
-            if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
-                continue;
-            Array.Reverse(byteArray, i * 4, 4);
-        }*/
-        
-        // TODO: Make this pointer magic work
-        uint[] uintArrayReversedEndian = new uint[uintArray.Length];
-        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayReversedEndian);
-        Buffer.BlockCopy(uintArrayReversedEndian, 0, byteArray, 0, byteArraySize);
-
-        //Parallel.For(0, byteArraySize / sizeof(uint), i =>
-        //{
-            // If all bytes are equal, no reverse is needed
-            // Reduces runtime by around 30%
-            /*if ((byteArray[i * 4 + 0] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 1] ^ byteArray[i * 4 + 2]) == 0)
-                return;
-            Array.Reverse(byteArray, i * 4, 4);*/
-
-            // Unused method for unsafe endian reversing
-            // Sometimes faster, sometimes slower than safe endian reverse
-            // Some timing tests below; ST = Single-threaded (no Parallel.For); AOT = Ahead-of-time compiled
-            // Avg safe:          17.5ms
-            // Avg safe AOT:      07.6ms
-            // Avg safe ST:       46.8ms
-            // Avg safe ST AOT:   18.5ms
-            // Avg unsafe:        16.6ms
-            // Avg unsafe AOT:    07.6ms
-            // Avg unsafe ST:     52.9ms
-            // Avg unsafe ST AOT: 14.6ms
-            /*unsafe
-            {
-                fixed (byte* byteArrayPtr = &byteArray[i * 4])
-                {
-                    uint* uintLittleEndianPtr = (uint*)byteArrayPtr;
-                    uint uintLittleEndian = *uintLittleEndianPtr;
-                    if (uintLittleEndian == 0 || uintLittleEndian == 0xFFFFFFFF) return;
-                    uint uintBigEndian =
-                        ((uintLittleEndian & 0xFF000000) >> 24) |
-                        ((uintLittleEndian & 0x00FF0000) >> 08) |
-                        ((uintLittleEndian & 0x0000FF00) << 08) |
-                        ((uintLittleEndian & 0x000000FF) << 24);
-                    *uintLittleEndianPtr = uintBigEndian;
-                }
-            }*/
-        //});
-
-        return byteArray;
-    }
-
-    public void LaunchCycleLoop()
-    {
-        for (ulong cycle = 0; ; cycle++)
-        {
-            TimeSpan cycleTime = StepSingleCycle();
-            Thread.Sleep((int)(1000.0 / ClockRateHz) - cycleTime.Milliseconds);
-        }
+        return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
     }
 
     public TimeSpan StepSingleCycle()

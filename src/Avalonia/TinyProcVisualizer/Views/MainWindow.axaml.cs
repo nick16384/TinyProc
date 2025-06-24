@@ -96,7 +96,7 @@ public partial class MainWindow : Window
                 Console.Error.WriteLine("CPU not initialized yet, cannot read RAM.");
             else
             {
-                byte[] ramData = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes;
+                ReadOnlySpan<byte> ramData = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes;
                 if ((ulong)ramData.Length != _HexEditorDocumentRAM.Length)
                     _HexEditorDocumentRAM = new RealTimeFixedSizeBinaryDocument(ramData, UPDATE_INTERVAL_DOC_RAM);
                 _HexEditorDocumentRAM.WriteNewDataToLiveBuffer(ramData);
