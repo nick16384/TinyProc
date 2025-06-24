@@ -292,7 +292,7 @@ public partial class MainWindow : Window
                 }
                 // Sleep for specified amount before executing next cycle.
                 // The accuracy of this Sleep() call is low compared to millisecond-accurate timers.
-                // The reasons for this are artifacts preemptive OS process scheduling and not a topic
+                // The reasons for this are artifacts of preemptive OS process scheduling and not a topic
                 // of further discussion here.
                 // Note, however, that for this reason, there is no need to measure the cycle time
                 // more accurate than in milliseconds, since the scheduling process introduces by far

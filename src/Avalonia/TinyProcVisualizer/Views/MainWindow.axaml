@@ -6,8 +6,8 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="1350"
-        Height="732"
+        Width="{Binding Window_Width}"
+        Height="{Binding Window_Height}"
         x:Class="TinyProcVisualizer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -21,7 +21,8 @@
 
     <StackPanel>
         <!-- Toolbar -->
-        <StackPanel Orientation="Horizontal" Margin="2">
+        <StackPanel Width="{Binding Toolbar_Width}" Height="{Binding Toolbar_Height}"
+            Orientation="Horizontal" Margin="2">
             <Menu>
                 <!-- File selection -->
                 <MenuItem Header="File" BorderThickness="1">

@@ -144,7 +144,7 @@ public partial class MainWindow : Window
                 return;
         }
     }
-    // Forces all hex editors to show updated documents, if their length has changed externally.
+    // Forces all hex editors to show updated documents, if their document length has changed externally.
     // Normal modifications are already handled by the RT updater inside the documents.
     private void ReloadHexEditorDocuments()
     {

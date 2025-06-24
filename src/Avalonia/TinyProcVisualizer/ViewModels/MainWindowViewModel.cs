@@ -23,21 +23,29 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     // TODO: Move this scaling code into a separate class
     #region Element scaling
-    public static int WindowWidth { get; } = 800;
-    public static int WindowHeight { get; } = 600;
 
-    public static double ToolbarScaleWidth { get; } = 1.0;
-    public static double ToolbarScaleHeight { get; } = 0.1;
+    public static int Window_Width { get; } = 1350;
+    public static int Window_Height { get; } = 732;
+
+    public static double Toolbar_ScaleWidth { get; } = 1.0;
+    public static double Toolbar_ScaleHeight { get; } = 0.04;
+
+    public static double Toolbar_FileMenu_ScaleHeight { get; } = 1.0;
 
     public static double Grid_AdvancedCPUCycling_ScaleWidth { get; } = 0.3;
     public static double Grid_AdvancedCPUCycling_Column0_ScaleWidth { get; } = 0.2;
 
+    // TODO: Dismiss relative scaling, but instead use DockPanel.Dock="..."
+    // when trying to realignt window elements on windows resize (to remove the need for absolute scaling)
+
     // TODO: Implement this style of relative scaling for all window elements
     // This is because of varying resolutions and I want the app to be fullscreen
-    public static double ToolbarWidth { get => WindowWidth * ToolbarScaleWidth; }
-    public static double ToolbarHeight { get => WindowWidth * ToolbarScaleHeight; }
-    public static double Grid_AdvancedCPUCycling_Width { get => WindowWidth * Grid_AdvancedCPUCycling_ScaleWidth; }
-    public static double Grid_AdvancedCPUCycling_Column0_Width { get => Grid_AdvancedCPUCycling_Column0_Width * Grid_AdvancedCPUCycling_Column0_ScaleWidth; }
+    public static double Toolbar_Width { get => Window_Width * Toolbar_ScaleWidth; }
+    public static double Toolbar_Height { get => Window_Height * Toolbar_ScaleHeight; }
+    public static double Toolbar_FileMenu_Height { get => Toolbar_Height * Toolbar_FileMenu_ScaleHeight; }
+    public static double Grid_AdvancedCPUCycling_Width { get => Window_Width * Grid_AdvancedCPUCycling_ScaleWidth; }
+    public static double Grid_AdvancedCPUCycling_Column0_Width {
+        get => Grid_AdvancedCPUCycling_Column0_Width * Grid_AdvancedCPUCycling_Column0_ScaleWidth; }
 
     #endregion Element scaling
 
