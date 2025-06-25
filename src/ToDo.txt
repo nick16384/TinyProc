@@ -41,13 +41,6 @@ Temporary fix: Run "reset" after the error occurs
 Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
 
 Today:
-- Replace run/step/stop buttons with play/step/pause buttons with icons [done]
-- Add more options to running [done]
-- when printing Compiler error in GUI, also attach assembly line number [done]
-- set hex view selectors to have item sources from lists [done]
-- set fixed width on all text fields and comboboxes [basically done]
-- fix a bunch of newlines appearing once when running the CPU [done]
-- Move file selection to toolbar [done]
 - Add source code view component [in progress]
 - Add some stuff to the toolbar
 - Fix IndexOutOfBounds (or similar) exception when scrolling through HexEditor
