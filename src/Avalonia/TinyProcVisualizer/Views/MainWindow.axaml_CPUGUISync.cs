@@ -101,14 +101,17 @@ public partial class MainWindow : Window
         var updateTextBlock_MDR = Dispatcher.UIThread.InvokeAsync(() => TextBlock_RegisterMDR.Text = mdrValue);
 
         // Sync and update register address highlighters
-        HexEditorPCHighlighter.Ranges.Clear();
-        HexEditorMARHighlighter.Ranges.Clear();
-        ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue * sizeof(uint);
-        ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue + 2) * sizeof(uint);
-        HexEditorPCHighlighter.Ranges.Add(new BitRange(pcStartByte, pcEndByte));
-        ulong marStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue * sizeof(uint);
-        ulong marEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue + 1) * sizeof(uint);
-        HexEditorMARHighlighter.Ranges.Add(new BitRange(marStartByte, marEndByte));
+        var syncHexViewHighlightRanges = Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            HexEditorPCHighlighter.Ranges.Clear();
+            HexEditorMARHighlighter.Ranges.Clear();
+            ulong pcStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue * sizeof(uint);
+            ulong pcEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue + 2) * sizeof(uint);
+            HexEditorPCHighlighter.Ranges.Add(new BitRange(pcStartByte, pcEndByte));
+            ulong marStartByte = TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue * sizeof(uint);
+            ulong marEndByte = (TinyProc.Application.ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue + 1) * sizeof(uint);
+            HexEditorMARHighlighter.Ranges.Add(new BitRange(marStartByte, marEndByte)); 
+        });
         var updateHexEditor1Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor1.HexView.InvalidateVisualLines);
         var updateHexEditor2Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor2.HexView.InvalidateVisualLines);
 
@@ -137,6 +140,7 @@ public partial class MainWindow : Window
                 updateTextBlock_SR.GetTask(),
                 updateTextBlock_MAR.GetTask(),
                 updateTextBlock_MDR.GetTask(),
+                syncHexViewHighlightRanges.GetTask(),
                 updateHexEditor1Highlight.GetTask(),
                 updateHexEditor2Highlight.GetTask(),
                 syncRAM,
