@@ -255,6 +255,11 @@ public partial class MainWindow : Window
             return;
         }
         _isCPURunning = true;
+        if (TinyProc.Application.ExecutionContainer.INSTANCE0.IsCPUInInvalidState)
+        {
+            Console.Error.WriteLine("Cannot run CPU clock: CPU in invalid state.");
+            return;
+        }
         Thickness previousTextBoxBorderThickness = TextBox_CurrentCPUCycle.BorderThickness;
         IBrush? previousTextBoxBorderBrush = TextBox_CurrentCPUCycle.BorderBrush;
         TextBox_CurrentCPUCycle.BorderThickness = Thickness.Parse("2.0");
@@ -318,6 +323,8 @@ public partial class MainWindow : Window
                 "The CPU has now entered an invalid state, in which it is unable to execute any further instructions.\n\n" +
                 $"Stacktrace:\n{ex.Message}\n{ex.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
+            previousTextBoxBorderThickness = new Thickness(2.0);
+            previousTextBoxBorderBrush = Brushes.Red;
         }
         _isCPURunning = false;
         TextBox_CurrentCPUCycle.BorderThickness = previousTextBoxBorderThickness;

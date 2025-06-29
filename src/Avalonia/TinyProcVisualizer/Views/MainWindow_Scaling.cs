@@ -1,10 +1,7 @@
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.LogicalTree;
-using Avalonia.VisualTree;
 using TinyProcVisualizer.ViewModels;
 
 namespace TinyProcVisualizer.Views;
@@ -13,22 +10,22 @@ public partial class MainWindow : Window
 {
     // Code responsible for scaling / sizing elements in a way, that is not directly possible in the AXAML.
 
-    private const int GRID_TOOLBAR_HEIGHT = 30;
+    private const uint GRID_TOOLBAR_HEIGHT = 30;
 
-    private const int GRID_ADVANCED_CYCLE_CONTROL_WIDTH = 365;
-    private const int GRID_ADVANCED_CYCLE_CONTROL_HEIGHT = 95;
-    private const int GRID_ADVANCED_CYCLE_CONTROL_TEXTBOX_WIDTH = 90;
+    private const uint GRID_ADVANCED_CYCLE_CONTROL_WIDTH = 365;
+    private const uint GRID_ADVANCED_CYCLE_CONTROL_HEIGHT = 95;
+    private const uint GRID_ADVANCED_CYCLE_CONTROL_TEXTBOX_WIDTH = 90;
 
-    private const int SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT = 50;
-    private const int SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_RIGHT = 0;
-    private const int SCROLLVIEWER_SOURCECODEEDITOR_HEIGHT = 300;
+    private const uint SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT = 5;
+    private const uint SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_RIGHT = 5;
+    private const uint SCROLLVIEWER_SOURCECODEEDITOR_HEIGHT = 300;
 
-    private const int HEXEDITOR1_WIDTH = 365;
-    private const int HEXEDITOR1_HEIGHT = 440;
-    private const int HEXEDITOR2_WIDTH = HEXEDITOR1_WIDTH;
-    private const int HEXEDITOR2_HEIGHT = HEXEDITOR1_HEIGHT;
+    private const uint HEXEDITOR1_WIDTH = 365;
+    private const uint HEXEDITOR1_HEIGHT = 440;
+    private const uint HEXEDITOR2_WIDTH = HEXEDITOR1_WIDTH;
+    private const uint HEXEDITOR2_HEIGHT = HEXEDITOR1_HEIGHT;
 
-    private const int REGISTER_TEXTBLOCK_WIDTH = 80;
+    private const uint REGISTER_TEXTBLOCK_WIDTH = 80;
 
     private bool _initWindowScalingEventHandlersHasBeenCalled = false;
     private void InitWindowScalingAndPositioning()
@@ -62,12 +59,7 @@ public partial class MainWindow : Window
         // This is the only element that resizes dynamically depending on the window size.
         ScrollViewer_SourceCodeEditor.LayoutUpdated += (_, _) =>
         {
-            // FIXME: Does not work (does not set left margin, but is instead completely ignored)
-            Canvas.SetLeft(ScrollViewer_SourceCodeEditor,
-                Grid_CPUControlAndStatus.Bounds.Width
-                + Grid_CPUControlAndStatus.Margin.Left - Grid_CPUControlAndStatus.Margin.Right
-                + Grid_CPUControlAndStatus.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
-                + SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT);
+            ScrollViewer_SourceCodeEditor.Margin = new Thickness(SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT, 0, 0, 0);
             ScrollViewer_SourceCodeEditor.Width =
                 Math.Max(0,
                 // Get the window width and then subtract the widths of all elements, that the source code editor is put between in.
@@ -80,6 +72,7 @@ public partial class MainWindow : Window
                 - Grid_HexEditors.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
                 // Subtract additional right margin
                 - SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_RIGHT
+                - SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT
                 );
             ScrollViewer_SourceCodeEditor.Height = SCROLLVIEWER_SOURCECODEEDITOR_HEIGHT;
         };

@@ -32,12 +32,25 @@
     <Canvas Name="Canvas_MainWindowCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <!-- Toolbar -->
         <Grid Name="Grid_Toolbar" ColumnDefinitions="Auto, Auto, Auto, Auto, Auto, Auto" Margin="2">
-            <Menu Grid.Row="0" Grid.Column="0" Name="Menu_ToolbarSelectFile">
+            <Menu Grid.Row="0" Grid.Column="0" Name="Menu_Toolbar">
                 <!-- File selection -->
                 <MenuItem Header="File" BorderThickness="1">
                     <!-- TODO: Implement file drag and drop -->
                     <MenuItem Header="Load and compile assembly source file..." Click="Menu_File_AssemblySourceFileSelectAndCompile_OnClick" />
                     <MenuItem Header="Select binary executable file..." Click="Menu_File_BinaryExecutableFileSelect_OnClick" />
+                </MenuItem>
+                <MenuItem Header="Edit" BorderThickness="1">
+                    <MenuItem Header="Decompile from">
+                        <MenuItem Header="File..." Click="Menu_Edit_DecompileFromFile" />
+                        <MenuItem Header="RAM" Click="Menu_Edit_DecompileFromRAM" />
+                    </MenuItem>
+                    <MenuItem Header="Compile and save to file..." Click="Menu_Edit_CompileToFile" />
+                    <MenuItem Header="Compile and load at address" Click="Menu_Edit_CompileAndLoadAtAddress" />
+                </MenuItem>
+                <MenuItem Header="View" BorderThickness="1">
+                    <CheckBox Name="Menu_View_EnableEditorSyntaxHighlighting" IsChecked="True">
+                        Enable syntax highlighting
+                    </CheckBox>
                 </MenuItem>
             </Menu>
             <Button Grid.Row="0" Grid.Column="1"
@@ -196,17 +209,10 @@
             <!-- Source assembly editor and compiler -->
             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0, 10, 0, 0">
                 <ScrollViewer Name="ScrollViewer_SourceCodeEditor" VerticalScrollBarVisibility="Visible">
-                    <TextBox Name="SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True">
-                        Source code text placeholder
+                    <TextBox Name="TextBox_SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True">
+                        <!-- Source code text -->
                     </TextBox>
                 </ScrollViewer>
-                <!-- Add button: Load assembly source file... (opens file selection dialog) -->
-                <!-- Add button: Open binary file... (opens selection dialog) -->
-                <!-- Add button: Decompile from [source] -->
-                <!-- Add decompilation [source] selector (ComboBox) -->
-                <!-- Add button: Compile and save to... (opens save dialog) -->
-                <!-- Add button: Compile and load to memory (also resets CPU state) -->
-                <!-- After all above completed: Remove file selection (asm, bin), compile button, and "Init CPU" button -->
             </StackPanel>
         </Grid>
 

@@ -203,6 +203,10 @@ public partial class MainWindow : Window
     private string? _assemblySourceFilePath;
     private string? _binaryExecutableFilePath;
 
+    #region Toolbar
+
+    #region File menu
+
     private async void Menu_File_AssemblySourceFileSelectAndCompile_OnClick(object? sender, RoutedEventArgs e)
     {
         // Load assembly file
@@ -282,16 +286,36 @@ public partial class MainWindow : Window
         return files;
     }
 
+    #endregion File menu
+
+    #region Edit menu
+
+    private async void Menu_Edit_DecompileFromFile(object? sender, RoutedEventArgs e)
+        => throw new NotImplementedException();
+
+    private async void Menu_Edit_DecompileFromRAM(object? sender, RoutedEventArgs e)
+        => throw new NotImplementedException();
+    
+    private async void Menu_Edit_CompileToFile(object? sender, RoutedEventArgs e)
+        => throw new NotImplementedException();
+
+    private async void Menu_Edit_CompileAndLoadAtAddress(object? sender, RoutedEventArgs e)
+        => throw new NotImplementedException();
+
+    #endregion Edit menu
+
+    #endregion Toolbar
+
     #region Logging
 
     private void CheckBox_LogDebugMessages_OnClick(object? sender, RoutedEventArgs e)
-        => TinyProc.Application.Logging.SuppressDebugMessages = !CheckBox_LogDebugMessages.IsChecked.Value;
+        => TinyProc.Application.Logging.SuppressDebugMessages = !CheckBox_LogDebugMessages.IsChecked.GetValueOrDefault(true);
     private void CheckBox_LogInfoMessages_OnClick(object? sender, RoutedEventArgs e)
-        => TinyProc.Application.Logging.SuppressInfoMessages = !CheckBox_LogInfoMessages.IsChecked.Value;
+        => TinyProc.Application.Logging.SuppressInfoMessages = !CheckBox_LogInfoMessages.IsChecked.GetValueOrDefault(true);
     private void CheckBox_LogWarningMessages_OnClick(object? sender, RoutedEventArgs e)
-        => TinyProc.Application.Logging.SuppressWarningMessages = !CheckBox_LogWarningMessages.IsChecked.Value;
+        => TinyProc.Application.Logging.SuppressWarningMessages = !CheckBox_LogWarningMessages.IsChecked.GetValueOrDefault(true);
     private void CheckBox_LogErrorMessages_OnClick(object? sender, RoutedEventArgs e)
-        => TinyProc.Application.Logging.SuppressErrorMessages = !CheckBox_LogErrorMessages.IsChecked.Value;
+        => TinyProc.Application.Logging.SuppressErrorMessages = !CheckBox_LogErrorMessages.IsChecked.GetValueOrDefault(true);
 
     
     #endregion Logging
