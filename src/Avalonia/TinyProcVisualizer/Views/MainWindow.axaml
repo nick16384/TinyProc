@@ -509,7 +509,7 @@
             </StackPanel>
         </StackPanel>
 
-        <TextBlock Canvas.Bottom="0" Canvas.Left="0"
+        <TextBlock Canvas.Bottom="2" Canvas.Left="2"
             VerticalAlignment="Bottom" HorizontalAlignment="Left" Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
     </Canvas>
 
