@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Threading;
 using System.Timers;
 using Avalonia.Controls;
 using Timer = System.Timers.Timer;
@@ -21,36 +20,14 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public static string BorderColorRegisterMAR { get => "#993333"; }
     public static string BorderColorRegisterMDR { get => "#bb3333"; }
 
-    // TODO: Move this scaling code into a separate class
-    #region Element scaling
+    private static int _windowWidthDefault = 1500; // 1350
+    public static int Window_Width { get; set; } = _windowWidthDefault;
+    private static int _windowHeightDefault = 800; // 732
+    public static int Window_Height { get; set; } = _windowHeightDefault;
 
-    public static int Window_Width { get; } = 1350;
-    public static int Window_Height { get; } = 732;
-
-    public static double Toolbar_ScaleWidth { get; } = 1.0;
-    public static double Toolbar_ScaleHeight { get; } = 0.04;
-
-    public static double Toolbar_FileMenu_ScaleHeight { get; } = 1.0;
-
-    public static double Grid_AdvancedCPUCycling_ScaleWidth { get; } = 0.3;
-    public static double Grid_AdvancedCPUCycling_Column0_ScaleWidth { get; } = 0.2;
-
-    // TODO: Dismiss relative scaling, but instead use DockPanel.Dock="..."
-    // when trying to realignt window elements on windows resize (to remove the need for absolute scaling)
-
-    // TODO: Implement this style of relative scaling for all window elements
-    // This is because of varying resolutions and I want the app to be fullscreen
-    public static double Toolbar_Width { get => Window_Width * Toolbar_ScaleWidth; }
-    public static double Toolbar_Height { get => Window_Height * Toolbar_ScaleHeight; }
-    public static double Toolbar_FileMenu_Height { get => Toolbar_Height * Toolbar_FileMenu_ScaleHeight; }
-    public static double Grid_AdvancedCPUCycling_Width { get => Window_Width * Grid_AdvancedCPUCycling_ScaleWidth; }
-    public static double Grid_AdvancedCPUCycling_Column0_Width {
-        get => Grid_AdvancedCPUCycling_Column0_Width * Grid_AdvancedCPUCycling_Column0_ScaleWidth; }
-
-    #endregion Element scaling
-
-    public static int HexEditorHeight { get => 450; }
-    public static int HexEditorWidth { get => 365; }
+    // Important: Some element scaling / positioning code is in the Views/MainWindow_Scaling.cs class file.
+    // The reason for this is that putting the scale values here and attaching a Binding to the GUI elements
+    // in the AXAML makes more cluttered than it already is.
 
     public static double GlobalFontSize { get => 12.0; }
     public static double HexEditorFontSize { get => 12.0; }
@@ -103,8 +80,6 @@ public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         if (c4 < 0x20 || c4 > 0x7E) c4 = '.';
         return new string([c1, c2, c3, c4]);
     }
-
-    public static int Buttons_CycleControl_SizeXY { get => 16; }
 
     // TODO: Make ComboBoxItems constant and add them to an enum (or equivalent)
     // so that checking the selected element in MainWindow has a single reference here.

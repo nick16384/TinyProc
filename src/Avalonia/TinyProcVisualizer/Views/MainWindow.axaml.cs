@@ -38,6 +38,11 @@ public partial class MainWindow : Window
         HexEditor1.HexView.LineTransformers.Add(HexEditorMARHighlighter);
         HexEditor2.HexView.LineTransformers.Add(HexEditorMARHighlighter);
 
+        // Initialize event handlers responsible primarily for resizing window elements.
+        // Note, that these handlers apply scaling more specific than what could be done
+        // otherwise in the AXAML.
+        InitWindowScalingAndPositioning();
+
         // TODO: Launch updater thread as daemon
         InitCPUGUIDataSyncThread();
         CPUGUIDataSyncThread.Start();
