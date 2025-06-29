@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using System;
 using System.Diagnostics;
-using TinyProcVisualizer.Logging;
 
 namespace TinyProcVisualizer;
 
@@ -24,6 +23,4 @@ sealed class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
-            // See TinyProcSink.cs file for why this is commented out
-            //.LogToTinyProcSink();
 }
