@@ -207,6 +207,17 @@ public partial class MainWindow : Window
 
     #region File menu
 
+    private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false
+        });
+        return files;
+    }
+
     private async void Menu_File_AssemblySourceFileSelectAndCompile_OnClick(object? sender, RoutedEventArgs e)
     {
         // Load assembly file
@@ -275,23 +286,24 @@ public partial class MainWindow : Window
         _binaryExecutableFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
         ReloadHexEditorDocuments();
     }
-    private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = title,
-            AllowMultiple = false
-        });
-        return files;
-    }
 
     #endregion File menu
 
     #region Edit menu
 
     private async void Menu_Edit_DecompileFromFile(object? sender, RoutedEventArgs e)
-        => throw new NotImplementedException();
+    {
+        var files = await OpenSingleFileSelectionDialog("Select binary file to decompile...");
+        if (files.Count <= 0)
+        {
+            Console.WriteLine("Binary file selection cancelled.");
+            return;
+        }
+        Console.WriteLine("Selected binary executable file to decompile: " + files[0].Name);
+        string binaryFilePathToDecompile = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        // TODO: Finish this
+        throw new NotImplementedException();
+    }
 
     private async void Menu_Edit_DecompileFromRAM(object? sender, RoutedEventArgs e)
         => throw new NotImplementedException();
