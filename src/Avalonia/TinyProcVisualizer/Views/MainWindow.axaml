@@ -207,8 +207,8 @@
             </StackPanel>
 
             <!-- Source assembly editor and compiler -->
-            <StackPanel Grid.Row="0" Grid.Column="1" Margin="0, 10, 0, 0">
-                <ScrollViewer Name="ScrollViewer_SourceCodeEditor" VerticalScrollBarVisibility="Visible">
+            <StackPanel Grid.Row="0" Grid.Column="1">
+                <ScrollViewer Name="ScrollViewer_SourceCodeEditor" VerticalScrollBarVisibility="Visible" Margin="10, 40, 10, 30">
                     <TextBox Name="TextBox_SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True">
                         <!-- Source code text -->
                     </TextBox>

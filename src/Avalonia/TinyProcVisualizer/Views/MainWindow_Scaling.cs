@@ -10,15 +10,14 @@ public partial class MainWindow : Window
 {
     // Code responsible for scaling / sizing elements in a way, that is not directly possible in the AXAML.
 
+    // Note: These pixel values are device-independent!
+    // That means, that the Window will be scaled the same regardless of the underlying computer.
+
     private const uint GRID_TOOLBAR_HEIGHT = 30;
 
     private const uint GRID_ADVANCED_CYCLE_CONTROL_WIDTH = 365;
     private const uint GRID_ADVANCED_CYCLE_CONTROL_HEIGHT = 95;
     private const uint GRID_ADVANCED_CYCLE_CONTROL_TEXTBOX_WIDTH = 90;
-
-    private const uint SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT = 5;
-    private const uint SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_RIGHT = 5;
-    private const uint SCROLLVIEWER_SOURCECODEEDITOR_HEIGHT = 300;
 
     private const uint HEXEDITOR1_WIDTH = 365;
     private const uint HEXEDITOR1_HEIGHT = 440;
@@ -59,7 +58,6 @@ public partial class MainWindow : Window
         // This is the only element that resizes dynamically depending on the window size.
         ScrollViewer_SourceCodeEditor.LayoutUpdated += (_, _) =>
         {
-            ScrollViewer_SourceCodeEditor.Margin = new Thickness(SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT, 0, 0, 0);
             ScrollViewer_SourceCodeEditor.Width =
                 Math.Max(0,
                 // Get the window width and then subtract the widths of all elements, that the source code editor is put between in.
@@ -70,11 +68,14 @@ public partial class MainWindow : Window
                 - Grid_HexEditors.Margin.Left - Grid_HexEditors.Margin.Right
                 - Grid_CPUControlAndStatus.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
                 - Grid_HexEditors.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
-                // Subtract additional right margin
-                - SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_RIGHT
-                - SCROLLVIEWER_SOURCECODEEDITOR_MARGIN_LEFT
+                // Subtract margins
+                - ScrollViewer_SourceCodeEditor.Margin.Right
+                - ScrollViewer_SourceCodeEditor.Margin.Left
                 );
-            ScrollViewer_SourceCodeEditor.Height = SCROLLVIEWER_SOURCECODEEDITOR_HEIGHT;
+            ScrollViewer_SourceCodeEditor.Height =
+                MainWindowViewModel.Window_Height
+                - ScrollViewer_SourceCodeEditor.Margin.Bottom
+                - ScrollViewer_SourceCodeEditor.Margin.Top;
         };
 
         // Static updates (only called once)

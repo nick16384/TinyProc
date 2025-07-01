@@ -13,6 +13,8 @@ using AvaloniaHex.Rendering;
 using Avalonia.Media;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using TinyProc.Application;
+using Avalonia.Threading;
 
 namespace TinyProcVisualizer.Views;
 
@@ -301,8 +303,20 @@ public partial class MainWindow : Window
         }
         Console.WriteLine("Selected binary executable file to decompile: " + files[0].Name);
         string binaryFilePathToDecompile = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        // TODO: Finish this
-        throw new NotImplementedException();
+        try
+        {
+            ExecutableWrapper programWrapper = new(binaryFilePathToDecompile);
+            string decompiledProgram = TinyProc.Assembler.Assembler.DisassembleFromProgram(programWrapper);
+            await Dispatcher.UIThread.InvokeAsync(() => TextBox_SourceAssemblyCodeEditor.Text = decompiledProgram);
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Decompilation error",
+                $"Decompilation error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
     }
 
     private async void Menu_Edit_DecompileFromRAM(object? sender, RoutedEventArgs e)
