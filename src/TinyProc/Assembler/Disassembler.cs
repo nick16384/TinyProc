@@ -17,10 +17,12 @@ public partial class Assembler
 
         StringBuilder assemblyCodeBuilder = new();
 
-        foreach ((uint, uint) instruction in programWrapper.ExecutableProgram.Select((word1, word2) => (word1, word2)))
+        foreach ((uint, uint) instruction in ConvertArrayToTuples(programWrapper.ExecutableProgram))
         {
-            // Loop through program tuples
-            assemblyCodeBuilder.Append(StringFromInstructionWords(instruction));  
+            // Loop through program instruction word tuples
+            string disassembledInstructionAssembly = StringFromSingleInstruction(instruction);
+            Logging.LogDebug($"Decoded {instruction.Item1:X8}, {instruction.Item2:X8} into \"{disassembledInstructionAssembly}\"");
+            assemblyCodeBuilder.Append(disassembledInstructionAssembly);
 
             // Append newline at the end of every instruction
             assemblyCodeBuilder.Append('\n');
@@ -30,5 +32,18 @@ public partial class Assembler
         return assemblyCodeBuilder.ToString().Trim();
 
         throw new NotImplementedException();
+    }
+
+    private static (T, T)[] ConvertArrayToTuples<T>(T[] array)
+    {
+        if (array.Length % 2 != 0)
+            throw new ArgumentException("Cannot convert array to tuples: Number of elements is odd.");
+
+        return
+            [..
+                Enumerable
+                .Range(0, array.Length / 2)
+                .Select(i => (array[2 * i], array[2 * i + 1]))
+            ];
     }
 }

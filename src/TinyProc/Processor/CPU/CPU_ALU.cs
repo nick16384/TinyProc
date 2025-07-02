@@ -64,9 +64,11 @@ public partial class CPU
 
             public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opcodeBits) => new(opcodeBits);
             public static implicit operator (bool, bool, bool, bool, bool, bool)(ALUOpcode opcode) => opcode._opcodeBits;
+            public static bool operator ==(ALUOpcode opcode1, ALUOpcode opcode2) => opcode1._opcodeBits == opcode2._opcodeBits;
+            public static bool operator !=(ALUOpcode opcode1, ALUOpcode opcode2) => opcode1._opcodeBits != opcode2._opcodeBits;
 
             // List of all commonly used opcodes; Acts as a kind of enum or Dictionary<OpName, ALUOpcode>.
-            public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false));
+            public static readonly ALUOpcode TransferA = new((false, false, true, true, false, false));
             public static readonly ALUOpcode TransferB            = new((true, true, false, false, false, false));
             public static readonly ALUOpcode Addition             = new((false, false, false, false, true, false));
             public static readonly ALUOpcode AB_SubtractionSigned = new((false, true, false, false, true, true));
