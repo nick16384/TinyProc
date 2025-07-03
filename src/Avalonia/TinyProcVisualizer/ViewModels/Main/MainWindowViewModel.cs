@@ -5,7 +5,7 @@ using System.Timers;
 using Avalonia.Controls;
 using Timer = System.Timers.Timer;
 
-namespace TinyProcVisualizer.ViewModels;
+namespace TinyProcVisualizer.ViewModels.Main;
 
 public partial class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {

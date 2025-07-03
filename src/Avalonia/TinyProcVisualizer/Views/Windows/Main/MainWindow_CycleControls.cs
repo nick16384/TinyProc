@@ -10,7 +10,7 @@ using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 
-namespace TinyProcVisualizer.Views;
+namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {
@@ -87,7 +87,7 @@ public partial class MainWindow : Window
             TinyProc.Application.ExecutionContainer.INSTANCE0.ReadRAMDirect(memAddress) == memValueRequired,
             updateGUIInRealtime);
     }
-    private static uint ConvertStringToUInt(string numStr)
+    public static uint ConvertStringToUInt(string numStr)
     {
         // Base 2
         if (numStr.StartsWith("0b"))

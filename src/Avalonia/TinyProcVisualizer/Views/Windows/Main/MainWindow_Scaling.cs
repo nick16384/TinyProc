@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using TinyProcVisualizer.ViewModels;
+using TinyProcVisualizer.ViewModels.Main;
 
-namespace TinyProcVisualizer.Views;
+namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {

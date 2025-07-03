@@ -15,9 +15,14 @@ public partial class Assembler
         $"CON End:     {programWrapper.CONRegionEnd:X8}\n" +
         $"Entry Point: {programWrapper.EntryPoint:X8}");
 
+        return DisassembleFromProgram(programWrapper.ExecutableProgram);
+    }
+
+    public static string DisassembleFromProgram(uint[] executableProgram)
+    {
         StringBuilder assemblyCodeBuilder = new();
 
-        foreach ((uint, uint) instruction in ConvertArrayToTuples(programWrapper.ExecutableProgram))
+        foreach ((uint, uint) instruction in ConvertArrayToTuples(executableProgram))
         {
             // Loop through program instruction word tuples
             string disassembledInstructionAssembly = StringFromSingleInstruction(instruction);
@@ -30,8 +35,6 @@ public partial class Assembler
 
         // Convert to string and remove last unnecessary newline
         return assemblyCodeBuilder.ToString().Trim();
-
-        throw new NotImplementedException();
     }
 
     private static (T, T)[] ConvertArrayToTuples<T>(T[] array)

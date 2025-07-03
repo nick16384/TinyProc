@@ -6,8 +6,8 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         WindowState="Maximized"
-        x:Class="TinyProcVisualizer.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
+        x:Class="TinyProcVisualizer.Views.Windows.Main.MainWindow"
+        x:DataType="vm:Main.MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="TinyProc CPU Emulator Visualizer">
 

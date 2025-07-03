@@ -8,15 +8,20 @@ using System.IO;
 using System.Threading.Tasks;
 using AvaloniaHex;
 using Avalonia.Controls.ApplicationLifetimes;
-using TinyProcVisualizer.ViewModels;
+using TinyProcVisualizer.ViewModels.Main;
 using AvaloniaHex.Rendering;
 using Avalonia.Media;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using TinyProc.Application;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.Messaging;
+using TinyProcVisualizer.Messages;
+using TinyProcVisualizer.Views.Windows.Dialog_DisassembleFromRAM;
+using TinyProcVisualizer.ViewModels.Dialog_DisassembleFromRAM;
+using TinyProc.Memory;
 
-namespace TinyProcVisualizer.Views;
+namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {
@@ -39,6 +44,18 @@ public partial class MainWindow : Window
         HexEditor2.HexView.LineTransformers.Add(HexEditorPCHighlighter);
         HexEditor1.HexView.LineTransformers.Add(HexEditorMARHighlighter);
         HexEditor2.HexView.LineTransformers.Add(HexEditorMARHighlighter);
+
+        // Register handler for dialog that comes up, when the user decompiles from RAM.
+        // Example cause I don't understand this crap:
+        // https://docs.avaloniaui.net/docs/tutorials/music-store-app/opening-a-dialog
+        WeakReferenceMessenger.Default.Register<MainWindow, DisassembleFromRAMMessage>(this, static (window, message) =>
+        {
+            var dialog = new DialogDisassembleFromRAM
+            {
+                DataContext = new DialogDisassembleFromRAM_ViewModel()
+            };
+            message.Reply(dialog.ShowDialog<DialogDisassembleFromRAM_ViewModel?>(window));
+        });
 
         // Initialize event handlers responsible primarily for resizing window elements.
         // Note, that these handlers apply scaling more specific than what could be done
@@ -320,7 +337,48 @@ public partial class MainWindow : Window
     }
 
     private async void Menu_Edit_DecompileFromRAM(object? sender, RoutedEventArgs e)
-        => throw new NotImplementedException();
+    {
+        // Show address range selection dialog
+        var memoryRange = await WeakReferenceMessenger.Default.Send(new DisassembleFromRAMMessage());
+        uint? startAddress = memoryRange?.DisassemblingStartAddress;
+        uint? endAddress = memoryRange?.DisassemblingEndAddress;
+        if (!startAddress.HasValue || !endAddress.HasValue)
+        {
+            Console.WriteLine("User cancelled disassembly memory range selection.");
+            return;
+        }
+
+        uint[][] memoryDumpFull = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveMemoryDump;
+        if (memoryDumpFull.Length > 1)
+            Console.Error.WriteLine("Warning: Memory dump has more words than the disassembler can handle at once.");
+        uint[] memoryDump = memoryDumpFull[0];
+        // FIXME: If errors occur with big memory sizes, check if the cast from uint to int caused the int to overflow.
+        uint[] memoryDisassembleSlice = new uint[(int)(endAddress - startAddress)];
+        Array.Copy(memoryDump, (int)startAddress, memoryDisassembleSlice, 0, memoryDisassembleSlice.Length);
+        try
+        {
+            string decompiledProgram = "";
+            var showDisassemblingMessage = Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                // FIXME: Make this disappear when disassembling finished
+                await MessageBoxManager.GetMessageBoxStandard(
+                    "Disassembling",
+                    $"Disassembling... (this might take a while)",
+                    ButtonEnum.Ok).ShowAsync();
+            });
+            await Task.Run(() => decompiledProgram = TinyProc.Assembler.Assembler.DisassembleFromProgram(memoryDisassembleSlice));
+            await showDisassemblingMessage;
+            await Dispatcher.UIThread.InvokeAsync(() => TextBox_SourceAssemblyCodeEditor.Text = decompiledProgram);
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Decompilation error",
+                $"Decompilation error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
+    }
     
     private async void Menu_Edit_CompileToFile(object? sender, RoutedEventArgs e)
         => throw new NotImplementedException();

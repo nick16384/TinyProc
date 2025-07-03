@@ -51,7 +51,11 @@ public class RawMemory : IBusAttachable
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
-    public RawMemory(uint words, uint[] initialData)
+    public RawMemory(uint words) : this(words, new uint[0]) {}
+
+    public RawMemory(uint words, uint[] initialData) : this(words, [initialData]) {}
+
+    public RawMemory(uint words, uint[][] initialData)
     {
         if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
@@ -66,8 +70,10 @@ public class RawMemory : IBusAttachable
 
         if (initialData.Length > words)
             throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
-        for (uint i = 0; i < initialData.Length; i++)
-            Write(i, initialData[i]);
+        if (initialData.Length >= 1 && initialData[0].Length != 0)
+            Array.Copy(initialData[0], _data[0], initialData[0].Length);
+        if (initialData.Length >= 2 && initialData[1].Length != 0)
+            Array.Copy(initialData[1], _data[1], initialData[1].Length);
         Logging.LogDebug(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
             $"WORDS:{_words}; Total space:{TotalSizeBits} bits");

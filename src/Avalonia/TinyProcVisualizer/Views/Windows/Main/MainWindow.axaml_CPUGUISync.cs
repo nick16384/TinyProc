@@ -5,7 +5,7 @@ using System.Threading;
 using Avalonia.Threading;
 using AvaloniaHex.Document;
 
-namespace TinyProcVisualizer.Views;
+namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {

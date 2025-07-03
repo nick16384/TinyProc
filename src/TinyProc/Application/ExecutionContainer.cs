@@ -85,6 +85,19 @@ public class ExecutionContainer
             INSTANCE0 = this;
     }
 
+    public uint VirtualMemorySizeWords { get => (uint)(_mem1.TotalSizeBits / 32); }
+
+    public uint[][] LiveMemoryDump {
+        get
+        {
+            uint[][] memoryDump = new uint[_mem1.Data.Length][];
+            for (int i = 0; i < memoryDump.Length; i++)
+                memoryDump[i] = new uint[_mem1.Data[i].Length];
+            _mem1.Data.CopyTo(memoryDump.AsMemory());
+            return memoryDump;
+        }}
+
+    // TODO: Replace direct read / write methods with an array and underlying yield methods.
     public uint ReadRAMDirect(uint address) => _mem1.ReadDirect(address);
     
     public void WriteRAMDirect(uint address, int uintOffset, byte value)

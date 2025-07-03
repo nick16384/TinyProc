@@ -33,8 +33,10 @@ public partial class Assembler
             })
             .Key
             .Item1;
-        return $"{mnemonic}{GetConditionString(instruction.GetConditional())} " +
-            $"{instruction.R_GetAddressableDestRegCode()}, {instruction.R_GetAddressableSrcRegCode()}";
+        return string.Format("{0,-7} {1}, {2}",
+                mnemonic + GetConditionString(instruction.GetConditional()),
+                instruction.R_GetAddressableDestRegCode(),
+                instruction.R_GetAddressableSrcRegCode());
     }
 
     private static string StringFromRegImmInstruction(Instructions.RegImmInstruction instruction)
@@ -50,11 +52,14 @@ public partial class Assembler
             .Key
             .Item1;
         if (mnemonic == "INC" || mnemonic == "DEC")
-            return $"{mnemonic}{GetConditionString(instruction.GetConditional())} " +
-                $"{instruction.I_GetAddressableDestRegCode()}";
+            return string.Format("{0,-7} {1}",
+                mnemonic + GetConditionString(instruction.GetConditional()),
+                instruction.I_GetAddressableDestRegCode());
         else
-            return $"{mnemonic}{GetConditionString(instruction.GetConditional())} " +
-                $"{instruction.I_GetAddressableDestRegCode()}, 0x{instruction.I_GetImmediateValue():X8}";
+            return string.Format("{0,-7} {1}, 0x{2:X8}",
+                mnemonic + GetConditionString(instruction.GetConditional()),
+                instruction.I_GetAddressableDestRegCode(),
+                instruction.I_GetImmediateValue());
     }
 
     private static string StringFromJumpInstruction(Instructions.JumpInstruction instruction)
@@ -70,17 +75,18 @@ public partial class Assembler
             .Item1;
 
         if (instruction.GetOpcode() == Instructions.Opcode.NOP)
-            return $"{mnemonic}{instruction.GetConditional()}";
+            return string.Format("{0}",
+                mnemonic + GetConditionString(instruction.GetConditional()));
         else
-            return $"{mnemonic}{GetConditionString(instruction.GetConditional())} " +
-                $"0x{instruction.J_GetJumpTargetAddress():X8}";
+            return string.Format("{0,-7} 0x{1:X8}",
+                mnemonic + GetConditionString(instruction.GetConditional()),
+                instruction.J_GetJumpTargetAddress());
     }
 
     private static string GetConditionString(Instructions.Condition condition)
     {
-        if (condition == Instructions.Condition.ALWAYS)
-            return "";
-        else
+        if (condition != Instructions.Condition.ALWAYS)
             return condition.ToString();
+        return "";
     }
 }

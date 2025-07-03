@@ -2,7 +2,7 @@ using System;
 using Avalonia.Threading;
 using AvaloniaHex.Document;
 
-namespace TinyProcVisualizer.Views;
+namespace TinyProcVisualizer.Views.Windows.Main;
 
 public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
 {

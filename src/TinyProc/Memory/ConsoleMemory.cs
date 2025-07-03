@@ -2,7 +2,7 @@ using TinyProc.Application;
 
 namespace TinyProc.Memory;
 
-public class ConsoleMemory(uint words) : RawMemory(words, [])
+public class ConsoleMemory(uint words) : RawMemory(words, new uint[0])
 {
     public bool EnableConsoleOutput = true;
 
