@@ -37,6 +37,30 @@ public partial class Assembler
         return assemblyCodeBuilder.ToString().Trim();
     }
 
+    public static string DisassembleFromProgramWithHeader(ExecutableWrapper programWrapper)
+    {
+        string header =
+            $"#VERSION {GetVersionStringFromEncodedValue(programWrapper.AssemblerVersion)}\n" +
+            $"#MEMREGION RAM 0x{programWrapper.RAMRegionStart:X8} 0x{programWrapper.RAMRegionEnd:X8}\n" +
+            $"#MEMREGION CON 0x{programWrapper.CONRegionStart:X8} 0x{programWrapper.CONRegionEnd:X8}";
+        return header + "\n\n" + DisassembleFromProgram(programWrapper);
+    }
+
+    public static string DisassembleFromProgramWithHeader(uint[] executableProgram,
+        string? version = null, uint? ramStart = null, uint? ramEnd = null, uint? conStart = null, uint? conEnd = null)
+    {
+        version ??= "2.0";
+        ramStart ??= 0x00000000u;
+        ramEnd ??= (uint)executableProgram.Length;
+        conStart ??= ramEnd + 1;
+        conEnd ??= conStart + 1;
+        string header =
+            $"#VERSION {version}\n" +
+            $"#MEMREGION RAM 0x{ramStart:X8} 0x{ramEnd:X8}\n" +
+            $"#MEMREGION CON 0x{conStart:X8} 0x{conEnd:X8}";
+        return header + "\n\n" + DisassembleFromProgram(executableProgram);
+    }
+
     private static (T, T)[] ConvertArrayToTuples<T>(T[] array)
     {
         if (array.Length % 2 != 0)

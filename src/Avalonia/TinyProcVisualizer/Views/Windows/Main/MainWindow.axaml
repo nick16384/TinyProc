@@ -36,16 +36,16 @@
                 <!-- File selection -->
                 <MenuItem Header="File" BorderThickness="1">
                     <!-- TODO: Implement file drag and drop -->
-                    <MenuItem Header="Load and compile assembly source file..." Click="Menu_File_AssemblySourceFileSelectAndCompile_OnClick" />
-                    <MenuItem Header="Select binary executable file..." Click="Menu_File_BinaryExecutableFileSelect_OnClick" />
+                    <MenuItem Header="Load and assemble assembly source file..." Click="Menu_File_AssemblySourceFileSelectAndAssemble_OnClick" />
+                    <MenuItem Header="Load binary executable file..." Click="Menu_File_BinaryExecutableFileSelect_OnClick" />
                 </MenuItem>
                 <MenuItem Header="Edit" BorderThickness="1">
-                    <MenuItem Header="Decompile from">
-                        <MenuItem Header="File..." Click="Menu_Edit_DecompileFromFile" />
-                        <MenuItem Header="RAM" Click="Menu_Edit_DecompileFromRAM" />
+                    <MenuItem Header="Disassemble from">
+                        <MenuItem Header="File..." Click="Menu_Edit_DisassembleFromFile" />
+                        <MenuItem Header="RAM" Click="Menu_Edit_DisassembleFromRAM" />
                     </MenuItem>
-                    <MenuItem Header="Compile and save to file..." Click="Menu_Edit_CompileToFile" />
-                    <MenuItem Header="Compile and load at address" Click="Menu_Edit_CompileAndLoadAtAddress" />
+                    <MenuItem Header="Assemble and save to file..." Click="Menu_Edit_AssembleToFile" />
+                    <MenuItem Header="Assemble and load at address" Click="Menu_Edit_AssembleAndLoadAtAddress" />
                 </MenuItem>
                 <MenuItem Header="View" BorderThickness="1">
                     <CheckBox Name="Menu_View_EnableEditorSyntaxHighlighting" IsChecked="True">
@@ -206,7 +206,7 @@
                 </Border>
             </StackPanel>
 
-            <!-- Source assembly editor and compiler -->
+            <!-- Source assembly editor and assembler / disassembler -->
             <StackPanel Grid.Row="0" Grid.Column="1">
                 <ScrollViewer Name="ScrollViewer_SourceCodeEditor" VerticalScrollBarVisibility="Visible" Margin="10, 40, 10, 30">
                     <TextBox Name="TextBox_SourceAssemblyCodeEditor" TextWrapping="Wrap" AcceptsReturn="True">
