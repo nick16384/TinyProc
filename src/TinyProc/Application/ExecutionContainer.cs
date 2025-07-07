@@ -85,6 +85,14 @@ public class ExecutionContainer
             INSTANCE0 = this;
     }
 
+    public void LoadDataAtAddress(uint[] data, uint address)
+    {
+        for (uint i = 0; i < data.Length; i++)
+        {
+            _mem1.WriteDirect(data[i], address + i);
+        }
+    }
+
     public uint VirtualMemorySizeWords { get => (uint)(_mem1.TotalSizeBits / 32); }
 
     public uint[][] LiveMemoryDump {

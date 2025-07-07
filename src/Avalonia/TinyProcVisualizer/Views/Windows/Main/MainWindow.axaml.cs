@@ -19,6 +19,8 @@ using CommunityToolkit.Mvvm.Messaging;
 using TinyProcVisualizer.Messages;
 using TinyProcVisualizer.Views.Windows.Dialog_DisassembleFromRAM;
 using TinyProcVisualizer.ViewModels.Dialog_DisassembleFromRAM;
+using TinyProcVisualizer.Views.Windows.Dialog_AssembleAndLoad;
+using TinyProcVisualizer.ViewModels.Dialog_AssembleAndLoad;
 
 namespace TinyProcVisualizer.Views.Windows.Main;
 
@@ -44,7 +46,7 @@ public partial class MainWindow : Window
         HexEditor1.HexView.LineTransformers.Add(HexEditorMARHighlighter);
         HexEditor2.HexView.LineTransformers.Add(HexEditorMARHighlighter);
 
-        // Register handler for dialog that comes up, when the user disassembles from RAM.
+        // Register handlers for Windows that ask the user to enter data.
         // Example cause I don't understand this crap:
         // https://docs.avaloniaui.net/docs/tutorials/music-store-app/opening-a-dialog
         WeakReferenceMessenger.Default.Register<MainWindow, DisassembleFromRAMMessage>(this, static (window, message) =>
@@ -54,6 +56,14 @@ public partial class MainWindow : Window
                 DataContext = new DialogDisassembleFromRAM_ViewModel()
             };
             message.Reply(dialog.ShowDialog<DialogDisassembleFromRAM_ViewModel?>(window));
+        });
+        WeakReferenceMessenger.Default.Register<MainWindow, AssembleAndLoadMessage>(this, static (window, message) =>
+        {
+            var dialog = new DialogAssembleAndLoad
+            {
+                DataContext = new DialogAssembleAndLoad_ViewModel()
+            };
+            message.Reply(dialog.ShowDialog<DialogAssembleAndLoad_ViewModel?>(window));
         });
 
         // Initialize event handlers responsible primarily for resizing window elements.
@@ -273,7 +283,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Assembler error",
-                $"Runtime assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -413,7 +423,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Assembler error",
-                $"Runtime assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -433,7 +443,39 @@ public partial class MainWindow : Window
     }
 
     private async void Menu_Edit_AssembleAndLoadAtAddress(object? sender, RoutedEventArgs e)
-        => throw new NotImplementedException();
+    {
+        //string 
+
+        string sourceCodeText = TextBox_SourceAssemblyCodeEditor.Text ?? "";
+        if (string.IsNullOrWhiteSpace(sourceCodeText))
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Error",
+                $"No source code to assemble.",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
+
+        // Assemble text to binary executable
+        uint[] assembledBinary;
+        try
+        {
+            // Using async await, since the assembling process might take a long time
+            assembledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceCodeText));
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Assembler error",
+                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
+        TinyProc.Application.ExecutableWrapper programWrapper = new(assembledBinary);
+
+        // Write assembled program to memory
+
+    }
 
     #endregion Edit menu
 

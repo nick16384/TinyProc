@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TinyProcVisualizer.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        x:Class="TinyProcVisualizer.Views.Windows.Dialog_AssembleAndLoad.DialogAssembleAndLoad"
+        x:DataType="vm:Dialog_DisassembleFromRAM.DialogDisassembleFromRAM_ViewModel"
+        WindowStartupLocation="CenterOwner"
+        Width="300" Height="190"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Assemble and load at address">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <StackPanel>
+        <Label>Load at address:</Label>
+        <StackPanel Orientation="Horizontal">
+            <TextBox Name="TextBox_LoadAddress" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                Min
+            </Button>
+            <Button Click="Button_SetMaxEndAddress_OnClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                Max
+            </Button>
+        </StackPanel>
+
+        <Button Click="Button_SubmitAddressRanges_OnClick" Width="90" VerticalAlignment="Stretch" Margin="0, 20, 0, 3">
+            Assemble and Load
+        </Button>
+    </StackPanel>
+
+</Window>

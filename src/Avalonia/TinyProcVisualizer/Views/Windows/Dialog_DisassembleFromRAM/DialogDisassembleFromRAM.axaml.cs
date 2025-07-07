@@ -1,7 +1,6 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using DialogHostAvalonia;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using TinyProcVisualizer.ViewModels.Dialog_DisassembleFromRAM;
