@@ -20,14 +20,15 @@
         <Label>Load at address:</Label>
         <StackPanel Orientation="Horizontal">
             <TextBox Name="TextBox_LoadAddress" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            <Button Click="Button_SetMinLoadAddress_OnClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 Min
             </Button>
-            <Button Click="Button_SetMaxEndAddress_OnClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Button Click="Button_SetMaxLoadAddress_OnClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 Max
             </Button>
         </StackPanel>
 
-        <Button Click="Button_SubmitAddressRanges_OnClick" Width="90" VerticalAlignment="Stretch" Margin="0, 20, 0, 3">
+        <Button Click="Button_SubmitLoadAddress_OnClick" Width="90" VerticalAlignment="Stretch" Margin="0, 20, 0, 3">
             Assemble and Load
         </Button>
     </StackPanel>
