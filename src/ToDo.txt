@@ -39,6 +39,7 @@ Upcoming / In progress ToDo's:
 - Fix occasional TaskCanceledException on app exit
 
 === MILESTONE: Merge development-avalonia with development ===
+-> Bump versions
 
 - Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it
 (Parse labels as addresses first, then assemble the rest.
