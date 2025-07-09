@@ -6,7 +6,7 @@
         x:Class="TinyProcVisualizer.Views.Windows.Dialog_AssembleAndLoad.DialogAssembleAndLoad"
         x:DataType="vm:Dialog_DisassembleFromRAM.DialogDisassembleFromRAM_ViewModel"
         WindowStartupLocation="CenterOwner"
-        Width="300" Height="190"
+        Width="185" Height="120"
         Icon="/Assets/avalonia-logo.ico"
         Title="Assemble and load at address">
 
@@ -16,10 +16,10 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <StackPanel>
+    <StackPanel Margin="5">
         <Label>Load at address:</Label>
         <StackPanel Orientation="Horizontal">
-            <TextBox Name="TextBox_LoadAddress" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            <TextBox Name="TextBox_LoadAddress" Width="90" VerticalAlignment="Stretch" />
             <Button Click="Button_SetMinLoadAddress_OnClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 Min
             </Button>
@@ -28,7 +28,7 @@
             </Button>
         </StackPanel>
 
-        <Button Click="Button_SubmitLoadAddress_OnClick" Width="90" VerticalAlignment="Stretch" Margin="0, 20, 0, 3">
+        <Button Click="Button_SubmitLoadAddress_OnClick" Width="140" VerticalAlignment="Stretch" Margin="0, 20, 0, 3">
             Assemble and Load
         </Button>
     </StackPanel>
