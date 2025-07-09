@@ -474,7 +474,26 @@ public partial class MainWindow : Window
         TinyProc.Application.ExecutableWrapper programWrapper = new(assembledBinary);
 
         // Write assembled program to memory
+        // Show address selection dialog
+        var messageAddress = await WeakReferenceMessenger.Default.Send(new AssembleAndLoadMessage());
+        uint? address = messageAddress?.LoadAddress;
+        if (!address.HasValue)
+        {
+            Console.WriteLine("User cancelled assmble and load memory address selection.");
+            return;
+        }
 
+        if (address + programWrapper.ExecutableProgram.Length
+            > TinyProc.Application.ExecutionContainer.INSTANCE0.VirtualMemorySizeWords)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Assembler error",
+                $"The program is too large to be loaded at the specified address.",
+                ButtonEnum.Ok).ShowAsync();
+            return;
+        }
+
+        TinyProc.Application.ExecutionContainer.INSTANCE0.LoadDataAtAddress(programWrapper.ExecutableProgram, address.Value);
     }
 
     #endregion Edit menu

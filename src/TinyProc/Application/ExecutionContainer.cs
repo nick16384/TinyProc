@@ -89,7 +89,7 @@ public class ExecutionContainer
     {
         for (uint i = 0; i < data.Length; i++)
         {
-            _mem1.WriteDirect(data[i], address + i);
+            _mem1.WriteDirect(address + i, data[i]);
         }
     }
 
