@@ -1,9 +1,9 @@
 Typical asm mnemonics:
-[INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
+[INSTRUCTION] [DESTINATION], [SOURCE] ; [Comments]
 e.g.
-ADD REG1 0x40 ; Adds 0x40 to register 1
+ADD REG1, 0x40 ; Adds 0x40 to register 1
 or
-ADDR REG1 REG2 ; Adds the value of register 2 to register 1
+ADDR REG1, REG2 ; Adds the value of register 2 to register 1
 
 Instruction set:
 [Mnemonic]? [Operand 1] [Operand 2] : [Description] (Supports conditions)
@@ -14,7 +14,7 @@ NOP : Do nothing for one cycle
 
 Branching:
 JMP [Target address] : Jump to address
-B? [Target address] : Branch on condition
+B? [Target address] : Branch(=jump) on condition
 
 Flags:
 To be implemented: TST, CLZ, CLOF, CLNG
@@ -49,13 +49,13 @@ BZR 0x01
 This instruction will only run, if the flag "ZR" ("zero") is set to 1.
 The flag will be set if the result of the previous arithmetic instruction was zero.
 In the following example, the BZR instruction will execute:
-MOV gp1, 1
-SUB gp1, 1
-BZR 0x01
+MOV gp1, 1 ; Copy the value "1" to register GP1
+SUB gp1, 1 ; Subtract 1 from register GP1. The result is 1 - 1 = 0
+BZR 0x01 ; The result of the last operation was 0 -> Jump to address 0x01
 While this BZR instruction will not run, because 2 - 1 is not equal to 0:
-MOV gp1, 2
-SUB gp1, 1
-BZR 0x01
+MOV gp1, 2 ; Copy the value "2" to register GP1
+SUB gp1, 1 ; Subtract 1 from register GP1. Result is 2 - 1 = 1
+BZR 0x01 ; The result of the last operation was not 0 -> Do nothing (effectively a NOP)
 Additional note: There are always negated / inverted conditions, e.g. NZ ("not zero") is the inverse of ZR ("zero") and so on.
 
 [Conditional code] - [Description] - [Instruction suffix]
