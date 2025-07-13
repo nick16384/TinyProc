@@ -11,7 +11,7 @@ public class ExecutionContainer
 {
     // The first (and almost always only) instance of an ExecutionContainer, which is
     // exposed externally to be used by e.g. GUIs.
-    public static ExecutionContainer INSTANCE0;
+    public static ExecutionContainer? INSTANCE0 { get; set; }
 
     private readonly RawMemory _mem1;
     private readonly ConsoleMemory _tmem1;

@@ -116,8 +116,14 @@ public partial class MainWindow : Window
         var updateHexEditor2Highlight = Dispatcher.UIThread.InvokeAsync(HexEditor2.HexView.InvalidateVisualLines);
 
         // Sync RAM and CON hex view (They update themselves)
-        var syncRAM = Task.Run(() => ForceGetterUpdate(HexEditorDocumentRAM));
-        var syncCON = Task.Run(() => ForceGetterUpdate(HexEditorDocumentCON));
+        Console.WriteLine($"New RAM len {(ulong)TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes.Length}");
+        var syncRAM = Task.Run(() =>
+        {
+            if ((ulong)TinyProc.Application.ExecutionContainer.INSTANCE0.VirtualMemorySizeWords * sizeof(uint) != _HexEditorDocumentRAM.Length)
+                ReinitializeDocument(
+                    _HexEditorDocumentRAM, () => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
+        });
+        var syncCON = Task.Run(() => {});
 
         // Wait for all update tasks to complete
         try

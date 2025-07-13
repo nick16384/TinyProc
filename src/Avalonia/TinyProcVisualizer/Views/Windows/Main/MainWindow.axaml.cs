@@ -1,9 +1,6 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
-using System.Web;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AvaloniaHex;
@@ -13,15 +10,12 @@ using AvaloniaHex.Rendering;
 using Avalonia.Media;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
-using TinyProc.Application;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using TinyProcVisualizer.Messages;
 using TinyProcVisualizer.Views.Windows.Dialog_DisassembleFromRAM;
 using TinyProcVisualizer.ViewModels.Dialog_DisassembleFromRAM;
 using TinyProcVisualizer.Views.Windows.Dialog_AssembleAndLoad;
 using TinyProcVisualizer.ViewModels.Dialog_AssembleAndLoad;
-using AvaloniaHex.Document;
 
 namespace TinyProcVisualizer.Views.Windows.Main;
 
@@ -77,9 +71,6 @@ public partial class MainWindow : Window
         CPUGUIDataSyncThread.Start();
     }
 
-    // Helper method: Updates a property, if its getter implements some sort of auto-update.
-    private static void ForceGetterUpdate(object obj) { object unused = obj; }
-
     public void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
         Console.WriteLine("App exit called.");
@@ -89,9 +80,9 @@ public partial class MainWindow : Window
 
     #region Hex Editors
 
-    private static readonly RealTimeFixedSizeBinaryDocument EMPTY_RT_DOCUMENT = new([], null);
+    private static readonly RealTimeFixedSizeExternalSourceBinaryDocument EMPTY_RT_DOCUMENT = new(() => [], TimeSpan.FromMilliseconds(100));
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_BINARY = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan UPDATE_INTERVAL_DOC_RAM = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan UPDATE_INTERVAL_DOC_CON = TimeSpan.FromMilliseconds(100);
 
     private readonly RangesHighlighter HexEditorPCHighlighter = new()
@@ -104,8 +95,8 @@ public partial class MainWindow : Window
     };
     // TODO: Make arbitrary register contents be interpretable as addresses and highlight them.
 
-    private RealTimeFixedSizeBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
-    private RealTimeFixedSizeBinaryDocument HexEditorDocumentBinaryExecutableFile
+    private RealTimeFixedSizeExternalSourceBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
+    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentBinaryExecutableFile
     {
         get
         {
@@ -116,13 +107,13 @@ public partial class MainWindow : Window
             else
             {
                 _HexEditorDocumentBinaryExecutableFile
-                    = new RealTimeFixedSizeBinaryDocument(File.ReadAllBytes(binFilePath), UPDATE_INTERVAL_DOC_BINARY);
+                    = new RealTimeFixedSizeExternalSourceBinaryDocument(() => File.ReadAllBytes(binFilePath), UPDATE_INTERVAL_DOC_BINARY);
             }
             return _HexEditorDocumentBinaryExecutableFile;
         }
     }
-    private RealTimeFixedSizeBinaryDocument _HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
-    private RealTimeFixedSizeBinaryDocument HexEditorDocumentRAM
+    private RealTimeFixedSizeExternalSourceBinaryDocument _HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
+    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentRAM
     {
         get
         {
@@ -130,17 +121,16 @@ public partial class MainWindow : Window
                 Console.Error.WriteLine("CPU not initialized yet, cannot read RAM.");
             else
             {
-                ReadOnlySpan<byte> ramData = TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes;
-                if ((ulong)ramData.Length != _HexEditorDocumentRAM.Length)
-                    _HexEditorDocumentRAM = new RealTimeFixedSizeBinaryDocument(ramData, UPDATE_INTERVAL_DOC_RAM);
-                _HexEditorDocumentRAM.WriteNewDataToLiveBuffer(ramData);
+                if ((ulong)TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes.Length != _HexEditorDocumentRAM.Length)
+                    ReinitializeDocument(
+                        _HexEditorDocumentRAM, () => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
             }
             return _HexEditorDocumentRAM;
         }
     }
-    private RealTimeFixedSizeBinaryDocument HexEditorDocumentCON
+    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentCON
     {
-        get => new([1, 2, 3], TimeSpan.FromMilliseconds(1000));
+        get => new(() => [1, 2, 3], TimeSpan.FromMilliseconds(100));
     }
 
     #endregion Hex Editors
@@ -185,6 +175,14 @@ public partial class MainWindow : Window
         ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor1Selector, HexEditor1);
         ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor2Selector, HexEditor2);
     }
+    private static void ReinitializeDocument(
+        RealTimeFixedSizeExternalSourceBinaryDocument document, Func<ReadOnlySpan<byte>> backingSource, TimeSpan updateInterval)
+    {
+        // Reinitialize document when e.g. the size changed
+        document = new RealTimeFixedSizeExternalSourceBinaryDocument(backingSource, updateInterval);
+        // Exclude backing updates for bytes that have been changed by the user
+        document.Changed += (sender, eventArgs) => document.AddLockedRange(eventArgs.AffectedRange);
+    }
 
     private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -212,10 +210,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _HexEditorDocumentRAM =
-            await Task.Run(() =>
-            new RealTimeFixedSizeBinaryDocument(new byte[TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes.Length],
-            UPDATE_INTERVAL_DOC_RAM));
+        ReinitializeDocument(_HexEditorDocumentRAM, () => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
 
         // Simple CPU stepping
         Button_InitCPU.IsEnabled = false;
@@ -227,12 +222,20 @@ public partial class MainWindow : Window
         // Other
         Button_CPUStop.IsEnabled = true;
         ReloadHexEditorDocuments();
-        (HexEditor2.HexView.Document as RealTimeFixedSizeBinaryDocument).UpdatingBitRanges.Clear();
-        (HexEditor2.HexView.Document as RealTimeFixedSizeBinaryDocument).UpdatingBitRanges.Add(new BitRange(1024, 2048));
     }
 
-    private string? executableTargetPath;
-    private string? _binaryExecutableFilePath;
+    private void Button_HexEditor1_OverrideMemoryContents(object? sender, RoutedEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void Button_HexEditor1_RefreshMemoryContents(object? sender, RoutedEventArgs e)
+    {
+        if (HexEditor1.Document is RealTimeFixedSizeExternalSourceBinaryDocument document)
+            document.ResetUpdateRanges();
+        else
+            Console.Error.WriteLine("Hex editor 1 document is not an RT document; Cannot refresh.");
+    }
 
     #region Logging
 

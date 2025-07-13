@@ -13,6 +13,9 @@ namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {
+    private string? _executableTargetPath;
+    private string? _binaryExecutableFilePath;
+
     #region File menu
 
     private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
@@ -37,11 +40,11 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected assembly source file: " + files[0].Name);
-        executableTargetPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        _executableTargetPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
 
         // Assemble loaded assembly file
         // Read assembly source file contents
-        string? sourceFilePath = executableTargetPath;
+        string? sourceFilePath = _executableTargetPath;
         if (string.IsNullOrWhiteSpace(sourceFilePath))
         {
             await MessageBoxManager.GetMessageBoxStandard(

@@ -1,30 +1,118 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.Threading;
+using System.Threading;
+using System.Threading.Tasks;
 using AvaloniaHex.Document;
 
 namespace TinyProcVisualizer.Views.Windows.Main;
 
-public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
+public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocument
 {
-    private static readonly TimeSpan DEFAULT_UPDATE_INTERVAL = TimeSpan.FromMilliseconds(100);
-    public RealTimeFixedSizeBinaryDocument(ReadOnlySpan<byte> bytes, TimeSpan? updateInterval) : base(bytes.ToArray())
+    private readonly Func<ReadOnlySpan<byte>> _backingSource;
+    private readonly TimeSpan _updateInterval;
+    private List<BitRange> _updatingBitRanges = [];
+
+    public RealTimeFixedSizeExternalSourceBinaryDocument(Func<ReadOnlySpan<byte>> backingSource, TimeSpan updateInterval)
+        : base(backingSource().ToArray())
     {
-        updateInterval ??= DEFAULT_UPDATE_INTERVAL;
-        var updateTimer = new DispatcherTimer(updateInterval.Value, DispatcherPriority.Background, UpdateDocument);
         ResetUpdateRanges();
-        updateTimer.Start();
+        _backingSource = backingSource;
+        _updateInterval = updateInterval;
+
+        Task.Run(() =>
+        {
+            while (true)
+            {
+                Thread.Sleep(updateInterval);
+                ReadOnlySpan<byte> newData = backingSource();
+                if (newData.Length != Memory.Length)
+                {
+                    Console.Error.WriteLine($"Backing source length {newData.Length} mismatches internal length {Memory.Length}");
+                    return;
+                    // FIXME: Fix mem leak
+                    // FIXME: Fix RAM not updating correctly
+                }
+                WriteNewDataToLiveBuffer(newData);
+            }
+        });
     }
 
-    private List<BitRange> _updatingBitRanges = [];
-    public List<BitRange> UpdatingBitRanges
+    public void AddUpdatingRange(BitRange newRange)
     {
-        get => _updatingBitRanges;
-        set
+        lock (_updatingBitRanges)
         {
-            _updatingBitRanges = value;
+            _updatingBitRanges.Add(newRange);
             CleanupUpdateRanges();
+        }
+    }
+
+    public void ResetUpdateRanges()
+    {
+        _updatingBitRanges = [new BitRange(0ul, (ulong)Memory.Length - 1)];
+    }
+
+    // Locked bit range are bit ranges that do not get updated
+    public List<BitRange> GetLockedBitRanges()
+    {
+        lock (_updatingBitRanges)
+        {
+            List<BitRange> lockedBitRanges = [];
+            for (int i = 1; i < _updatingBitRanges.Count; i++)
+            {
+                ulong endPrev = _updatingBitRanges[i - 1].End.ByteIndex;
+                ulong start = _updatingBitRanges[i].Start.ByteIndex;
+
+                if (endPrev + 1 < start)
+                    lockedBitRanges.Add(new BitRange(endPrev + 1, start - 1));
+            }
+            if (_updatingBitRanges.Last().End.ByteIndex + 1 < (ulong)Memory.Length)
+                lockedBitRanges.Add(new BitRange(_updatingBitRanges.Last().End.ByteIndex + 1, (ulong)Memory.Length - 1));
+            return lockedBitRanges;
+        }
+    }
+
+    // Locked bit range are bit ranges that do not get updated
+    public void AddLockedRange(BitRange newLockedRange)
+    {
+        lock (_updatingBitRanges)
+        {
+            List<BitRange> newUpdatingBitRanges = [];
+
+            ulong startLocked = newLockedRange.Start.ByteIndex;
+            ulong endLocked = newLockedRange.End.ByteIndex;
+
+            for (int i = 0; i < _updatingBitRanges.Count; i++)
+            {
+                ulong start = _updatingBitRanges[i].Start.ByteIndex;
+                ulong end = _updatingBitRanges[i].End.ByteIndex;
+
+                // Cut out at the end or inside updating ranges
+                // start < startLocked < end
+                if (start < startLocked && startLocked <= end)
+                {
+                    newUpdatingBitRanges.Add(new BitRange(start, startLocked - 1));
+                    // start < startLocked < endLocked < end
+                    if (endLocked < end)
+                        newUpdatingBitRanges.Add(new BitRange(endLocked + 1, end));
+                }
+
+                // Cut out the beginning of updating ranges
+                // startLocked <= start < end
+                else if (startLocked <= start && start < end)
+                {
+                    // If end <= endLocked, do nothing, since the updating range is fully covered by the locked range
+                    if (endLocked < end)
+                        newUpdatingBitRanges.Add(new BitRange(endLocked + 1, end));
+                }
+                else
+                {
+                    // Completely unaffected updating range
+                    newUpdatingBitRanges.Add(_updatingBitRanges[i]);
+                }
+            }
+
+            _updatingBitRanges = newUpdatingBitRanges;
         }
     }
 
@@ -34,15 +122,15 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
         // Sort the list of ranges
         _updatingBitRanges.Sort();
 
-        for (int i = 0; i < UpdatingBitRanges.Count; i++)
+        for (int i = 0; i < _updatingBitRanges.Count; i++)
         {
-            for (int j = 0; j < UpdatingBitRanges.Count; j++)
+            for (int j = 0; j < _updatingBitRanges.Count; j++)
             {
                 if (i == j) continue;
-                ulong start1 = (ulong)UpdatingBitRanges[i].Start.BitIndex;
-                ulong start2 = (ulong)UpdatingBitRanges[i].End.BitIndex;
-                ulong end1 = (ulong)UpdatingBitRanges[j].Start.BitIndex;
-                ulong end2 = (ulong)UpdatingBitRanges[j].End.BitIndex;
+                ulong start1 = _updatingBitRanges[i].Start.ByteIndex;
+                ulong start2 = _updatingBitRanges[i].End.ByteIndex;
+                ulong end1 = _updatingBitRanges[j].Start.ByteIndex;
+                ulong end2 = _updatingBitRanges[j].End.ByteIndex;
 
                 // Remove redundant ranges (ranges fully enclosed by other ranges)
 
@@ -52,7 +140,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // start1 == start2 && end1 == end2
                 if (start1 == start2 && end1 == end2)
                 {
-                    UpdatingBitRanges.RemoveAt(j);
+                    _updatingBitRanges.RemoveAt(j);
                     j -= 1;
                     continue;
                 }
@@ -62,7 +150,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // start1 < start2 < end2 < end1
                 if (start1 < start2 && start2 < end2 && end2 < end1)
                 {
-                    UpdatingBitRanges.RemoveAt(j);
+                    _updatingBitRanges.RemoveAt(j);
                     j -= 1;
                     continue;
                 }
@@ -72,7 +160,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // start2 < start1 < end1 < end2
                 if (start2 < start1 && start1 < end1 && end1 < end2)
                 {
-                    UpdatingBitRanges.RemoveAt(i);
+                    _updatingBitRanges.RemoveAt(i);
                     i -= 1;
                     break;
                 }
@@ -85,7 +173,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // start1 < start2 <= end1 < end2
                 if (start1 < start2 && start2 <= end1 && end1 < end2)
                 {
-                    UpdatingBitRanges[j] = new BitRange(end1 + 1, end2);
+                    _updatingBitRanges[j] = new BitRange(end1 + 1, end2);
                 }
                 // 1:    |-----|
                 // 2: |-----|
@@ -93,7 +181,7 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // start2 < start1 <= end2 < end1
                 if (start2 < start1 && start1 <= end2 && end2 < end1)
                 {
-                    UpdatingBitRanges[i] = new BitRange(end2 + 1, end1);
+                    _updatingBitRanges[i] = new BitRange(end2 + 1, end1);
                 }
 
                 // Merge ranges that are next to each other
@@ -103,8 +191,8 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
                 // end1 + 1 == start2
                 if (end1 + 1 == start2)
                 {
-                    UpdatingBitRanges.RemoveAt(j);
-                    UpdatingBitRanges[i] = new BitRange(start1, end2);
+                    _updatingBitRanges.RemoveAt(j);
+                    _updatingBitRanges[i] = new BitRange(start1, end2);
                     j -= 1;
                     continue;
                 }
@@ -112,31 +200,19 @@ public class RealTimeFixedSizeBinaryDocument : MemoryBinaryDocument
         }
     }
 
-    public void ResetUpdateRanges()
-    {
-        UpdatingBitRanges = [new BitRange(0ul, (ulong)Memory.Length * 8)];
-    }
-
     public void WriteNewDataToLiveBuffer(ReadOnlySpan<byte> bytes)
     {
-        foreach (BitRange updateRange in UpdatingBitRanges)
+        if (bytes.Length != Memory.Length)
+            throw new ArgumentOutOfRangeException(
+                $"Cannot override hexview data: New size {bytes.Length} does not match internal size {Memory.Length}");
+        foreach (BitRange updateRange in _updatingBitRanges)
         {
-            Console.WriteLine($"Range {updateRange.Start.ByteIndex:X8} to {updateRange.End.ByteIndex:X8}");
-            byte[] span = new byte[updateRange.ByteLength];
-            Array.Copy(bytes.ToArray(), (int)updateRange.Start.ByteIndex, span, 0, span.Length);
-            span.CopyTo(Memory.Span[(int)updateRange.Start.ByteIndex..]);
+            // Create a temporary buffer, which contains the new updated data for this update range
+            byte[] updateRangeNewBytes = new byte[updateRange.ByteLength];
+            // Fill the buffer with the new data (update range section only)
+            Array.Copy(bytes.ToArray(), (int)updateRange.Start.ByteIndex, updateRangeNewBytes, 0, updateRangeNewBytes.Length);
+            // Copy the new updated section to the update range on the internal memory
+            updateRangeNewBytes.CopyTo(Memory.Span[(int)updateRange.Start.ByteIndex..]);
         }
     }
-
-    private void UpdateDocument(object? sender, EventArgs? e)
-    {
-        // TODO: For future implementation, only change the affected memory regions (only if performance improves)
-        BitRange changedMemoryRange = new(0, (ulong)Memory.Length - 1);
-        // var span = Memory.ToArray();
-        // span.CopyTo(Memory.Span);
-        foreach (BitRange updateRange in UpdatingBitRanges)
-            OnChanged(new BinaryDocumentChange(BinaryDocumentChangeType.Modify, updateRange));
-    }
-
-    public void ForceReload() => UpdateDocument(this, null);
 }
