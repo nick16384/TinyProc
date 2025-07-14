@@ -25,12 +25,10 @@ Future (unplanned) ToDo's:
    e.g. MemoryAddress and MemoryData get changed once each during memory writes, causing a double write.
    Potential fix: Enable write on setting EnableWrite only and not during bus updates.
 - Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
+- Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
 
 Upcoming / In progress ToDo's:
-- Add source code view component [in progress]
-2. Add simple syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
-
-- Implement memory override / refresh buttons
+- Implement memory override / refresh buttons [in progress]
 1. Disable memory hexview updates when the user entered something
 
 - Remove 2nd hex editor or make selectable, which to show via dropdown

@@ -223,8 +223,8 @@
                 <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
                     <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
                         Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged" />
-                    <Button DockPanel.Dock="Right">Override</Button>
-                    <Button DockPanel.Dock="Right">Refresh</Button>
+                    <Button DockPanel.Dock="Right" Click="Button_HexEditor1_OverrideMemoryContents">Override</Button>
+                    <Button DockPanel.Dock="Right" Click="Button_HexEditor1_RefreshMemoryContents">Refresh</Button>
                 </DockPanel>
                 <avaloniaHex:HexEditor
                 Grid.Row="1" Grid.Column="0"
