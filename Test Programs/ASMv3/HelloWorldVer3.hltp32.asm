@@ -7,7 +7,7 @@ immediate int_syscall = 1
 immediate int_syscall_conwrite = 10
 ; Hello world message must be stored as a pointer to the message, since the
 ; message itself is too large to be stored in a 32 bit value
-pointer hello_world, "Hello, World!" 0xA ; Store string + newline
+pointer hello_world, "Hello, World!"+0xA ; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
 block params_helloworld_call

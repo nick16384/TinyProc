@@ -31,11 +31,13 @@ Upcoming / In progress ToDo's:
 - Fix occasional TaskCanceledException on app exit [in progress]
 - Bump versions [done]
 
-- Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it
+- Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it [in progress]
 (Parse labels as addresses first, then assemble the rest.
 This prevents errors with jumps to labels that occur before the label was specified.)
 
 - Implement new assembly syntax (v3.0)
+-> When writing assembly in the GUI, use "direct" mode (instructions only, no .data section and header)
+--> Optionally make header usable; When header detected, switch to full assembly mode (requires header, .data and .text)
 
 - Add CPU init controls in separate border box / section
 1. Button "Initialize CPU" [done]
