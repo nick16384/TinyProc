@@ -5,11 +5,11 @@ Max. instruction mnemonic letters: 5
 Single universal addressing mode: absolute
 
 Typical asm mnemonics:
-[INSTRUCTION] [DESTINATION] [SOURCE] ; [Comments]
+[INSTRUCTION] [DESTINATION], [SOURCE] ; [Comments]
 e.g.
-ADD REG1 0x40 ; Adds 0x40 to register 1
+ADD REG1, 0x40 ; Adds 0x40 to register 1
 or
-ADDR REG1 REG2 ; Adds the value of register 2 to register 1
+ADDR REG1, REG2 ; Adds the value of register 2 to register 1
 
 Instruction set:
 [Op Code] - [Mnemonic]? [Opt: Arg1] [Opt: Arg2] : [Description] (Supports conditions)
@@ -18,7 +18,7 @@ Instruction set:
 
 Branching:
 01 - JMP [Target address] : Jump to address
-02 - B? [Target address] : Branch on condition
+02 - B? [Target address] : Branch(=jump) on condition
 
 Inter-register non-arithmetic operations:
 05 - TST : Test command; Sets all flags

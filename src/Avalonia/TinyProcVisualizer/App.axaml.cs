@@ -4,8 +4,8 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
-using TinyProcVisualizer.ViewModels;
-using TinyProcVisualizer.Views;
+using TinyProcVisualizer.ViewModels.Main;
+using TinyProcVisualizer.Views.Windows.Main;
 
 namespace TinyProcVisualizer;
 
@@ -27,6 +27,7 @@ public partial class App : Application
             {
                 DataContext = new MainWindowViewModel(),
             };
+            desktop.Exit += (desktop.MainWindow as MainWindow).OnAppExit;
         }
 
         base.OnFrameworkInitializationCompleted();

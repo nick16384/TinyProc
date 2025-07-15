@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using TinyProc.Application;
 using TinyProc.Memory;
 
 namespace TinyProc.Processor.CPU;
@@ -57,6 +59,8 @@ public partial class CPU
     private readonly ControlUnit _CU;
     private readonly ALU _ALU;
     private readonly MMU _MMU;
+    private readonly CPUDebugPort _debugPort;
+    public CPUDebugPort DebugPort { get => _debugPort; }
 
     public CPU(Dictionary<(uint, uint), RawMemory> rams, uint entryPoint)
     {
@@ -72,32 +76,19 @@ public partial class CPU
         _ALU = new ALU();
         _MMU = new MMU(null, (0x0, 0x0), rams);
         _CU = new ControlUnit(this, entryPoint, _ALU, _MMU);
+        _debugPort = new CPUDebugPort(this);
     }
 
-    private bool _clockLevel;
-    public bool ClockLevel
+    public void NextClock()
     {
-        get => _clockLevel;
-        // If rising edge, initiate next clock cycle
-        set
-        {
-            bool clockLevelOld = _clockLevel;
-            _clockLevel = value;
-            if (clockLevelOld == false && value == true)
-                NextClock();
-        }
-    }
-
-    private void NextClock()
-    {
-        Console.WriteLine("====================================================================");
+        Logging.PrintDebug("====================================================================\n");
 
         _CU.Temp_InstructionFetch1();
         _CU.Temp_InstructionFetch2();
         _CU.Temp_InstructionDecode();
         _CU.Temp_InstructionExecute();
 
-        Console.WriteLine("\n====================================================================");
-        Console.WriteLine("Cycle finished. Waiting for next clock pulse.");
+        Logging.PrintDebug("\n====================================================================\n");
+        Logging.LogInfo("Cycle finished. Waiting for next clock pulse.");
     }
 }

@@ -1,15 +1,14 @@
+SRC_CODE_DIR = src/TinyProc
+SRC_CODE_DIR_GUI = src/Avalonia/TinyProcVisualizer
+
 ifeq ($(OS), Windows_NT)
 	DOTNET = dotnet.exe
+	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc.exe
+	AOT_COMPILED_GUI = $(SRC_CODE_DIR_GUI)/bin/Release/net9.0/TinyProcVisualizer.exe
 else
 	DOTNET = dotnet
-endif
-
-SRC_CODE_DIR = src/TinyProc
-
-ifeq ($(OS), Windows_NT)
-	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc.exe
-else
 	AOT_COMPILED_EXECUTABLE = $(SRC_CODE_DIR)/bin/Release/net9.0/TinyProc
+	AOT_COMPILED_GUI = $(SRC_CODE_DIR_GUI)/bin/Release/net9.0/TinyProcVisualizer
 endif
 
 SOURCE_FILE_ASM = "Test Programs/ASMv2/Alphabet.lltp32.asm"
@@ -30,3 +29,13 @@ assemble-aot: build
 
 run-aot: build
 	$(AOT_COMPILED_EXECUTABLE) --run $(TARGET_FILE_BIN)
+
+gui:
+	$(DOTNET) run --project $(SRC_CODE_DIR_GUI)
+
+build-gui:
+	cd $(SRC_CODE_DIR_GUI) && $(DOTNET) build
+	cd $(SRC_CODE_DIR_GUI) && $(DOTNET) publish
+
+gui-aot: build-gui
+	$(AOT_COMPILED_GUI)

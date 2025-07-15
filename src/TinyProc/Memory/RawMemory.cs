@@ -1,5 +1,6 @@
 namespace TinyProc.Memory;
 
+using TinyProc.Application;
 using TinyProc.Processor;
 
 public class RawMemory : IBusAttachable
@@ -12,6 +13,11 @@ public class RawMemory : IBusAttachable
     // of uints in total.
     // Externally, this appears as one continuous address space.
     private readonly uint[][] _data;
+    public uint[][] Data { get => _data; }
+    // Write directly to the memory without a bus attached;
+    // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
+    public void WriteDirect(uint address, uint value) => Write(address, value);
+    public uint ReadDirect(uint address) => Read(address);
 
     // Logic that allows only either write or read line to be set:
     private bool _readEnable;
@@ -45,12 +51,16 @@ public class RawMemory : IBusAttachable
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
-    public RawMemory(uint words, uint[] initialData)
+    public RawMemory(uint words) : this(words, new uint[0]) {}
+
+    public RawMemory(uint words, uint[] initialData) : this(words, [initialData]) {}
+
+    public RawMemory(uint words, uint[][] initialData)
     {
         if (words <= 0)
             throw new ArgumentException("Word count 0 disallowed");
         if (words > 1_000_000)
-            Console.Error.WriteLine(
+            Logging.LogWarn(
                 "Warning: *Attempting* to initialize very large memory (>1,000,000 words). Expect out-of-memory errors.");
         _words = words;
         if (_words > int.MaxValue)
@@ -60,9 +70,11 @@ public class RawMemory : IBusAttachable
 
         if (initialData.Length > words)
             throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
-        for (uint i = 0; i < initialData.Length; i++)
-            Write(i, initialData[i]);
-        Console.WriteLine(
+        if (initialData.Length >= 1 && initialData[0].Length != 0)
+            Array.Copy(initialData[0], _data[0], initialData[0].Length);
+        if (initialData.Length >= 2 && initialData[1].Length != 0)
+            Array.Copy(initialData[1], _data[1], initialData[1].Length);
+        Logging.LogDebug(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
             $"WORDS:{_words}; Total space:{TotalSizeBits} bits");
     }
@@ -79,7 +91,7 @@ public class RawMemory : IBusAttachable
     private protected virtual void Write(uint addr, uint value)
     {
         if (addr == 0x39u || addr == 39)
-            Console.WriteLine("Miku says thank you!");
+            Logging.LogDebug("Miku says thank you!");
         CheckValidAddress(addr);
         if (addr > int.MaxValue)
             _data[1][addr - int.MaxValue + 1] = value;
@@ -89,18 +101,18 @@ public class RawMemory : IBusAttachable
 
     public void Debug_DumpAll()
     {
-        Console.WriteLine("[Mem] Dumping full memory contents (Big endian)");
+        Logging.LogDebug("[Mem] Dumping full memory contents (Big endian)");
         int addressesPerLine = 4;
         for (uint baseAddr = 0; baseAddr < _words; baseAddr += 4)
         {
-            Console.Write($"{baseAddr:x8}:");
+            Logging.PrintDebug($"{baseAddr:x8}:");
             // Print address values as hexadecimal
             for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
                 uint addr = baseAddr + subAddr;
-                Console.Write($" {Read(addr):x8}");
+                Logging.PrintDebug($" {Read(addr):x8}");
             }
-            Console.Write("   ");
+            Logging.PrintDebug("   ");
             // Print address values decoded as ASCII
             for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
             {
@@ -110,12 +122,12 @@ public class RawMemory : IBusAttachable
                 char c2 = (char)((data & 0x00FF0000) >> 16);
                 char c3 = (char)((data & 0x0000FF00) >> 8);
                 char c4 = (char)((data & 0x000000FF) >> 0);
-                if (c1 >= 0x20 && c1 <= 0x7E) { Console.Write($" {c1} "); } else { Console.Write(" . "); }
-                if (c2 >= 0x20 && c2 <= 0x7E) { Console.Write($" {c2} "); } else { Console.Write(" . "); }
-                if (c3 >= 0x20 && c3 <= 0x7E) { Console.Write($" {c3} "); } else { Console.Write(" . "); }
-                if (c4 >= 0x20 && c4 <= 0x7E) { Console.Write($" {c4} "); } else { Console.Write(" . "); }
+                if (c1 >= 0x20 && c1 <= 0x7E) { Logging.PrintDebug($" {c1} "); } else { Logging.PrintDebug(" . "); }
+                if (c2 >= 0x20 && c2 <= 0x7E) { Logging.PrintDebug($" {c2} "); } else { Logging.PrintDebug(" . "); }
+                if (c3 >= 0x20 && c3 <= 0x7E) { Logging.PrintDebug($" {c3} "); } else { Logging.PrintDebug(" . "); }
+                if (c4 >= 0x20 && c4 <= 0x7E) { Logging.PrintDebug($" {c4} "); } else { Logging.PrintDebug(" . "); }
             }
-            Console.WriteLine();
+            Logging.NewlineDebug();
         }
     }
 
@@ -140,6 +152,6 @@ public class RawMemory : IBusAttachable
         busAttachCount++;
         
         if (MemoryAddressBus != null && MemoryDataBus != null)
-            Console.WriteLine("Memory successfully attached to address and data bus.");
+            Logging.LogDebug("Memory successfully attached to address and data bus.");
     }
 }

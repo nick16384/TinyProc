@@ -1,55 +1,55 @@
 Future (optional) ideas:
-Simulate different access times
-Add muxers / demuxers
-External HW interfaces, Interrupts
-Caches, virtual memory -> MMU
+- Simulate different access times
+- Add muxers / demuxers
+- External HW interfaces, Interrupts
+- Caches, virtual memory, (segmentation / paging?) -> MMU
 
+General hints / useful coding guidelines:
 Mark methods with Debug_ when they are not part of the microarch and only there to provide debugging info.
+Git issue regarding terminal not rendering input text after an exception:
+https://github.com/dotnet/runtime/issues/110502
+Temporary fix: Run "reset" after the error occurs
 
-Refactor RawMemory.Debug_DumpAll() to look more pleasing.
-
-Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
+Future (unplanned) ToDo's:
+- Split instruction cycles into more logical clock cycles (= Add more NextClock() wait points)
 -> Currently one continuous operation: Not realistic
-
-INC / INC2 / DEC instructions, since they perform faster with special registers outputting these values
-
-ALU: Convert to pure logic, so that changes made to A, B, OpCode and SR propagate directly after set to R.
-
-Warning: When changing ALU opcode changes to update bus data, respect order of operations in control unit!
-
-New meta instructions:
-STORI (Store immediate value at address in register)
-
-Add bus and register for ALU Opcode instead of directly setting from CU.
-
-Today:
-- Change ALU opcode struct to be more usable [done]
-- Add one abstract Instruction class, which all instruction type classes derive from [done]
-- Remove Register ReadWriteAccess enum; Add the following bools and actually handle their cases: [done]
-1. WriteAllowed (default true)
-2. ErrorOnIllegalWrite (default true)
-3. ReadAllowed (default true)
-4. ErrorOnIllegalRead (default true)
-- Change memory to use an uint[] array instead of a bool[] array [done]
-- Register codes: Pack into enum with "enum RegisterCode : uint" header [done]
-- Reformat internal bus code [done]
-- Rename e.g. CV_P1 register to more understandable Const_Pos1 [done]
-- Attach RawMemory and ConsoleMemory to Bus [done]
--> Fix memory being completely filled with zeroes.
-- Convert hex numbers and some logging to lowercase [done]
-
+- New meta instructions:
+1. STORI (Store immediate value at address in register)
+- Add bus for ALU Opcode (no register) instead of directly setting from CU.
 - Make code C# language rule conform and as uniform as possible
 -> Case of variables, preceding underscore, etc.
-
 - Make bus easier to use by replacing adding uint[] DataAsWord fields, that throw an exception if the bus width is not 32.
-
 - Fix errors when addresses in memory bus are set before the read enable, causing old data to be read when the read enable bit changes.
-
 - Single bus access often results in multiple updates -> Fix. (Check e.g. MAR/MDR access or ALU computation count)
 -> This is a result of bus members updating their content everytime an attached bus updates, even though the data is often redundant
    e.g. MemoryAddress and MemoryData get changed once each during memory writes, causing a double write.
    Potential fix: Enable write on setting EnableWrite only and not during bus updates.
+- Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
+- Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
 
-Git issue regarding terminal not rendering input text after an exception:
-https://github.com/dotnet/runtime/issues/110502
-Temporary fix: Run "reset" after the error occurs
+Upcoming / In progress ToDo's:
+- Implement memory override / refresh buttons [done]
+1. Disable memory hexview updates when the user entered something
+
+- Remove 2nd hex editor or make selectable, which to show via dropdown [done]
+-> Currently too wide, not enough space for source code editor to look pleasing
+
+- Fix occasional TaskCanceledException on app exit
+
+=== MILESTONE: Merge development-avalonia with development ===
+-> Bump versions
+
+- Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it
+(Parse labels as addresses first, then assemble the rest.
+This prevents errors with jumps to labels that occur before the label was specified.)
+
+- Implement new assembly syntax (v3.0)
+
+- Add CPU init controls in separate border box / section
+1. Button "Initialize CPU" [done]
+2.1. Slider "RAM size (words)" + TextBox for exact values
+2.2. Slider "CON size (words)" + TextBox for exact values
+
+- Make registers overridable (esp. PC)
+1. Make CPUDebugPort bi-directional
+1. -> Don't break internal CPU register access restrictions!

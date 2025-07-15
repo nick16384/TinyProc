@@ -1,3 +1,5 @@
+using TinyProc.Application;
+
 namespace TinyProc.Assembler;
 
 public partial class Assembler()
@@ -33,20 +35,30 @@ public partial class Assembler()
 
     public static uint[] AssembleToMachineCode(string assemblyCode)
     {
-        Console.WriteLine($"LLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
+        Logging.LogInfo($"LLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
         List<string> assemblyLines = [.. assemblyCode.Split("\n")];
         // Filter out comments & Remove empty lines
         assemblyLines = [.. assemblyLines
             .ConvertAll(line => line.Split(";")[0].Trim())
             .Where(line => !string.IsNullOrEmpty(line))];
 
-        Console.WriteLine("===== Assembly begin =====");
-        assemblyLines.ForEach(Console.WriteLine);
-        Console.WriteLine("=====  Assembly end  =====");
+        Logging.LogInfo("===== Assembly begin =====");
+        assemblyLines.ForEach(Logging.LogInfo);
+        Logging.LogInfo("=====  Assembly end  =====");
 
         (uint, uint) workingMemoryRegion = (uint.MaxValue, uint.MaxValue - 1);
         (uint, uint) consoleMemoryRegion = (uint.MaxValue, uint.MaxValue - 1);
         Dictionary<string, uint> labelAddressMap = [];
+
+        // Header words:
+        // 0: Encoded assembler version (major and minor)
+        // 1: Absolute start address of RAM region (default 0x0, determined later)
+        // 2: Absolute end address of RAM region (default 0x0, determined later)
+        // 3: Absolute start address of CON memory region (default UInt.MaxValue, determined later)
+        // 4: Absolute end address of CON memory region (default UInt.MaxValue - 1, determined later)
+        // 5: Program entry point
+        // 6: 0x0 (reserved)
+        // 7: 0x0 (reserved)
         List<uint> assembledMachineCode =
             [ASSEMBLER_VERSION_ENCODED, 0x0, 0x0, 0xFFFFFFFF, 0xFFFFFFFE, DEFAULT_PROGRAM_ENTRY_POINT, 0x0u, 0x0u];
         uint currentLine = 0;
@@ -59,7 +71,7 @@ public partial class Assembler()
             {
                 currentLine++;
                 currentLineStr = line;
-                Console.WriteLine($"Attempting to parse assembly line: {line}");
+                Logging.LogDebug($"Attempting to parse assembly line: {line}");
                 // Split line at spaces and commas, except when enclosed in double quotes
                 // https://stackoverflow.com/questions/14655023/split-a-string-that-has-white-spaces-unless-they-are-enclosed-within-quotes
                 string[] words = [.. line.Split('"')
@@ -77,7 +89,7 @@ public partial class Assembler()
                         throw new NotSupportedException(
                             $"Assembler version {ASSEMBLER_VERSION}" +
                             $"does not match {ASM_DIRECTIVE_VERSION} directive with value {words[1]}");
-                    Console.WriteLine("Version check successful.");
+                    Logging.LogDebug("Version check successful.");
                     continue;
                 }
 
@@ -96,7 +108,7 @@ public partial class Assembler()
                         workingMemoryRegion = (regionStart, regionEnd);
                         assembledMachineCode[HEADER_INDEX_RAM_REGION_START] = regionStart;
                         assembledMachineCode[HEADER_INDEX_RAM_REGION_END] = regionEnd;
-                        Console.WriteLine($"Working memory region: {regionStart:x8} - {regionEnd:x8}");
+                        Logging.LogDebug($"Working memory region: {regionStart:x8} - {regionEnd:x8}");
                         continue;
                     }
                     if (words[1] == ASM_DIRECTIVE_MEMREGION_CON)
@@ -109,12 +121,12 @@ public partial class Assembler()
                         consoleMemoryRegion = (regionStart, regionEnd);
                         assembledMachineCode[HEADER_INDEX_CON_REGION_START] = regionStart;
                         assembledMachineCode[HEADER_INDEX_CON_REGION_END] = regionEnd;
-                        Console.WriteLine($"Console memory region: {regionStart:x8} - {regionEnd:x8}");
+                        Logging.LogDebug($"Console memory region: {regionStart:x8} - {regionEnd:x8}");
                         continue;
                     }
                     throw new ArgumentException($"Unknown memory region type {words[1]}");
                 }
-                
+
                 // Checks current line for occurrences of relative addresses
                 for (int i = 0; i < words.Length; i++)
                 {
@@ -137,7 +149,7 @@ public partial class Assembler()
                 {
                     string label = words[0][..^1];
                     labelAddressMap.Add(label, currentAddress);
-                    Console.WriteLine($"Found label declaration \"{label}\" at address {currentAddress:x8}");
+                    Logging.LogDebug($"Found label declaration \"{label}\" at address {currentAddress:x8}");
                     continue;
                 }
                 for (int i = 0; i < words.Length; i++)
@@ -156,7 +168,7 @@ public partial class Assembler()
                     {
                         if (!words[i].EndsWith('\"'))
                             throw new ArgumentException($"Unescaped string literal: {words[i]}");
-                        
+
                         // Trim quotes of string literal
                         string stringLiteral = words[i][1..^1];
                         char[] stringLiteralChars = stringLiteral.ToCharArray();
@@ -166,13 +178,13 @@ public partial class Assembler()
                         for (int cIdx = 0; cIdx < charCount; cIdx++)
                         {
                             char c = stringLiteralChars[cIdx];
-                            stringLiteralAsUInt |= ((uint)c) << ((3 - cIdx) * sizeof(byte)*8);
+                            stringLiteralAsUInt |= ((uint)c) << ((3 - cIdx) * sizeof(byte) * 8);
                         }
 
                         words[i] = Convert.ToString(stringLiteralAsUInt);
                     }
                 }
-                Console.WriteLine($"Line parsed into tokens: \"{currentLineStr}\" --> {string.Join(" ", words)}");
+                Logging.LogDebug($"Line parsed into tokens: \"{currentLineStr}\" --> {string.Join(" ", words)}");
 
                 // Parse line as an instruction
                 (uint, uint) instructionBinaryTuple = ParseAsInstruction(words);
@@ -181,10 +193,9 @@ public partial class Assembler()
                 currentAddress += 0x2;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error on line {currentLine} \"{currentLineStr}\":");
-            throw;
+            throw new Exception($"Error on line {currentLine} \"{currentLineStr}\": ", ex);
         }
 
         // Check valid memory regions
@@ -196,7 +207,7 @@ public partial class Assembler()
             throw new ArgumentOutOfRangeException("Working memory region not specified. Directive #MEMREGION RAM missing");
         if (CONRegionEnd < CONRegionStart)
             // Console region is optional, therefore no error is thrown if it doesn't exist.
-            Console.Error.WriteLine("Warning: No console memory region specified. (#MEMREGION CON directive missing)");
+            Logging.LogWarn("Warning: No console memory region specified. (#MEMREGION CON directive missing)");
         
         // Check for overlapping regions
         // Check if CON region starts inside of RAM region

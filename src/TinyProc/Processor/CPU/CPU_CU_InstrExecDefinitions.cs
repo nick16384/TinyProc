@@ -1,3 +1,5 @@
+using TinyProc.Application;
+
 namespace TinyProc.Processor.CPU;
 
 public partial class CPU
@@ -22,11 +24,11 @@ public partial class CPU
 
         private void INSTRUCTION_R_AOPR()
         {
-            Console.Write(
+            Logging.LogDebugWithoutNewline(
                 "Arithmetic register operation: " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
-                $"<{_currentInstruction.R_GetALUOpcode}> " +
+                $"<{_currentInstruction.R_GetALUOpcode()}> " +
                 $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
             _alu.CurrentOpcode = _currentInstruction.R_GetALUOpcode();
@@ -36,14 +38,14 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = _currentInstruction.R_GetDestRegCode();
             _alu.Status_EnableFlags = false;
             ResetBus3();
-            Console.WriteLine(
+            Logging.PrintDebug(
                 $" --> Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}]\n");
         }
         
         private void INSTRUCTION_R_LOADR()
         {
-            Console.WriteLine(
+            Logging.LogDebug(
                 "Load from memory to register " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
@@ -61,7 +63,7 @@ public partial class CPU
         }
         private void INSTRUCTION_R_STORR()
         {
-            Console.WriteLine(
+            Logging.LogDebug(
                 "Store to memory from register " +
                 $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
@@ -80,7 +82,7 @@ public partial class CPU
 
         private void INSTRUCTION_I_AOPI()
         {
-            Console.Write(
+            Logging.LogDebugWithoutNewline(
                 "Arithmetic immediate operation: " +
                 $"#{_currentInstruction.I_GetImmediateValue():x8} <{_currentInstruction.I_GetALUOpcode()}> " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
@@ -92,14 +94,14 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = _currentInstruction.I_GetDestRegCode();
             _alu.Status_EnableFlags = false;
             ResetBus3();
-            Console.WriteLine(
+            Logging.PrintDebug(
                 $" --> Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]");
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]\n");
         }
 
         private void INSTRUCTION_I_LOAD()
         {
-            Console.WriteLine(
+            Logging.LogDebug(
                 "Load from memory to register " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()} " +
                 "at immediate address " +
@@ -115,7 +117,7 @@ public partial class CPU
         }
         private void INSTRUCTION_I_STORE()
         {
-            Console.WriteLine(
+            Logging.LogDebug(
                 "Store to memory from register " +
                 $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}] " +
@@ -133,12 +135,12 @@ public partial class CPU
 
         private void INSTRUCTION_J_NOP()
         {
-            Console.WriteLine("No operation.");
+            Logging.LogDebug("No operation.");
             // Do literally nothing. Same as jumping to next address, which is automatically done.
         }
         private void INSTRUCTION_J_JMP()
         {
-            Console.WriteLine($"Jump to address {IRB.ValueDirect:x8}");
+            Logging.LogDebug($"Jump to address {IRB.ValueDirect:x8}");
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
