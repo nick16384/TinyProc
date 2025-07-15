@@ -225,8 +225,13 @@ public partial class MainWindow : Window
         else
             Console.Error.WriteLine("Hex editor document is not an RT document; Cannot refresh.");
     }
-    private static void LoadHexEditorBytesIntoCPUMemory(HexEditor editor)
+    private void LoadHexEditorBytesIntoCPUMemory(HexEditor editor)
     {
+        if (editor.Document != HexEditorDocumentRAM)
+        {
+            Console.Error.WriteLine("Cannot override from hex document; Not the RAM document.");
+            return;
+        }
         Span<byte> hexEditorBytes = new byte[editor.Document.Length];
         editor.Document.ReadBytes(0, hexEditorBytes);
         TinyProc.Application.ExecutionContainer.INSTANCE0.LoadBytesAtAddress(hexEditorBytes.ToArray(), 0x0u);

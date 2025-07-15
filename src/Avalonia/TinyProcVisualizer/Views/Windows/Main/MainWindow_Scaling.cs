@@ -63,11 +63,11 @@ public partial class MainWindow : Window
                 // Get the window width and then subtract the widths of all elements, that the source code editor is put between in.
                 MainWindowViewModel.Window_Width
                 - Grid_CPUControlAndStatus.Bounds.Width
-                - Grid_HexEditors.Bounds.Width
+                - Grid_HexEditorsAndRegisters.Bounds.Width
                 - Grid_CPUControlAndStatus.Margin.Left - Grid_CPUControlAndStatus.Margin.Right
-                - Grid_HexEditors.Margin.Left - Grid_HexEditors.Margin.Right
+                - Grid_HexEditorsAndRegisters.Margin.Left - Grid_HexEditorsAndRegisters.Margin.Right
                 - Grid_CPUControlAndStatus.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
-                - Grid_HexEditors.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
+                - Grid_HexEditorsAndRegisters.Children.Select(child => child.Margin.Left + child.Margin.Right).Sum()
                 // Subtract margins
                 - ScrollViewer_SourceCodeEditor.Margin.Right
                 - ScrollViewer_SourceCodeEditor.Margin.Left

@@ -217,50 +217,64 @@
         </Grid>
 
         <!-- CPU status (memory, registers etc.) -->
-        <StackPanel Canvas.Right="0">
-            <!-- Hex editors -->
-            <Grid Name="Grid_HexEditors" Margin="5" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto">
-                <DockPanel Grid.Row="0" Grid.Column="0" Margin="5, 0, 5, 5" LastChildFill="False">
-                    <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
-                        Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged" />
-                    <Button DockPanel.Dock="Right" Click="Button_HexEditor1_OverrideMemoryContents">Override</Button>
-                    <Button DockPanel.Dock="Right" Click="Button_HexEditor1_RefreshMemoryContents">Refresh</Button>
-                </DockPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="0"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                FontSize="{Binding HexEditorFontSize}"
-                Name="HexEditor1">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
+        <Grid Name="Grid_HexEditorsAndRegisters" ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto" Margin="5" Canvas.Right="0">
 
-                <DockPanel Grid.Row="0" Grid.Column="1" Margin="5, 0, 5, 5" LastChildFill="False">
-                    <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
-                        Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged" />
-                    <Button DockPanel.Dock="Right" Click="Button_HexEditor2_OverrideMemoryContents">Override</Button>
-                    <Button DockPanel.Dock="Right" Click="Button_HexEditor2_RefreshMemoryContents">Refresh</Button>
-                </DockPanel>
-                <avaloniaHex:HexEditor
-                Grid.Row="1" Grid.Column="1"
-                FontFamily="{StaticResource SourceCodeProFont}"
-                FontSize="{Binding HexEditorFontSize}"
-                Name="HexEditor2">
-                    <!-- Define columns to display -->
-                    <avaloniaHex:HexEditor.Columns>
-                        <rendering:OffsetColumn />
-                        <rendering:HexColumn />
-                        <rendering:AsciiColumn />
-                    </avaloniaHex:HexEditor.Columns>
-                </avaloniaHex:HexEditor>
-            </Grid>
+            <!-- Hex editors -->
+            <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right">
+                <Expander VerticalAlignment="Top" ExpandDirection="Down" IsExpanded="False" Background="Black">
+                    <Expander.Header>
+                        <TextBlock>Hex 1</TextBlock>
+                    </Expander.Header>
+                    <StackPanel Orientation="Vertical">
+                        <DockPanel Margin="5, 0, 5, 5" LastChildFill="False">
+                            <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
+                                Name="ComboBox_HexEditor1Selector" SelectionChanged="ComboBox_HexEditor1Selector_SelectionChanged" />
+                            <Button DockPanel.Dock="Right" Click="Button_HexEditor1_OverrideMemoryContents">Override</Button>
+                            <Button DockPanel.Dock="Right" Click="Button_HexEditor1_RefreshMemoryContents">Refresh</Button>
+                        </DockPanel>
+                        <avaloniaHex:HexEditor
+                        FontFamily="{StaticResource SourceCodeProFont}"
+                        FontSize="{Binding HexEditorFontSize}"
+                        Name="HexEditor1">
+                            <!-- Define columns to display -->
+                            <avaloniaHex:HexEditor.Columns>
+                                <rendering:OffsetColumn />
+                                <rendering:HexColumn />
+                                <rendering:AsciiColumn />
+                            </avaloniaHex:HexEditor.Columns>
+                        </avaloniaHex:HexEditor>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+            <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Right">
+                <Expander VerticalAlignment="Top" ExpandDirection="Down" IsExpanded="False" Background="Black">
+                    <Expander.Header>
+                        <TextBlock>Hex 2</TextBlock>
+                    </Expander.Header>
+                    <StackPanel Orientation="Vertical">
+                        <DockPanel Margin="5, 0, 5, 5" LastChildFill="False">
+                            <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding HexViewSourceSelectionValues}"
+                                Name="ComboBox_HexEditor2Selector" SelectionChanged="ComboBox_HexEditor2Selector_SelectionChanged" />
+                            <Button DockPanel.Dock="Right" Click="Button_HexEditor2_OverrideMemoryContents">Override</Button>
+                            <Button DockPanel.Dock="Right" Click="Button_HexEditor2_RefreshMemoryContents">Refresh</Button>
+                        </DockPanel>
+                        <avaloniaHex:HexEditor
+                        FontFamily="{StaticResource SourceCodeProFont}"
+                        FontSize="{Binding HexEditorFontSize}"
+                        Name="HexEditor2">
+                            <!-- Define columns to display -->
+                            <avaloniaHex:HexEditor.Columns>
+                                <rendering:OffsetColumn />
+                                <rendering:HexColumn />
+                                <rendering:AsciiColumn />
+                            </avaloniaHex:HexEditor.Columns>
+                        </avaloniaHex:HexEditor>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
 
             <!-- CPU registers -->
-            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Margin="10">
+            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Right" Orientation="Horizontal" Margin="10">
                 <!-- Special-purpose registers -->
                 <Grid Name="Grid_SpecialPurposeRegisters" ColumnDefinitions="Auto, *, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
                     <Label Grid.Row="0" Grid.Column="0">PC</Label>
@@ -507,7 +521,7 @@
                     </Border>
                 </Grid>
             </StackPanel>
-        </StackPanel>
+        </Grid>
 
         <TextBlock Canvas.Bottom="2" Canvas.Left="2"
             VerticalAlignment="Bottom" HorizontalAlignment="Left" Text="{Binding MemoryUsage}" Name="TextBlock_MemoryUsage" />
