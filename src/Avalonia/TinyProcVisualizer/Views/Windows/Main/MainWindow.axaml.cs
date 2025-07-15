@@ -212,8 +212,6 @@ public partial class MainWindow : Window
         => ResetHexEditorUpdateRanges(HexEditor1);
     private void Button_HexEditor2_OverrideMemoryContents(object? sender, RoutedEventArgs e)
     {
-        // FIXME: Fix occasional editor not working for 1st char entered (ignores user input, jumps one further)
-        // --> Probably correlates with concurrency (editor updated before being locked)
         LoadHexEditorBytesIntoCPUMemory(HexEditor2);
         ResetHexEditorUpdateRanges(HexEditor2);
     }

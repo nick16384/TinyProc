@@ -81,10 +81,10 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
             ulong startLocked = newLockedRange.Start.ByteIndex;
             ulong endLocked = newLockedRange.End.ByteIndex;
 
-            for (int i = 0; i < _updatingBitRanges.Count; i++)
+            foreach (BitRange updatingRange in _updatingBitRanges)
             {
-                ulong start = _updatingBitRanges[i].Start.ByteIndex;
-                ulong end = _updatingBitRanges[i].End.ByteIndex;
+                ulong start = updatingRange.Start.ByteIndex;
+                ulong end = updatingRange.End.ByteIndex;
 
                 // Cut out at the end or inside updating ranges
                 // start < startLocked < end
@@ -97,8 +97,8 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
                 }
 
                 // Cut out the beginning of updating ranges
-                // startLocked <= start < end
-                else if (startLocked <= start && start < end)
+                // startLocked <= start < endLocked
+                else if (startLocked <= start && start < endLocked)
                 {
                     // If end <= endLocked, do nothing, since the updating range is fully covered by the locked range
                     if (endLocked < end)
@@ -107,11 +107,12 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
                 else
                 {
                     // Completely unaffected updating range
-                    newUpdatingBitRanges.Add(_updatingBitRanges[i]);
+                    newUpdatingBitRanges.Add(updatingRange);
                 }
             }
 
             _updatingBitRanges = newUpdatingBitRanges;
+            CleanupUpdateRanges();
         }
     }
 
@@ -119,7 +120,16 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
     private void CleanupUpdateRanges()
     {
         // Sort the list of ranges
-        _updatingBitRanges.Sort();
+        _updatingBitRanges.Sort((a, b) =>
+        {
+            int difference = (int)((long)a.Start.ByteIndex - (long)b.Start.ByteIndex);
+            return difference switch
+            {
+                var _ when difference <  0 => -1, // A < B
+                var _ when difference == 0 => 0,  // A == B
+                var _ when difference >  0 => 1   // A > B
+            };
+        });
 
         for (int i = 0; i < _updatingBitRanges.Count; i++)
         {
@@ -204,14 +214,17 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
         if (bytes.Length != Memory.Length)
             throw new ArgumentOutOfRangeException(
                 $"Cannot override hexview data: New size {bytes.Length} does not match internal size {Memory.Length}");
-        foreach (BitRange updateRange in _updatingBitRanges)
+        lock (_updatingBitRanges)
         {
-            // Create a temporary buffer, which contains the new updated data for this update range
-            byte[] updateRangeNewBytes = new byte[updateRange.ByteLength];
-            // Fill the buffer with the new data (update range section only)
-            Array.Copy(bytes.ToArray(), (int)updateRange.Start.ByteIndex, updateRangeNewBytes, 0, updateRangeNewBytes.Length);
-            // Copy the new updated section to the update range on the internal memory
-            updateRangeNewBytes.CopyTo(Memory.Span[(int)updateRange.Start.ByteIndex..]);
+            foreach (BitRange updateRange in _updatingBitRanges)
+            {
+                // Create a temporary buffer, which contains the new updated data for this update range
+                byte[] updateRangeNewBytes = new byte[updateRange.ByteLength];
+                // Fill the buffer with the new data (update range section only)
+                Array.Copy(bytes.ToArray(), (int)updateRange.Start.ByteIndex, updateRangeNewBytes, 0, updateRangeNewBytes.Length);
+                // Copy the new updated section to the update range on the internal memory
+                updateRangeNewBytes.CopyTo(Memory.Span[(int)updateRange.Start.ByteIndex..]);
+            }
         }
     }
 }
