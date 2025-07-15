@@ -28,16 +28,8 @@ Future (unplanned) ToDo's:
 - Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
 
 Upcoming / In progress ToDo's:
-- Implement memory override / refresh buttons [done]
-1. Disable memory hexview updates when the user entered something
-
-- Remove 2nd hex editor or make selectable, which to show via dropdown [done]
--> Currently too wide, not enough space for source code editor to look pleasing
-
-- Fix occasional TaskCanceledException on app exit
-
-=== MILESTONE: Merge development-avalonia with development ===
--> Bump versions
+- Fix occasional TaskCanceledException on app exit [in progress]
+- Bump versions [done]
 
 - Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it
 (Parse labels as addresses first, then assemble the rest.
