@@ -112,22 +112,7 @@ public partial class MainWindow : Window
             return _HexEditorDocumentBinaryExecutableFile;
         }
     }
-    private RealTimeFixedSizeExternalSourceBinaryDocument _HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
-    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentRAM
-    {
-        get
-        {
-            if (TinyProc.Application.ExecutionContainer.INSTANCE0 == null)
-                Console.Error.WriteLine("CPU not initialized yet, cannot read RAM.");
-            else
-            {
-                if ((ulong)TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes.Length != _HexEditorDocumentRAM.Length)
-                    ReinitializeDocument(
-                        _HexEditorDocumentRAM, () => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
-            }
-            return _HexEditorDocumentRAM;
-        }
-    }
+    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
     private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentCON
     {
         get => new(() => [1, 2, 3], TimeSpan.FromMilliseconds(100));
@@ -175,14 +160,6 @@ public partial class MainWindow : Window
         ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor1Selector, HexEditor1);
         ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor2Selector, HexEditor2);
     }
-    private static void ReinitializeDocument(
-        RealTimeFixedSizeExternalSourceBinaryDocument document, Func<ReadOnlySpan<byte>> backingSource, TimeSpan updateInterval)
-    {
-        // Reinitialize document when e.g. the size changed
-        document = new RealTimeFixedSizeExternalSourceBinaryDocument(backingSource, updateInterval);
-        // Exclude backing updates for bytes that have been changed by the user
-        document.Changed += (sender, eventArgs) => document.AddLockedRange(eventArgs.AffectedRange);
-    }
 
     private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -210,7 +187,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        ReinitializeDocument(_HexEditorDocumentRAM, () => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
+        // Reinitialize the hex editor RAM document, since the size changed (because the CPU was initialized)
+        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
+        HexEditorDocumentRAM.Changed += (sender, eventArgs) => HexEditorDocumentRAM.AddLockedRange(eventArgs.AffectedRange);
 
         // Simple CPU stepping
         Button_InitCPU.IsEnabled = false;
@@ -226,15 +205,33 @@ public partial class MainWindow : Window
 
     private void Button_HexEditor1_OverrideMemoryContents(object? sender, RoutedEventArgs e)
     {
-        throw new NotImplementedException();
+        LoadHexEditorBytesIntoCPUMemory(HexEditor1);
+        ResetHexEditorUpdateRanges(HexEditor1);
     }
-
     private void Button_HexEditor1_RefreshMemoryContents(object? sender, RoutedEventArgs e)
+        => ResetHexEditorUpdateRanges(HexEditor1);
+    private void Button_HexEditor2_OverrideMemoryContents(object? sender, RoutedEventArgs e)
     {
-        if (HexEditor1.Document is RealTimeFixedSizeExternalSourceBinaryDocument document)
+        // FIXME: Fix occasional editor not working for 1st char entered (ignores user input, jumps one further)
+        // --> Probably correlates with concurrency (editor updated before being locked)
+        LoadHexEditorBytesIntoCPUMemory(HexEditor2);
+        ResetHexEditorUpdateRanges(HexEditor2);
+    }
+    private void Button_HexEditor2_RefreshMemoryContents(object? sender, RoutedEventArgs e)
+        => ResetHexEditorUpdateRanges(HexEditor2);
+
+    private static void ResetHexEditorUpdateRanges(HexEditor editor)
+    {
+        if (editor.Document is RealTimeFixedSizeExternalSourceBinaryDocument document)
             document.ResetUpdateRanges();
         else
-            Console.Error.WriteLine("Hex editor 1 document is not an RT document; Cannot refresh.");
+            Console.Error.WriteLine("Hex editor document is not an RT document; Cannot refresh.");
+    }
+    private static void LoadHexEditorBytesIntoCPUMemory(HexEditor editor)
+    {
+        Span<byte> hexEditorBytes = new byte[editor.Document.Length];
+        editor.Document.ReadBytes(0, hexEditorBytes);
+        TinyProc.Application.ExecutionContainer.INSTANCE0.LoadBytesAtAddress(hexEditorBytes.ToArray(), 0x0u);
     }
 
     #region Logging

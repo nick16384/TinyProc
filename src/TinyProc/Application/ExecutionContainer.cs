@@ -76,13 +76,13 @@ public class ExecutionContainer
             Logging.LogDebug("Memory object too large to dump.");
         Logging.LogDebug("Done.");
 
-        // Miku = 39 = Sankyuu easter egg ^-^
-        //mem1.WriteEnable = true;
-        //mem1.AddressBus = 0x00000039u;
-        //mem1.DataBus = 0x39393939u;
+        INSTANCE0 ??= this;
+    }
 
-        if (INSTANCE0 == null)
-            INSTANCE0 = this;
+    public void LoadBytesAtAddress(byte[] byteData, uint address)
+    {
+        uint[] dataAsUIntArray = ConvertByteArrayToUIntArrayAndReverseEndianness(byteData).ToArray();
+        LoadDataAtAddress(dataAsUIntArray, address);
     }
 
     public void LoadDataAtAddress(uint[] data, uint address)
@@ -134,6 +134,15 @@ public class ExecutionContainer
         BinaryPrimitives.ReverseEndianness(uintArray, uintArrayBigEndian);
 
         return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
+    }
+    private static ReadOnlySpan<uint> ConvertByteArrayToUIntArrayAndReverseEndianness(byte[] byteArray)
+    {
+        if (byteArray.Length % sizeof(uint) != 0)
+            throw new ArgumentException("Cannot convert byte[] to uint[]: Size not divisible by 4.");
+        ReadOnlySpan<uint> uintArray = MemoryMarshal.Cast<byte, uint>(byteArray);
+        Span<uint> uintArrayReversedEndian = new uint[byteArray.Length / 4];
+        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayReversedEndian);
+        return uintArrayReversedEndian;
     }
 
     public TimeSpan StepSingleCycle()

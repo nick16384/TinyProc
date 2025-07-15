@@ -24,14 +24,12 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
         {
             while (true)
             {
-                Thread.Sleep(updateInterval);
-                ReadOnlySpan<byte> newData = backingSource();
+                Thread.Sleep(_updateInterval);
+                ReadOnlySpan<byte> newData = _backingSource();
                 if (newData.Length != Memory.Length)
                 {
                     Console.Error.WriteLine($"Backing source length {newData.Length} mismatches internal length {Memory.Length}");
                     return;
-                    // FIXME: Fix mem leak
-                    // FIXME: Fix RAM not updating correctly
                 }
                 WriteNewDataToLiveBuffer(newData);
             }
@@ -49,7 +47,8 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
 
     public void ResetUpdateRanges()
     {
-        _updatingBitRanges = [new BitRange(0ul, (ulong)Memory.Length - 1)];
+        lock (_updatingBitRanges)
+        { _updatingBitRanges = [new BitRange(0ul, (ulong)Memory.Length - 1)]; }
     }
 
     // Locked bit range are bit ranges that do not get updated
