@@ -67,18 +67,34 @@ public partial class Assembler()
 
         try
         {
+            // Pre-parser
+            // Find labels and their corresponding addresses
+            for (int i = 0; i < assemblyLines.Count; i++)
+            {
+                string line = assemblyLines[i];
+                string[] words = SplitLineIntoWords(line);
+                // Resolve labels, Replace label encounters with their corresponding absolute addresses
+                if (words[0].EndsWith(':'))
+                {
+                    string label = words[0][..^1];
+                    labelAddressMap.Add(label, currentAddress);
+                    Logging.LogDebug($"Found label declaration \"{label}\" at address {currentAddress:x8}");
+                    assemblyLines.RemoveAt(i);
+                    i--;
+                    currentAddress -= 2;
+                }
+                currentAddress += 2;
+            }
+
+            currentAddress = 0;
+
+            // Main assembler
             foreach (string line in assemblyLines)
             {
                 currentLine++;
                 currentLineStr = line;
                 Logging.LogDebug($"Attempting to parse assembly line: {line}");
-                // Split line at spaces and commas, except when enclosed in double quotes
-                // https://stackoverflow.com/questions/14655023/split-a-string-that-has-white-spaces-unless-they-are-enclosed-within-quotes
-                string[] words = [.. line.Split('"')
-                     .Select((element, index) => index % 2 == 0  // If even index
-                                           ? element.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries)  // Split the item
-                                           : ["\"" + element + "\""])  // Keep the entire item
-                     .SelectMany(element => element).ToList()];
+                string[] words = SplitLineIntoWords(line);
 
                 // Make sure the correct version of assembly code is used
                 if (currentLine == 1)
@@ -144,14 +160,6 @@ public partial class Assembler()
                     }
                 }
 
-                // Resolve labels, Replace label encounters with their corresponding absolute addresses
-                if (words[0].EndsWith(':'))
-                {
-                    string label = words[0][..^1];
-                    labelAddressMap.Add(label, currentAddress);
-                    Logging.LogDebug($"Found label declaration \"{label}\" at address {currentAddress:x8}");
-                    continue;
-                }
                 for (int i = 0; i < words.Length; i++)
                 {
                     if (labelAddressMap.ContainsKey(words[i]))
@@ -200,15 +208,15 @@ public partial class Assembler()
 
         // Check valid memory regions
         uint RAMRegionStart = workingMemoryRegion.Item1;
-        uint RAMRegionEnd   = workingMemoryRegion.Item2;
+        uint RAMRegionEnd = workingMemoryRegion.Item2;
         uint CONRegionStart = consoleMemoryRegion.Item1;
-        uint CONRegionEnd   = consoleMemoryRegion.Item2;
+        uint CONRegionEnd = consoleMemoryRegion.Item2;
         if (RAMRegionEnd < RAMRegionStart)
             throw new ArgumentOutOfRangeException("Working memory region not specified. Directive #MEMREGION RAM missing");
         if (CONRegionEnd < CONRegionStart)
             // Console region is optional, therefore no error is thrown if it doesn't exist.
             Logging.LogWarn("Warning: No console memory region specified. (#MEMREGION CON directive missing)");
-        
+
         // Check for overlapping regions
         // Check if CON region starts inside of RAM region
         if (RAMRegionStart <= CONRegionStart && CONRegionStart <= RAMRegionEnd)
@@ -222,7 +230,7 @@ public partial class Assembler()
         // Check if RAM region ends inside of CON region
         if (CONRegionStart <= RAMRegionEnd && RAMRegionEnd <= CONRegionEnd)
             throw new ArgumentOutOfRangeException("Memory region overlap: RAM region ends inside of CON region.");
-        
+
         // Check for unused void space between memory regions
         uint RAMRegionSize = RAMRegionEnd - RAMRegionStart + 1; // + 1, because both start & end addresses are inclusive
         uint CONRegionSize = CONRegionEnd - CONRegionStart + 1;
@@ -256,5 +264,16 @@ public partial class Assembler()
             // Base 10 or unknown
             return Convert.ToUInt32(numStr);
         }
+    }
+
+    private static string[] SplitLineIntoWords(string line)
+    {
+        // Split line at spaces and commas, except when enclosed in double quotes
+        // https://stackoverflow.com/questions/14655023/split-a-string-that-has-white-spaces-unless-they-are-enclosed-within-quotes
+        return [.. line.Split('"')
+            .Select((element, index) => index % 2 == 0  // If even index
+                                ? element.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries)  // Split the item
+                                : ["\"" + element + "\""])  // Keep the entire item
+            .SelectMany(element => element).ToList()];
     }
 }
