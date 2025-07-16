@@ -67,13 +67,66 @@ public partial class Assembler()
 
         try
         {
+            // Verify assembler version, determine memory regions
+            // Make sure the correct version of assembly code is used
+            currentLineStr = assemblyLines[0];
+            string[] words = SplitLineIntoWords(currentLineStr);
+            if (words[0] != ASM_DIRECTIVE_VERSION)
+                throw new ArgumentException($"Cannot assemble program. No {ASM_DIRECTIVE_VERSION} directive specified.");
+            if (words[1] != ASSEMBLER_VERSION)
+                throw new NotSupportedException(
+                    $"Assembler version {ASSEMBLER_VERSION}" +
+                    $"does not match {ASM_DIRECTIVE_VERSION} directive with value {words[1]}");
+            Logging.LogDebug("Version check successful.");
+
+            assemblyLines.RemoveAt(0);
+            currentLineStr = assemblyLines[0];
+            words = SplitLineIntoWords(currentLineStr);
+
+            // Resolve memory spaces, Replace relative addresses with absolute counterpart
+            // Example: If "#MEMREGION CON 0x10000000 0x20000000" was specified, then
+            // "STORE gp1, CON:3" becomes "STORE gp1, 0x10000003"
+            if (words[0] == ASM_DIRECTIVE_MEMREGION && words[1] == ASM_DIRECTIVE_MEMREGION_RAM)
+            {
+                uint regionStart = ConvertStringToUInt(words[2]);
+                uint regionEnd = ConvertStringToUInt(words[3]);
+                if (regionEnd < regionStart)
+                    throw new ArgumentOutOfRangeException(
+                        $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
+                workingMemoryRegion = (regionStart, regionEnd);
+                assembledMachineCode[HEADER_INDEX_RAM_REGION_START] = regionStart;
+                assembledMachineCode[HEADER_INDEX_RAM_REGION_END] = regionEnd;
+                Logging.LogDebug($"Working memory region: {regionStart:x8} - {regionEnd:x8}");
+                assemblyLines.RemoveAt(0);
+                currentLineStr = assemblyLines[0];
+                words = SplitLineIntoWords(currentLineStr);
+            }
+            if (words[0] == ASM_DIRECTIVE_MEMREGION && words[1] == ASM_DIRECTIVE_MEMREGION_CON)
+            {
+                uint regionStart = ConvertStringToUInt(words[2]);
+                uint regionEnd = ConvertStringToUInt(words[3]);
+                if (regionEnd < regionStart)
+                    throw new ArgumentOutOfRangeException(
+                        $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
+                consoleMemoryRegion = (regionStart, regionEnd);
+                assembledMachineCode[HEADER_INDEX_CON_REGION_START] = regionStart;
+                assembledMachineCode[HEADER_INDEX_CON_REGION_END] = regionEnd;
+                Logging.LogDebug($"Console memory region: {regionStart:x8} - {regionEnd:x8}");
+                assemblyLines.RemoveAt(0);
+                currentLineStr = assemblyLines[0];
+                words = SplitLineIntoWords(currentLineStr);
+            }
+            if (words[0] == ASM_DIRECTIVE_MEMREGION)
+                throw new ArgumentException($"Unknown memory region type {words[1]}");
+
             // Pre-parser
             // Find labels and their corresponding addresses
             for (int i = 0; i < assemblyLines.Count; i++)
             {
                 currentLine++;
                 currentLineStr = assemblyLines[i];
-                string[] words = SplitLineIntoWords(currentLineStr);
+                words = SplitLineIntoWords(currentLineStr);
+                Console.WriteLine($"Line \"{currentLineStr}\" addr {currentAddress:x8}");
                 // Resolve labels
                 if (words[0].EndsWith(':'))
                 {
@@ -82,6 +135,7 @@ public partial class Assembler()
                     Logging.LogDebug($"Found label declaration \"{label}\" at address {currentAddress:x8}");
                     assemblyLines.RemoveAt(i);
                     i--;
+                    currentLine--;
                     currentAddress -= 2;
                 }
                 currentAddress += 2;
@@ -96,54 +150,7 @@ public partial class Assembler()
                 currentLine++;
                 currentLineStr = line;
                 Logging.LogDebug($"Attempting to parse assembly line: {line}");
-                string[] words = SplitLineIntoWords(line);
-
-                // Make sure the correct version of assembly code is used
-                if (currentLine == 1)
-                {
-                    if (words[0] != ASM_DIRECTIVE_VERSION)
-                        throw new ArgumentException($"Cannot assemble program. No {ASM_DIRECTIVE_VERSION} directive specified.");
-                    if (words[1] != ASSEMBLER_VERSION)
-                        throw new NotSupportedException(
-                            $"Assembler version {ASSEMBLER_VERSION}" +
-                            $"does not match {ASM_DIRECTIVE_VERSION} directive with value {words[1]}");
-                    Logging.LogDebug("Version check successful.");
-                    continue;
-                }
-
-                // Resolve memory spaces, Replace relative addresses with absolute counterpart
-                // Example: If "#MEMREGION CON 0x10000000 0x20000000" was specified, then
-                // "STORE gp1, CON:3" becomes "STORE gp1, 0x10000003"
-                if (words[0] == ASM_DIRECTIVE_MEMREGION)
-                {
-                    if (words[1] == ASM_DIRECTIVE_MEMREGION_RAM)
-                    {
-                        uint regionStart = ConvertStringToUInt(words[2]);
-                        uint regionEnd = ConvertStringToUInt(words[3]);
-                        if (regionEnd < regionStart)
-                            throw new ArgumentOutOfRangeException(
-                                $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
-                        workingMemoryRegion = (regionStart, regionEnd);
-                        assembledMachineCode[HEADER_INDEX_RAM_REGION_START] = regionStart;
-                        assembledMachineCode[HEADER_INDEX_RAM_REGION_END] = regionEnd;
-                        Logging.LogDebug($"Working memory region: {regionStart:x8} - {regionEnd:x8}");
-                        continue;
-                    }
-                    if (words[1] == ASM_DIRECTIVE_MEMREGION_CON)
-                    {
-                        uint regionStart = ConvertStringToUInt(words[2]);
-                        uint regionEnd = ConvertStringToUInt(words[3]);
-                        if (regionEnd < regionStart)
-                            throw new ArgumentOutOfRangeException(
-                                $"Working memory region end {regionEnd:x8} smaller than start {regionStart:x8}");
-                        consoleMemoryRegion = (regionStart, regionEnd);
-                        assembledMachineCode[HEADER_INDEX_CON_REGION_START] = regionStart;
-                        assembledMachineCode[HEADER_INDEX_CON_REGION_END] = regionEnd;
-                        Logging.LogDebug($"Console memory region: {regionStart:x8} - {regionEnd:x8}");
-                        continue;
-                    }
-                    throw new ArgumentException($"Unknown memory region type {words[1]}");
-                }
+                words = SplitLineIntoWords(line);
 
                 // Checks current line for occurrences of relative addresses
                 for (int i = 0; i < words.Length; i++)
