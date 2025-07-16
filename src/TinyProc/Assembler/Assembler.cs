@@ -71,9 +71,10 @@ public partial class Assembler()
             // Find labels and their corresponding addresses
             for (int i = 0; i < assemblyLines.Count; i++)
             {
-                string line = assemblyLines[i];
-                string[] words = SplitLineIntoWords(line);
-                // Resolve labels, Replace label encounters with their corresponding absolute addresses
+                currentLine++;
+                currentLineStr = assemblyLines[i];
+                string[] words = SplitLineIntoWords(currentLineStr);
+                // Resolve labels
                 if (words[0].EndsWith(':'))
                 {
                     string label = words[0][..^1];
@@ -86,6 +87,7 @@ public partial class Assembler()
                 currentAddress += 2;
             }
 
+            currentLine = 0;
             currentAddress = 0;
 
             // Main assembler
@@ -160,6 +162,7 @@ public partial class Assembler()
                     }
                 }
 
+                // Replace label encounters with their corresponding absolute addresses
                 for (int i = 0; i < words.Length; i++)
                 {
                     if (labelAddressMap.ContainsKey(words[i]))
