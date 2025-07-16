@@ -119,12 +119,14 @@ Internal registers (Not addressable):
 - IRA / IRB
 - MAR / MDR
 
+=== Create separate documentation for HLTP32 Assembler ===
+
 Assembly binary file, First 8 words:
-1. Assembler version (byte 1: Major; byte 2: Minor)
-2. Absolute start address of RAM region
-3. Absolute end address of RAM region
-4. Absolute start address of CON region (0xFFFFFFFF if none)
-5. Absolute end address of CON region (0xFFFFFFFE if none, E is not a typo)
-6. Entry point (Absolute address)
+1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
+2. Entry point (offset in .text section)
+3. .data segment size in words
+4. .text segment size in words
+5. 0x0
+6. 0x0
 7. 0x0
 8. 0x0

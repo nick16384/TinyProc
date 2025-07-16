@@ -3,7 +3,7 @@ using TinyProc.Application;
 using TinyProc.Processor;
 using TinyProc.Processor.CPU;
 
-namespace TinyProc.Assembler;
+namespace TinyProc.Assembling;
 
 public partial class Assembler
 {

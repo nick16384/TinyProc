@@ -1,7 +1,7 @@
 using System.Text;
 using TinyProc.Application;
 
-namespace TinyProc.Assembler;
+namespace TinyProc.Assembling;
 
 public partial class Assembler
 {
