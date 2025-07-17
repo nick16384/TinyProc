@@ -1,10 +1,6 @@
 using static TinyProc.Assembling.Sections.DataSection;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
-using System.Net.NetworkInformation;
-using System.Net.Http.Headers;
-using System.Collections.Frozen;
-using System.Diagnostics;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -12,13 +8,13 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
     Dictionary<string, uint> immediateValues, Dictionary<string, uint[]> pointers, Dictionary<string, ContinuousBlock> blockPointers)
 {
     public uint Size { get; } = (uint)immediateValues.Count + (uint)pointers.Count
-                                + blockPointers.Values.Select((block) => block.Size).Aggregate((x, y) => x + y);
+                                + blockPointers.Values.Select(block => block.Size).Aggregate((x, y) => x + y);
     public bool IsRelocatable { get; } = isRelocatable;
     public uint? FixedLoadAddress { get; } = fixedLoadAddress;
 
-    Dictionary<string, uint> ImmediateValues { get; } = immediateValues;
-    Dictionary<string, uint[]> Pointers { get; } = pointers;
-    Dictionary<string, ContinuousBlock> BlockPointers { get; } = blockPointers;
+    public Dictionary<string, uint> ImmediateValues { get; } = immediateValues;
+    public Dictionary<string, uint[]> Pointers { get; } = pointers;
+    public Dictionary<string, ContinuousBlock> BlockPointers { get; } = blockPointers;
 
     internal enum DataType
     {
@@ -123,7 +119,8 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 blocks.Add(blockName, innerBlock.Split("{")[1].Split("}")[0]);
 
                 // Remove block from being processed in immediate and pointer parsing
-                currentDataSectionCode = currentDataSectionCode[..(blockStartIdx + 1)][blockEndIdx..];
+                // effectively the same as "currentDataSectionCode[..blockStartIdx blockEndIdx..]"
+                currentDataSectionCode = currentDataSectionCode[..(blockStartIdx + 1)][(blockEndIdx - blockStartIdx - 1)..];
                 lines = [.. currentDataSectionCode.Split("\n")];
                 lines = FilterCommentsAndRemoveExcessWhitespace(lines);
                 blocksFound++;

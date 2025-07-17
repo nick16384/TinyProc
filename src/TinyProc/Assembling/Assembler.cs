@@ -11,6 +11,7 @@ public partial class Assembler()
 
         List<string> assemblyLines = [.. assemblyCode.Split("\n")];
         assemblyLines = FilterCommentsAndRemoveExcessWhitespace(assemblyLines);
+        assemblyCode = string.Join("\n", assemblyLines);
 
         Logging.LogInfo("===== Assembly begin =====");
         assemblyLines.ForEach(Logging.LogInfo);
@@ -30,8 +31,32 @@ public partial class Assembler()
         try
         {
             // Split full assembly code into sections (.data and .text)
-            string dataSectionCode = "";
-            string textSectionCode = "";
+            // Check valid section structure
+            if (!assemblyCode.Contains($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_DATA}"))
+                throw new Exception("No .data section found.");
+            if (!assemblyCode.Contains($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_TEXT}"))
+                throw new Exception("No .text section found.");
+            if (assemblyCode.IndexOf($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_DATA}")
+                > assemblyCode.IndexOf($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_TEXT}"))
+                throw new Exception(".data and .text sections in wrong order. Define .data first, then .text");
+            if (assemblyCode.Split($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_DATA}").Length > 2)
+                throw new Exception("Multiple .data sections found. Please only specify one.");
+            if (assemblyCode.Split($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_TEXT}").Length > 2)
+                throw new Exception("Multiple .text sections found. Please only specify one.");
+            // At this point it is guaranteed, that there is exactly one .data and one .text section,
+            // and they are in the following order: .data, .text
+
+            // Determine start and end indices of sections
+            int dataSectionStartIdx = assemblyCode.IndexOf($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_DATA}");
+            int textSectionStartIdx = assemblyCode.IndexOf($"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_TEXT}");
+            // Get start of .text section and subtract the header length of the .text section
+            int dataSectionEndIdx = textSectionStartIdx - assemblyCode[textSectionStartIdx..].Split("\n")[0].Length;
+            int textSectionEndIdx = assemblyCode.Length - 1;
+            string dataSectionCode = new(assemblyCode.AsSpan()[dataSectionStartIdx..dataSectionEndIdx]);
+            string textSectionCode = new(assemblyCode.AsSpan()[textSectionStartIdx..textSectionEndIdx]);
+
+            // TODO: Parse assembly header here (#VERSION, #ENTRY)
+
             DataSection dataSection = DataSection.CreateFromAssemblyCode(dataSectionCode);
         }
         catch (Exception ex)
