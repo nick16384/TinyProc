@@ -60,6 +60,7 @@ public sealed partial class Instructions
         return DetermineInstructionType(opcode << 26);
     }
 
+    // TODO: Move these 2 methods into the ALU class and replace them with explicit operators.
     private static ALU.ALUOpcode GetALUOpcodeFromUInt(uint opcodeBits)
     {
         bool[] aluOpcodeBoolArray = new bool[6];
@@ -89,32 +90,45 @@ public sealed partial class Instructions
 
     public interface IInstruction
     {
-        public Opcode GetOpcode();
-        public Condition GetConditional();
-        public InstructionType GetInstructionType();
+        public Opcode Opcode { get; }
+        public Condition Conditional { get; }
+        public InstructionType InstructionType { get; }
+        public (uint, uint) BinaryRepresentation
+        {
+            get
+            {
+                return InstructionType switch
+                {
+                    InstructionType.Register => ((uint, uint))(RegRegInstruction)this,
+                    InstructionType.Immediate => ((uint, uint))(RegImmInstruction)this,
+                    InstructionType.Jump => ((uint, uint))(JumpInstruction)this,
+                    _ => throw new Exception("Cannot return instruction byte representation, since its type could not be determined.")
+                };
+            }
+        }
         
         // Register-Type only
-        public AddressableRegisterCode R_GetAddressableDestRegCode()
-        { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type destination register code."); }
-        internal InternalRegisterCode R_GetDestRegCode() => (InternalRegisterCode)(uint)R_GetAddressableDestRegCode();
-        public AddressableRegisterCode R_GetAddressableSrcRegCode()
-        { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type source register code."); }
-        internal InternalRegisterCode R_GetSrcRegCode() => (InternalRegisterCode)(uint)R_GetAddressableSrcRegCode();
-        public ALU.ALUOpcode R_GetALUOpcode()
-        { throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type ALU Opcode."); }
+        public AddressableRegisterCode R_AddressableDestRegCode
+        { get => throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type destination register code."); }
+        internal InternalRegisterCode R_DestRegCode { get => (InternalRegisterCode)(uint)R_AddressableDestRegCode; }
+        public AddressableRegisterCode R_AddressableSrcRegCode
+        { get => throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type source register code."); }
+        internal InternalRegisterCode R_SrcRegCode { get => (InternalRegisterCode)(uint)R_AddressableSrcRegCode; }
+        public ALU.ALUOpcode R_ALUOpcode
+        { get => throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type ALU Opcode."); }
 
         // Immediate-Type only
-        public AddressableRegisterCode I_GetAddressableDestRegCode()
-        { throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type destination register code."); }
-        internal InternalRegisterCode I_GetDestRegCode() => (InternalRegisterCode)(uint)I_GetAddressableDestRegCode();
-        public ALU.ALUOpcode I_GetALUOpcode()
-        { throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type ALU Opcode."); }
-        public uint I_GetImmediateValue()
-        { throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type immediate value."); }
+        public AddressableRegisterCode I_AddressableDestRegCode
+        { get => throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type destination register code."); }
+        internal InternalRegisterCode I_DestRegCode { get => (InternalRegisterCode)(uint)I_AddressableDestRegCode; }
+        public ALU.ALUOpcode I_ALUOpcode
+        { get => throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type ALU Opcode."); }
+        public uint I_ImmediateValue
+        { get => throw new Exception("This instruction is not a Reg-Imm-Type instruction; It has no I-Type immediate value."); }
 
         // Jump-Type only
-        public uint J_GetJumpTargetAddress()
-        { throw new Exception("This instruction is not a Jump-Type instruction; It has no J-Type target jump address."); }
+        public uint J_JumpTargetAddress
+        { get => throw new Exception("This instruction is not a Jump-Type instruction; It has no J-Type target jump address."); }
     }
 
     // Register type instruction
@@ -122,18 +136,13 @@ public sealed partial class Instructions
         AddressableRegisterCode destRegCode, AddressableRegisterCode srcRegCode,
         ALU.ALUOpcode aluOpcode) : IInstruction
     {
-        public readonly Opcode Opcode = opcode;
-        public readonly Condition Conditional = conditional;
-        public readonly AddressableRegisterCode DestRegCode = destRegCode;
-        public readonly AddressableRegisterCode SrcRegCode = srcRegCode;
-        public readonly ALU.ALUOpcode ALUOpcode = aluOpcode;
+        public readonly Opcode Opcode { get; } = opcode;
+        public readonly Condition Conditional { get; } = conditional;
 
-        public InstructionType GetInstructionType() => InstructionType.Register;
-        public Opcode GetOpcode() => Opcode;
-        public Condition GetConditional() => Conditional;
-        public AddressableRegisterCode R_GetAddressableDestRegCode() => DestRegCode;
-        public AddressableRegisterCode R_GetAddressableSrcRegCode() => SrcRegCode;
-        public ALU.ALUOpcode R_GetALUOpcode() => ALUOpcode;
+        public readonly InstructionType InstructionType { get; } = InstructionType.Register;
+        public readonly AddressableRegisterCode R_AddressableDestRegCode { get; } = destRegCode;
+        public readonly AddressableRegisterCode R_AddressableSrcRegCode { get; } = srcRegCode;
+        public readonly ALU.ALUOpcode R_ALUOpcode { get; } = aluOpcode;
 
         // Explicit cast from binary instruction tuple to RegRegInstruction
         public static explicit operator RegRegInstruction((uint, uint) instructionTuple)
@@ -154,9 +163,9 @@ public sealed partial class Instructions
             uint highBytes = 0x0u;
             lowBytes |= instruction.Opcode <<      (32 - 6);
             lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            lowBytes |= instruction.DestRegCode << (32 - 6 - 4 - 5);
-            lowBytes |= instruction.SrcRegCode <<  (32 - 6 - 4 - 5 - 5);
-            lowBytes |= GetUIntFromALUOpcode(instruction.ALUOpcode) << (32 - 6 - 4 - 5 - 5 - 6);
+            lowBytes |= instruction.R_AddressableDestRegCode << (32 - 6 - 4 - 5);
+            lowBytes |= instruction.R_AddressableSrcRegCode <<  (32 - 6 - 4 - 5 - 5);
+            lowBytes |= GetUIntFromALUOpcode(instruction.R_ALUOpcode) << (32 - 6 - 4 - 5 - 5 - 6);
             return (lowBytes, highBytes);
         }
     }
@@ -165,18 +174,13 @@ public sealed partial class Instructions
     public readonly struct RegImmInstruction(Opcode opcode, Condition conditional,
         AddressableRegisterCode destRegCode, ALU.ALUOpcode aluOpcode, uint immediate) : IInstruction
     {
-        public readonly Opcode Opcode = opcode;
-        public readonly Condition Conditional = conditional;
-        public readonly AddressableRegisterCode DestRegCode = destRegCode;
-        public readonly ALU.ALUOpcode ALUOpcode = aluOpcode;
-        public readonly uint Immediate = immediate;
+        public readonly Opcode Opcode { get; } = opcode;
+        public readonly Condition Conditional { get; } = conditional;
 
-        public InstructionType GetInstructionType() => InstructionType.Immediate;
-        public Opcode GetOpcode() => Opcode;
-        public Condition GetConditional() => Conditional;
-        public AddressableRegisterCode I_GetAddressableDestRegCode() => DestRegCode;
-        public ALU.ALUOpcode I_GetALUOpcode() => ALUOpcode;
-        public uint I_GetImmediateValue() => Immediate;
+        public readonly InstructionType InstructionType { get; } = InstructionType.Immediate;
+        public readonly AddressableRegisterCode I_AddressableDestRegCode { get; } = destRegCode;
+        public readonly ALU.ALUOpcode I_ALUOpcode { get; } = aluOpcode;
+        public readonly uint I_ImmediateValue { get; } = immediate;
 
         // Explicit cast from binary instruction tuple to RegImmInstruction
         public static explicit operator RegImmInstruction((uint, uint) instructionTuple)
@@ -197,9 +201,9 @@ public sealed partial class Instructions
             uint highBytes = 0x0u;
             lowBytes |= instruction.Opcode <<      (32 - 6);
             lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            lowBytes |= instruction.DestRegCode << (32 - 6 - 4 - 5);
-            lowBytes |= GetUIntFromALUOpcode(instruction.ALUOpcode) << (32 - 6 - 4 - 5 - 6);
-            highBytes = instruction.Immediate;
+            lowBytes |= instruction.I_AddressableDestRegCode << (32 - 6 - 4 - 5);
+            lowBytes |= GetUIntFromALUOpcode(instruction.I_ALUOpcode) << (32 - 6 - 4 - 5 - 6);
+            highBytes = instruction.I_ImmediateValue;
             return (lowBytes, highBytes);
         }
     }
@@ -207,14 +211,11 @@ public sealed partial class Instructions
     // Jump type instruction
     public readonly struct JumpInstruction(Opcode opcode, Condition conditional, uint jumpTargetAddress) : IInstruction
     {
-        public readonly Opcode Opcode = opcode;
-        public readonly Condition Conditional = conditional;
-        public readonly uint JumpTargetAddress = jumpTargetAddress;
+        public readonly Opcode Opcode { get; } = opcode;
+        public readonly Condition Conditional { get; } = conditional;
 
-        public InstructionType GetInstructionType() => InstructionType.Jump;
-        public Opcode GetOpcode() => Opcode;
-        public Condition GetConditional() => Conditional;
-        public uint J_GetJumpTargetAddress() => JumpTargetAddress;
+        public readonly InstructionType InstructionType { get; } = InstructionType.Jump;
+        public readonly uint J_JumpTargetAddress { get; } = jumpTargetAddress;
 
         // Explicit cast from binary instruction tuple to JumpInstruction
         public static explicit operator JumpInstruction((uint, uint) instructionTuple)
@@ -233,7 +234,7 @@ public sealed partial class Instructions
             uint highBytes = 0x0u;
             lowBytes |= instruction.Opcode <<      (32 - 6);
             lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            highBytes = instruction.JumpTargetAddress;
+            highBytes = instruction.J_JumpTargetAddress;
             return (lowBytes, highBytes);
         }
     }

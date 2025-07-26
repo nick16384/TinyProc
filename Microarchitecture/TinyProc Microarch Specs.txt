@@ -124,9 +124,9 @@ Internal registers (Not addressable):
 Assembly binary file, First 8 words:
 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
 2. Entry point (offset in .text section)
-3. .data segment size in words
-4. .text segment size in words
-5. 0x0
-6. 0x0
+3. .data section fixed load address (or 0x0 if relocatable)
+4. .data segment size in words
+5. .text section fixed load address (ox 0x0 if relocatable)
+6. .text segment size in words
 7. 0x0
 8. 0x0

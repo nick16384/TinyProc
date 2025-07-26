@@ -1,69 +1,95 @@
 using static TinyProc.Assembling.Sections.DataSection;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 
 namespace TinyProc.Assembling.Sections;
 
-internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
-    Dictionary<string, uint> immediateValues, Dictionary<string, uint[]> pointers, Dictionary<string, ContinuousBlock> blockPointers)
+internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
+    Dictionary<string, ImmediateValue> immediateValues,
+    Dictionary<string, Pointer> pointers,
+    Dictionary<string, ContinuousBlock> blockPointers)
+    : IAssemblySection
 {
     public uint Size { get; } = (uint)immediateValues.Count + (uint)pointers.Count
                                 + blockPointers.Values.Select(block => block.Size).Aggregate((x, y) => x + y);
     public bool IsRelocatable { get; } = isRelocatable;
     public uint? FixedLoadAddress { get; } = fixedLoadAddress;
+    public List<uint> BinaryRepresentation { get; } = [
+        .. immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
+        .. pointers.Select(identifierAndPointerValue => identifierAndPointerValue.Value.Data).SelectMany(x => x),
+        .. blockPointers.Select(identifierAndBlock => identifierAndBlock.Value.BinaryRepresentation).SelectMany(x => x)
+        ];
 
-    public Dictionary<string, uint> ImmediateValues { get; } = immediateValues;
-    public Dictionary<string, uint[]> Pointers { get; } = pointers;
+    public Dictionary<string, ImmediateValue> ImmediateValues { get; } = immediateValues;
+    public Dictionary<string, Pointer> Pointers { get; } = pointers;
     public Dictionary<string, ContinuousBlock> BlockPointers { get; } = blockPointers;
 
-    internal enum DataType
+    internal readonly struct ImmediateValue(uint offset, uint value)
     {
-        Immediate,
-        Pointer
+        public readonly uint Offset = offset;
+        public readonly uint Value = value;
+    }
+    internal readonly struct Pointer(uint offset, uint[] data)
+    {
+        public readonly uint Offset = offset;
+        public readonly uint[] Data = data;
+    }
+
+    /// <summary>
+    /// An Either type instance contains either one instance of T1 or an instance of T2.
+    /// The either class wraps them up to be used in contexts where both types may appear.
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    public class Either<T1, T2>(T1? a, T2? b)
+    {
+        public T1? A { get; } = a;
+        public T2? B { get; } = b;
+        public Type Type { get; } = a != null ? typeof(T1) : typeof(T2);
+
+        public bool Is<TCompare>() => typeof(TCompare) == Type;
+
+        public static implicit operator Either<T1, T2>(T1 a) => new(a, default);
+        public static implicit operator Either<T1, T2>(T2 b) => new(default, b);
+
+        public static implicit operator T1(Either<T1, T2> either) => either.A;
+        public static implicit operator T2(Either<T1, T2> either) => either.B;
     }
 
     // A block of memory, which is (from external view) continuous in its address space.
-    internal readonly struct ContinuousBlock (Dictionary<uint, (DataType, uint[])> offsetToDataMap)
+    internal readonly struct ContinuousBlock(uint offset, Dictionary<uint, Either<ImmediateValue, Pointer>> offsetToDataMap)
     {
-        readonly Dictionary<uint, (DataType, uint[])> _offsetToDataMap = offsetToDataMap;
+        public readonly uint Offset = offset;
+        readonly Dictionary<uint, Either<ImmediateValue, Pointer>> _offsetToDataMap = offsetToDataMap;
 
-        public uint Size { get => (uint)_offsetToDataMap.Values.Select(tuple => tuple.Item2.Length).Aggregate((x, y) => x + y); }
+        public uint Size { get => (uint)BinaryRepresentation.Count; }
+        public List<uint> BinaryRepresentation { get; } =
+            [.. offsetToDataMap.Values.Select(either => {
+                if (either.Is<ImmediateValue>()) { return [((ImmediateValue)either).Value]; }
+                else { return ((Pointer)either).Data; }
+            }).SelectMany(x => x)];
 
-        public DataType GetTypeAt(uint dataOffset)
+        public Either<ImmediateValue, Pointer> GetValueAt(uint searchOffset)
         {
-            foreach (KeyValuePair<uint, (DataType, uint[])> offsetAndTypeAndData in _offsetToDataMap)
+            foreach (KeyValuePair<uint, Either<ImmediateValue, Pointer>> offsetAndData in _offsetToDataMap)
             {
-                uint offset = offsetAndTypeAndData.Key;
-                DataType type = offsetAndTypeAndData.Value.Item1;
-                uint[] data = offsetAndTypeAndData.Value.Item2;
+                uint offset = offsetAndData.Key;
+                Either<ImmediateValue, Pointer> data = offsetAndData.Value;
+                uint dataSize = 0;
+                if (data.Is<ImmediateValue>())
+                    dataSize = 1;
+                else
+                    dataSize = (uint)((Pointer)data).Data.Length;
 
-                // address <= dataIndex < (address + size)
-                if (offset <= dataOffset && dataOffset < (offset + data.Length))
-                    return type;
+                // offset <= searchOffset < (offset + dataSize)
+                if (offset <= searchOffset && searchOffset < (offset + dataSize))
+                    return data;
             }
-            throw new IndexOutOfRangeException($"Continuous block has no data at offset {dataOffset:x8}");
-        }
-
-        public object GetValueAt(uint dataOffset)
-        {
-            foreach (KeyValuePair<uint, (DataType, uint[])> offsetAndTypeAndData in _offsetToDataMap)
-            {
-                uint offset = offsetAndTypeAndData.Key;
-                DataType type = offsetAndTypeAndData.Value.Item1;
-                uint[] data = offsetAndTypeAndData.Value.Item2;
-
-                // address <= dataIndex < (address + size)
-                if (offset <= dataOffset && dataOffset < (offset + data.Length))
-                {
-                    return type switch
-                    {
-                        DataType.Immediate => data[0],
-                        DataType.Pointer => data,
-                        _ => throw new Exception($"Invalid DataType {type}")
-                    };
-                }
-            }
-            throw new IndexOutOfRangeException($"Continuous block has no data at offset {dataOffset:x8}");
+            throw new IndexOutOfRangeException($"Continuous block has no data at offset {searchOffset:x8}");
         }
     }
 
@@ -80,13 +106,14 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
         // These variables need to be determined by this parser
         bool isRelocatable;
         uint? fixedLoadAddress;
-        Dictionary<string, uint> immediateValues;
-        Dictionary<string, uint[]> pointers;
+        Dictionary<string, ImmediateValue> immediateValues;
+        Dictionary<string, Pointer> pointers;
         Dictionary<string, ContinuousBlock> blockPointers = [];
 
-        (bool, uint?) headerAttributes = ParseHeader(lines);
+        (bool, uint?) headerAttributes = ParseHeader(lines[0]);
         isRelocatable = headerAttributes.Item1;
         fixedLoadAddress = headerAttributes.Item2;
+        lines.RemoveAt(0);
 
         // Main parser for .data section
         // Search for blocks, save their contents for after immediate values and pointers have been parsed.
@@ -128,15 +155,17 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
         }
 
         // Process immediate values and pointers
-        (Dictionary<string, uint>, Dictionary<string, uint[]>) immediateValuesAndPointers
+        (Dictionary<string, ImmediateValue>, Dictionary<string, Pointer>) immediateValuesAndPointers
             = ExtractImmediateValuesAndPointers(string.Join("\n", lines));
         immediateValues = immediateValuesAndPointers.Item1;
         pointers = immediateValuesAndPointers.Item2;
 
+        uint currentOffset = pointers.Last().Value.Offset + (uint)pointers.Last().Value.Data.Length + 1;
+
         // Actually parse blocks, as immediate values and pointers have now been processed
         foreach (KeyValuePair<string, string> innerBlock in blocks)
         {
-            Dictionary<uint, (DataType, uint[])> blockOffsetToDataMap = [];
+            Dictionary<uint, Either<ImmediateValue, Pointer>> blockOffsetToDataMap = [];
             lines = [.. innerBlock.Value.Split("\n")];
             lines = FilterCommentsAndRemoveExcessWhitespace(lines);
             uint offset = 0;
@@ -148,7 +177,7 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
                     string name = words[1];
                     if (!immediateValues.ContainsKey(name))
                         throw new Exception($"Immediate value \"{name}\", specified in block \"{innerBlock.Key}\" was never declared.");
-                    blockOffsetToDataMap.Add(offset, (DataType.Immediate, [immediateValues[name]]));
+                    blockOffsetToDataMap.Add(offset, immediateValues[name]);
                     offset += 1;
                 }
                 else if (words[0] == KEYWORD_POINTER)
@@ -156,12 +185,14 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
                     string name = words[1];
                     if (!pointers.ContainsKey(name))
                         throw new Exception($"Pointer \"{name}\", specified in block \"{innerBlock.Key}\" was never declared.");
-                    blockOffsetToDataMap.Add(offset, (DataType.Pointer, pointers[name]));
-                    offset += (uint)pointers[name].Length;
+                    blockOffsetToDataMap.Add(offset, pointers[name]);
+                    offset += (uint)pointers[name].Data.Length;
                 }
                 else { throw new Exception($"Unknown keyword \"{words[0]}\" in block declaration for \"{innerBlock.Key}\"."); }
             }
-            blockPointers.Add(innerBlock.Key, new ContinuousBlock(blockOffsetToDataMap));
+            Logging.LogDebug($"Block with size {offset + 1:x8} found at .data section offset {currentOffset}");
+            blockPointers.Add(innerBlock.Key, new ContinuousBlock(currentOffset, blockOffsetToDataMap));
+            currentOffset += offset;
         }
 
         return new DataSection(isRelocatable, fixedLoadAddress, immediateValues, pointers, blockPointers);
@@ -169,17 +200,19 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
 
     /// <summary>
     /// Processes the header of the .data section
+    /// Mostly similar to the header of the .text section, but not identical,
+    /// since some attributes are section specific.
     /// </summary>
     /// <param name="lines"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static (bool, uint?) ParseHeader(List<string> lines)
+    private static (bool, uint?) ParseHeader(string headerLine)
     {
         bool isRelocatable = true;
         uint? fixedLoadAddress = null;
         // Parse section header
-        string[] headerWords = SplitLineIntoWords(lines[0]);
+        string[] headerWords = SplitLineIntoWords(headerLine);
         if (headerWords[0] != ASM_DIRECTIVE_SECTION || headerWords.Last() != ASM_DIRECTIVE_SECTION_DATA)
             throw new ArgumentException("Cannot parse assembly .data section: Incorrect header");
 
@@ -237,11 +270,14 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static (Dictionary<string, uint>, Dictionary<string, uint[]>) ExtractImmediateValuesAndPointers(string immediateAndPointerDeclarations)
+    private static (Dictionary<string, ImmediateValue>, Dictionary<string, Pointer>)
+        ExtractImmediateValuesAndPointers(string immediateAndPointerDeclarations)
     {
         List<string> lines = [.. immediateAndPointerDeclarations.Split("\n")];
-        Dictionary<string, uint> immediateValues = [];
-        Dictionary<string, uint[]> pointers = [];
+        Dictionary<string, ImmediateValue> immediateValues = [];
+        Dictionary<string, Pointer> pointers = [];
+
+        uint currentOffset = 0;
 
         foreach (string line in lines)
         {
@@ -260,8 +296,9 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 if (assignment != "=")
                     throw new ArgumentException($"Assignment operator \"=\" expected. Got \"{assignment}\" instead.");
 
-                immediateValues.Add(name, ConvertStringToUInt(value));
-                Logging.LogDebug($"Immediate value \"{name}\" has value {ConvertStringToUInt(value):x8}");
+                immediateValues.Add(name, new ImmediateValue(currentOffset, ConvertStringToUInt(value)));
+                Logging.LogDebug($"Immediate value \"{name}\" has value {ConvertStringToUInt(value):x8} at offset {currentOffset:x8}");
+                currentOffset++;
             }
 
             // Pointers
@@ -288,8 +325,9 @@ internal class DataSection(bool isRelocatable, uint? fixedLoadAddress,
                     else
                         throw new Exception($"Unable to parse pointer value \"{value}\" as uint array.");
                 }
-                pointers.Add(name, [.. valueAsUIntArray]);
-                Logging.LogDebug($"Pointer \"{name}\" points to the following data: {string.Join(", ", valueAsString)}");
+                pointers.Add(name, new Pointer(currentOffset, [.. valueAsUIntArray]));
+                Logging.LogDebug($"Pointer \"{name}\" points to data: \"{string.Join(", ", valueAsString)}\" at offset {currentOffset:x8}");
+                currentOffset += (uint)valueAsUIntArray.Count;
             }
         }
 

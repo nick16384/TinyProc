@@ -15,19 +15,19 @@ block params_helloworld_call
     ; Data in a block does not have individual names
     pointer hello_world_msg
     ; immediate length_bytes: hello_world_msg
-    immediate length_words: hello_world_msg
+    immediate len: hello_world_msg
 }
 
-#SECTION .text
+#SECTION (__attribute__ relocatable = false) (__attribute__ loadaddress = 0x00000200) .text
 _start:
-    load  *(hello_world_msg + 0), r0
+    ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
+    load  (hello_world_msg + 0), r0
     store r0, CON:0
-    load  *(hello_world_msg + 1), r0
+    load  (hello_world_msg + 1), r0
     store r0, CON:1
-    ; Syntactic sugar: var[x] = *var + x
-    load  *(hello_world_msg + 2), r0
+    load  (hello_world_msg + 2), r0
     store r0, CON:2
-    load  *(hello_world_msg + 3), r0
+    load  (hello_world_msg + 3), r0
     store r0, CON:3
 
     ; Alternative variant using software interrupts:

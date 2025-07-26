@@ -1,6 +1,6 @@
 namespace TinyProc.Application;
 
-using TinyProc.Assembler;
+using TinyProc.Assembling;
 
 // Wrapper for some binary data resembling HLTP32 code.
 // Can extract header information, read a binary file and save newly written files.
@@ -10,11 +10,11 @@ public class ExecutableWrapper
     public uint[] ExecutableProgram { get => [.. Program.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)]; }
 
     public uint AssemblerVersion { get => Program[Assembler.HEADER_INDEX_VERSION]; }
-    public uint RAMRegionStart   { get => Program[Assembler.HEADER_INDEX_RAM_REGION_START]; }
-    public uint RAMRegionEnd     { get => Program[Assembler.HEADER_INDEX_RAM_REGION_END]; }
-    public uint CONRegionStart   { get => Program[Assembler.HEADER_INDEX_CON_REGION_START]; }
-    public uint CONRegionEnd     { get => Program[Assembler.HEADER_INDEX_CON_REGION_END]; }
-    public uint EntryPoint       { get => Program[Assembler.HEADER_INDEX_ENTRY_POINT]; }
+    public uint EntryPoint { get => Program[Assembler.HEADER_INDEX_ENTRY_POINT]; }
+    public uint DataSectionLoadAddress { get => Program[Assembler.HEADER_INDEX_SEGMENT_DATA_LOADADDRESS]; }
+    public uint DataSectionSize { get => Program[Assembler.HEADER_INDEX_SEGMENT_DATA_SIZE]; }
+    public uint TextSectionLoadAddress { get => Program[Assembler.HEADER_INDEX_SEGMENT_TEXT_LOADADDRESS]; }
+    public uint TextSectionSize { get => Program[Assembler.HEADER_INDEX_SEGMENT_TEXT_SIZE]; }
 
     public ExecutableWrapper(string executableFilePath) => LoadProgramFromFile(executableFilePath);
     public void LoadProgramFromFile(string executableFilePath)

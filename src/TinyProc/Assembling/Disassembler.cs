@@ -9,11 +9,11 @@ public partial class Assembler
     {
         Logging.LogDebug("Disassembling program. Extracted header metadata:\n" +
         $"Assembler version: {GetVersionStringFromEncodedValue(programWrapper.AssemblerVersion)}\n" +
-        $"RAM Start:   {programWrapper.RAMRegionStart:X8}\n" +
-        $"RAM End:     {programWrapper.RAMRegionEnd:X8}\n" +
-        $"CON Start:   {programWrapper.CONRegionStart:X8}\n" +
-        $"CON End:     {programWrapper.CONRegionEnd:X8}\n" +
-        $"Entry Point: {programWrapper.EntryPoint:X8}");
+        $"Entry Point: {programWrapper.EntryPoint:X8}\n" +
+        $".data addr:  {programWrapper.DataSectionLoadAddress:X8}\n" +
+        $".data size:  {programWrapper.DataSectionSize:X8}\n" +
+        $".text addr:  {programWrapper.TextSectionLoadAddress:X8}\n" +
+        $".text size:  {programWrapper.TextSectionSize:X8}");
 
         return DisassembleFromProgram(programWrapper.ExecutableProgram);
     }
@@ -40,9 +40,7 @@ public partial class Assembler
     public static string DisassembleFromProgramWithHeader(ExecutableWrapper programWrapper)
     {
         string header =
-            $"#VERSION {GetVersionStringFromEncodedValue(programWrapper.AssemblerVersion)}\n" +
-            $"#MEMREGION RAM 0x{programWrapper.RAMRegionStart:X8} 0x{programWrapper.RAMRegionEnd:X8}\n" +
-            $"#MEMREGION CON 0x{programWrapper.CONRegionStart:X8} 0x{programWrapper.CONRegionEnd:X8}";
+            $"[Imagine header here (To be implemented)]";
         return header + "\n\n" + DisassembleFromProgram(programWrapper);
     }
 

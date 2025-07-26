@@ -26,56 +26,56 @@ public partial class CPU
         {
             Logging.LogDebugWithoutNewline(
                 "Arithmetic register operation: " +
-                $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
-                $"<{_currentInstruction.R_GetALUOpcode()}> " +
-                $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpcode = _currentInstruction.R_GetALUOpcode();
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetDestRegCode();
-            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
+                $"Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}] " +
+                $"<{_currentInstruction.R_ALUOpcode}> " +
+                $"Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}]");
+            _alu.CurrentOpcode = _currentInstruction.R_ALUOpcode;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _alu.Status_EnableFlags = true;
-            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_GetDestRegCode();
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_DestRegCode;
             _alu.Status_EnableFlags = false;
             ResetBus3();
             Logging.PrintDebug(
-                $" --> Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}]\n");
+                $" --> Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}]\n");
         }
         
         private void INSTRUCTION_R_LOADR()
         {
             Logging.LogDebug(
                 "Load from memory to register " +
-                $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
+                $"Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}] " +
                 "at address contained in register " +
-                $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
+                $"Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}]");
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
-            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_GetDestRegCode();
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_DestRegCode;
             ResetBus3();
         }
         private void INSTRUCTION_R_STORR()
         {
             Logging.LogDebug(
                 "Store to memory from register " +
-                $"Dst:{_currentInstruction.R_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetDestRegCode()].ValueDirect:x8}] " +
+                $"Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}] " +
                 "at address contained in register " +
-                $"Src:{_currentInstruction.R_GetSrcRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_GetSrcRegCode()].ValueDirect:x8}]");
+                $"Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}]");
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetSrcRegCode();
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
             ResetBus3();
 
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_GetDestRegCode();
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             ResetBus3();
         }
@@ -84,51 +84,51 @@ public partial class CPU
         {
             Logging.LogDebugWithoutNewline(
                 "Arithmetic immediate operation: " +
-                $"#{_currentInstruction.I_GetImmediateValue():x8} <{_currentInstruction.I_GetALUOpcode()}> " +
-                $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]");
-            _alu.CurrentOpcode = _currentInstruction.I_GetALUOpcode();
+                $"#{_currentInstruction.I_ImmediateValue:x8} <{_currentInstruction.I_ALUOpcode}> " +
+                $"Dst:{_currentInstruction.I_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_DestRegCode].ValueDirect:x8}]");
+            _alu.CurrentOpcode = _currentInstruction.I_ALUOpcode;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
-            _IntBus2.BusSourceRegisterCode = _currentInstruction.I_GetDestRegCode();
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.I_DestRegCode;
             _alu.Status_EnableFlags = true;
-            _IntBus3.BusTargetRegisterCode = _currentInstruction.I_GetDestRegCode();
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.I_DestRegCode;
             _alu.Status_EnableFlags = false;
             ResetBus3();
             Logging.PrintDebug(
-                $" --> Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}]\n");
+                $" --> Dst:{_currentInstruction.I_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_DestRegCode].ValueDirect:x8}]\n");
         }
 
         private void INSTRUCTION_I_LOAD()
         {
             Logging.LogDebug(
                 "Load from memory to register " +
-                $"Dst:{_currentInstruction.I_GetDestRegCode()} " +
+                $"Dst:{_currentInstruction.I_DestRegCode} " +
                 "at immediate address " +
-                $"#{_currentInstruction.I_GetImmediateValue():x8}");
+                $"#{_currentInstruction.I_ImmediateValue:x8}");
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
 
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
-            _IntBus3.BusTargetRegisterCode = _currentInstruction.I_GetDestRegCode();
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.I_DestRegCode;
             ResetBus3();
         }
         private void INSTRUCTION_I_STORE()
         {
             Logging.LogDebug(
                 "Store to memory from register " +
-                $"Dst:{_currentInstruction.I_GetDestRegCode()}" +
-                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_GetDestRegCode()].ValueDirect:x8}] " +
+                $"Dst:{_currentInstruction.I_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_DestRegCode].ValueDirect:x8}] " +
                 "at immediate address " +
-                $"#{_currentInstruction.I_GetImmediateValue():x8}");
+                $"#{_currentInstruction.I_ImmediateValue:x8}");
             _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
             ResetBus3();
 
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.I_GetDestRegCode();
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.I_DestRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             ResetBus3();
         }

@@ -19,8 +19,10 @@ public partial class Assembler
     public const int ASSEMBLER_HEADER_SIZE_WORDS = 8;
     public const int HEADER_INDEX_VERSION = 0;
     public const int HEADER_INDEX_ENTRY_POINT = 1;
-    public const int HEADER_INDEX_SEGMENT_DATA_SIZE = 2;
-    public const int HEADER_INDEX_SEGMENT_TEXT_SIZE = 3;
+    public const int HEADER_INDEX_SEGMENT_DATA_LOADADDRESS = 2;
+    public const int HEADER_INDEX_SEGMENT_DATA_SIZE = 3;
+    public const int HEADER_INDEX_SEGMENT_TEXT_LOADADDRESS = 4;
+    public const int HEADER_INDEX_SEGMENT_TEXT_SIZE = 5;
 
     // Assembler directives
     internal const string ASM_DIRECTIVE_VERSION = "#VERSION";

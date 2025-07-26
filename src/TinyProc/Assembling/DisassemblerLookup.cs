@@ -1,7 +1,7 @@
-using System.Net.Http.Headers;
 using TinyProc.Application;
 using TinyProc.Processor;
 using TinyProc.Processor.CPU;
+using static TinyProc.Assembling.Sections.InstructionLookup;
 
 namespace TinyProc.Assembling;
 
@@ -24,8 +24,8 @@ public partial class Assembler
 
     private static string StringFromRegRegInstruction(Instructions.RegRegInstruction instruction)
     {
-        Instructions.Opcode desiredOpcode = instruction.GetOpcode();
-        CPU.ALU.ALUOpcode desiredALUOpcode = instruction.R_GetALUOpcode();
+        Instructions.Opcode desiredOpcode = instruction.Opcode;
+        CPU.ALU.ALUOpcode desiredALUOpcode = instruction.R_ALUOpcode;
         string mnemonic = MnemonicOpcodeMap.First(opcodeAndALUOpcode =>
             {
                 return opcodeAndALUOpcode.Value.Item1 == desiredOpcode
@@ -34,15 +34,15 @@ public partial class Assembler
             .Key
             .Item1;
         return string.Format("{0,-7} {1}, {2}",
-                mnemonic + GetConditionString(instruction.GetConditional()),
-                instruction.R_GetAddressableDestRegCode(),
-                instruction.R_GetAddressableSrcRegCode());
+                mnemonic + GetConditionString(instruction.Conditional),
+                instruction.R_AddressableDestRegCode,
+                instruction.R_AddressableSrcRegCode);
     }
 
     private static string StringFromRegImmInstruction(Instructions.RegImmInstruction instruction)
     {
-        Instructions.Opcode desiredOpcode = instruction.GetOpcode();
-        CPU.ALU.ALUOpcode desiredALUOpcode = instruction.I_GetALUOpcode();
+        Instructions.Opcode desiredOpcode = instruction.Opcode;
+        CPU.ALU.ALUOpcode desiredALUOpcode = instruction.I_ALUOpcode;
         Logging.LogDebug($"Opcode: {desiredOpcode} ALU {desiredALUOpcode}");
         string mnemonic = MnemonicOpcodeMap.First(opcodeAndALUOpcode =>
             {
@@ -53,18 +53,18 @@ public partial class Assembler
             .Item1;
         if (mnemonic == "INC" || mnemonic == "DEC")
             return string.Format("{0,-7} {1}",
-                mnemonic + GetConditionString(instruction.GetConditional()),
-                instruction.I_GetAddressableDestRegCode());
+                mnemonic + GetConditionString(instruction.Conditional),
+                instruction.I_AddressableDestRegCode);
         else
             return string.Format("{0,-7} {1}, 0x{2:X8}",
-                mnemonic + GetConditionString(instruction.GetConditional()),
-                instruction.I_GetAddressableDestRegCode(),
-                instruction.I_GetImmediateValue());
+                mnemonic + GetConditionString(instruction.Conditional),
+                instruction.I_AddressableDestRegCode,
+                instruction.I_ImmediateValue);
     }
 
     private static string StringFromJumpInstruction(Instructions.JumpInstruction instruction)
     {
-        Instructions.Opcode desiredOpcode = instruction.GetOpcode();
+        Instructions.Opcode desiredOpcode = instruction.Opcode;
         string mnemonic =
             MnemonicOpcodeMap.First(opcodeAndALUOpcode =>
             {
@@ -74,13 +74,13 @@ public partial class Assembler
             .Key
             .Item1;
 
-        if (instruction.GetOpcode() == Instructions.Opcode.NOP)
+        if (instruction.Opcode == Instructions.Opcode.NOP)
             return string.Format("{0}",
-                mnemonic + GetConditionString(instruction.GetConditional()));
+                mnemonic + GetConditionString(instruction.Conditional));
         else
             return string.Format("{0,-7} 0x{1:X8}",
-                mnemonic + GetConditionString(instruction.GetConditional()),
-                instruction.J_GetJumpTargetAddress());
+                mnemonic + GetConditionString(instruction.Conditional),
+                instruction.J_JumpTargetAddress);
     }
 
     private static string GetConditionString(Instructions.Condition condition)

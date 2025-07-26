@@ -2,14 +2,15 @@ using TinyProc.Application;
 using TinyProc.Processor;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
+using static TinyProc.Assembling.Assembler;
 
-namespace TinyProc.Assembling;
+namespace TinyProc.Assembling.Sections;
 
-public partial class Assembler
+public sealed class InstructionLookup
 {
     // Maps instruction mnemonics from a specific type to 1. an Opcode and 2. an optional ALU opcode.
     // This lookup table can both be used by the assembler and the disassembler.
-    private static readonly Dictionary<(string, Instructions.InstructionType), (Instructions.Opcode, CPU.ALU.ALUOpcode)> MnemonicOpcodeMap = new()
+    public static readonly Dictionary<(string, Instructions.InstructionType), (Instructions.Opcode, CPU.ALU.ALUOpcode)> MnemonicOpcodeMap = new()
     {
         { ("NOP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.NOP,   DEFAULT_EMPTY_ALU_OPCODE) },
         { ("MOV",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.TransferB) },
@@ -31,8 +32,8 @@ public partial class Assembler
         { ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
         { ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.B,     DEFAULT_EMPTY_ALU_OPCODE) }
     };
-    
-    private static (uint, uint) ParseAsInstruction(string[] words)
+
+	internal static Instructions.IInstruction ParseAsInstruction(string[] words)
 	{
 		string mnemonic = words[0].ToUpper();
 
@@ -77,28 +78,13 @@ public partial class Assembler
 		else { throw new ArgumentException("Cannot determine instruction type."); }
 
 		Logging.LogDebug($"Type: {type}");
-		switch (type)
+		return type switch
 		{
-			case Instructions.InstructionType.Register:
-				// Case statements with brackets to create separate scope for each case statement.
-				{
-					Instructions.RegRegInstruction instruction = RegRegInstructionLookup(words, conditional);
-					return ((uint, uint))instruction;
-				}
-
-			case Instructions.InstructionType.Immediate:
-				{
-					Instructions.RegImmInstruction instruction = RegImmInstructionLookup(words, conditional);
-					return ((uint, uint))instruction;
-				}
-
-			case Instructions.InstructionType.Jump:
-				{
-					Instructions.JumpInstruction instruction = JumpInstructionLookup(words, conditional);
-					return ((uint, uint))instruction;
-				}
-		}
-		throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.");
+			Instructions.InstructionType.Register => RegRegInstructionLookup(words, conditional),
+			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, conditional),
+			Instructions.InstructionType.Jump => JumpInstructionLookup(words, conditional),
+			_ => throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.")
+		};
 	}
 
     private static Instructions.RegRegInstruction RegRegInstructionLookup(
@@ -126,10 +112,10 @@ public partial class Assembler
 
     // Some immediate type instructions don't receive any immediate values. (e.g. INC)
     // The default value passed in the instruction is ignored in this case.
-    private const uint IMMEDIATE_DEFAULT_VALUE = 0x0u;
+    public const uint IMMEDIATE_DEFAULT_VALUE = 0x0u;
     // When an instruction changes the ALU Opcode multiple times during execution, setting this has no effect.
     // This specifies the default value for such cases.
-    private static readonly ALU.ALUOpcode DEFAULT_EMPTY_ALU_OPCODE = new((false, false, false, false, false, false));
+    public static readonly ALU.ALUOpcode DEFAULT_EMPTY_ALU_OPCODE = new((false, false, false, false, false, false));
 
     private static Instructions.RegImmInstruction RegImmInstructionLookup(
         string[] words, Instructions.Condition conditional)

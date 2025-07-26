@@ -79,9 +79,9 @@ public partial class CPU
                 _currentInstruction = (JumpInstruction)(IRA.ValueDirect, IRB.ValueDirect);
 
             Logging.LogInfo(
-                $"Type: {_currentInstruction.GetInstructionType()}; " +
-                $"Opcode: {(uint)_currentInstruction.GetOpcode():X2}->{_currentInstruction.GetOpcode()}; " +
-                $"Condition: {(uint)_currentInstruction.GetConditional():X2}->{_currentInstruction.GetConditional()};");
+                $"Type: {_currentInstruction.InstructionType}; " +
+                $"Opcode: {(uint)_currentInstruction.Opcode:X2}->{_currentInstruction.Opcode}; " +
+                $"Condition: {(uint)_currentInstruction.Conditional:X2}->{_currentInstruction.Conditional};");
         }
 
         // Executes the current instruction respecting conditional values.
@@ -90,26 +90,26 @@ public partial class CPU
         {
             Logging.LogDebug("Entering EXECUTE stage...");
             bool execute;
-            if (_currentInstruction.GetConditional() == Condition.ALWAYS)
+            if (_currentInstruction.Conditional == Condition.ALWAYS)
                 execute = true;
-            else if (_currentInstruction.GetConditional() == Condition.OF)
+            else if (_currentInstruction.Conditional == Condition.OF)
                 execute = _alu.Status_Overflow;
-            else if (_currentInstruction.GetConditional() == Condition.NO)
+            else if (_currentInstruction.Conditional == Condition.NO)
                 execute = !_alu.Status_Overflow;
-            else if (_currentInstruction.GetConditional() == Condition.ZR)
+            else if (_currentInstruction.Conditional == Condition.ZR)
                 execute = _alu.Status_Zero;
-            else if (_currentInstruction.GetConditional() == Condition.NZ)
+            else if (_currentInstruction.Conditional == Condition.NZ)
                 execute = !_alu.Status_Zero;
-            else if (_currentInstruction.GetConditional() == Condition.NG)
+            else if (_currentInstruction.Conditional == Condition.NG)
                 execute = _alu.Status_Negative;
-            else if (_currentInstruction.GetConditional() == Condition.NN)
+            else if (_currentInstruction.Conditional == Condition.NN)
                 execute = !_alu.Status_Negative;
             else
-                throw new NotSupportedException($"Condition {_currentInstruction.GetConditional()} not implemented yet.");
+                throw new NotSupportedException($"Condition {_currentInstruction.Conditional} not implemented yet.");
             
             if (!execute)
             {
-                Logging.LogInfo($"Not executing: Conditional {_currentInstruction.GetConditional()} not satisfied.");
+                Logging.LogInfo($"Not executing: Conditional {_currentInstruction.Conditional} not satisfied.");
                 return;
             }
 
@@ -131,27 +131,27 @@ public partial class CPU
         // Conditional execution is handled by the InstructionExecute() method.
         private void ExecuteCurrentInstruction()
         {
-            switch (_currentInstruction.GetInstructionType())
+            switch (_currentInstruction.InstructionType)
             {
                 case InstructionType.Register:
-                    if      (_currentInstruction.GetOpcode() == Opcode.CLZ)   { INSTRUCTION_R_CLZ(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.CLOF)  { INSTRUCTION_R_CLOF(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.STORR) { INSTRUCTION_R_STORR(); }
+                    if      (_currentInstruction.Opcode == Opcode.CLZ)   { INSTRUCTION_R_CLZ(); }
+                    else if (_currentInstruction.Opcode == Opcode.CLOF)  { INSTRUCTION_R_CLOF(); }
+                    else if (_currentInstruction.Opcode == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
+                    else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
+                    else if (_currentInstruction.Opcode == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
+                    else if (_currentInstruction.Opcode == Opcode.STORR) { INSTRUCTION_R_STORR(); }
                     break;
 
                 case InstructionType.Immediate:
-                    if      (_currentInstruction.GetOpcode() == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.LOAD)  { INSTRUCTION_I_LOAD(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.STORE) { INSTRUCTION_I_STORE(); }
+                    if      (_currentInstruction.Opcode == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
+                    else if (_currentInstruction.Opcode == Opcode.LOAD)  { INSTRUCTION_I_LOAD(); }
+                    else if (_currentInstruction.Opcode == Opcode.STORE) { INSTRUCTION_I_STORE(); }
                     break;
 
                 case InstructionType.Jump:
-                    if      (_currentInstruction.GetOpcode() == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
-                    else if (_currentInstruction.GetOpcode() == Opcode.B)     { INSTRUCTION_J_B(); }
+                    if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
+                    else if (_currentInstruction.Opcode == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
+                    else if (_currentInstruction.Opcode == Opcode.B)     { INSTRUCTION_J_B(); }
                     break;
             }
         }

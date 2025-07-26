@@ -53,19 +53,17 @@ public class ExecutionContainer
 
     private ExecutionContainer(ExecutableWrapper mainProgramWrapper)
     {
-        uint ramSize = mainProgramWrapper.RAMRegionEnd - mainProgramWrapper.RAMRegionStart + 1;
-        uint conSize = mainProgramWrapper.CONRegionEnd - mainProgramWrapper.CONRegionStart + 1;
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
-        Logging.LogDebug($"{ramSize}, {conSize}");
-        _mem1 = new RawMemory(ramSize, mainProgramWrapper.ExecutableProgram);
-        _tmem1 = new ConsoleMemory(conSize);
+        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x00100000!");
+        _mem1 = new RawMemory(0x00100000, mainProgramWrapper.ExecutableProgram);
+        _tmem1 = new ConsoleMemory(0x200);
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(new Dictionary<(uint, uint), RawMemory>
             {
-                { (mainProgramWrapper.RAMRegionStart, mainProgramWrapper.RAMRegionEnd), _mem1 },
-                { (mainProgramWrapper.CONRegionStart, mainProgramWrapper.CONRegionEnd), _tmem1 }
+                { (0, _mem1._words - 1), _mem1 },
+                { (_mem1._words, _mem1._words + _tmem1._words - 1), _tmem1 }
             }, mainProgramWrapper.EntryPoint
         );
 

@@ -1,4 +1,4 @@
-﻿using TinyProc.Assembler;
+﻿using TinyProc.Assembling;
 using TinyProc.Application;
 
 class Program
