@@ -33,11 +33,11 @@ public partial class Assembler
 
     // Attributes
     internal const string ASM_ATTRIBUTE = "__attribute__";
-    internal const string ASM_ATTRIBUTE_SECTION_RELOCATABLE = "relocatable";
     internal const string ASM_ATTRIBUTE_SECTION_LOADADDRESS = "loadaddress";
 
     // Keywords
     internal const string KEYWORD_IMMEDIATE = "immediate";
     internal const string KEYWORD_POINTER = "pointer";
     internal const string KEYWORD_BLOCK = "block";
+    internal const string KEYWORD_SPECIAL_LENGTH = "len:";
 }

@@ -1,20 +1,28 @@
 using static TinyProc.Assembling.Sections.DataSection;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
 
 namespace TinyProc.Assembling.Sections;
 
-internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
+internal readonly struct DataSection(uint? fixedLoadAddress,
     Dictionary<string, ImmediateValue> immediateValues,
     Dictionary<string, Pointer> pointers,
     Dictionary<string, ContinuousBlock> blockPointers)
     : IAssemblySection
 {
-    public uint Size { get; } = (uint)immediateValues.Count + (uint)pointers.Count
-                                + blockPointers.Values.Select(block => block.Size).Aggregate((x, y) => x + y);
-    public bool IsRelocatable { get; } = isRelocatable;
+    public uint Size
+    {
+        get
+        {
+            uint immediateValuesTotalSize = 0, pointersTotalSize = 0, blocksTotalSize = 0;
+            immediateValuesTotalSize = (uint)immediateValues.Count;
+            if (pointers.Count > 0)
+                pointersTotalSize = (uint)pointers.Select(ptr => ptr.Value.Data.Length).Sum();
+            if (blockPointers.Count > 0)
+                blocksTotalSize = blockPointers.Select(blk => blk.Value.Size).Aggregate((x, y) => x + y);
+            return immediateValuesTotalSize + pointersTotalSize + blocksTotalSize;
+        }
+    }
     public uint? FixedLoadAddress { get; } = fixedLoadAddress;
     public List<uint> BinaryRepresentation { get; } = [
         .. immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
@@ -104,15 +112,13 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
         lines = FilterCommentsAndRemoveExcessWhitespace(lines);
 
         // These variables need to be determined by this parser
-        bool isRelocatable;
         uint? fixedLoadAddress;
         Dictionary<string, ImmediateValue> immediateValues;
         Dictionary<string, Pointer> pointers;
         Dictionary<string, ContinuousBlock> blockPointers = [];
 
-        (bool, uint?) headerAttributes = ParseHeader(lines[0]);
-        isRelocatable = headerAttributes.Item1;
-        fixedLoadAddress = headerAttributes.Item2;
+        uint? headerAttributes = ParseHeader(lines[0]);
+        fixedLoadAddress = headerAttributes;
         lines.RemoveAt(0);
 
         // Main parser for .data section
@@ -137,8 +143,8 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 // Determine block start / end
                 string currentDataSectionCode = string.Join("\n", lines);
                 int blockStartIdx = currentDataSectionCode.IndexOf('{');
-                int blockEndIdx = currentDataSectionCode.IndexOf('}');
-                string innerBlock = currentDataSectionCode[blockStartIdx..blockEndIdx];
+                int blockEndIdx = currentDataSectionCode.IndexOf('}') + 1;
+                string innerBlock = currentDataSectionCode[blockStartIdx..blockEndIdx].Trim();
 
                 // Extract block contents for later parsing
                 string blockName = words[1].Split("{")[0].Trim();
@@ -146,11 +152,13 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 blocks.Add(blockName, innerBlock.Split("{")[1].Split("}")[0]);
 
                 // Remove block from being processed in immediate and pointer parsing
-                // effectively the same as "currentDataSectionCode[..blockStartIdx blockEndIdx..]"
-                currentDataSectionCode = currentDataSectionCode[..(blockStartIdx + 1)][(blockEndIdx - blockStartIdx - 1)..];
+                int fullBlockStartIdx = blockStartIdx - line.Length - 1;
+                int fullBlockLength = blockEndIdx - fullBlockStartIdx;
+                currentDataSectionCode = currentDataSectionCode.Remove(fullBlockStartIdx, fullBlockLength).Trim();
                 lines = [.. currentDataSectionCode.Split("\n")];
                 lines = FilterCommentsAndRemoveExcessWhitespace(lines);
                 blocksFound++;
+                i -= innerBlock.Split("\n").Length;
             }
         }
 
@@ -160,7 +168,18 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
         immediateValues = immediateValuesAndPointers.Item1;
         pointers = immediateValuesAndPointers.Item2;
 
-        uint currentOffset = pointers.Last().Value.Offset + (uint)pointers.Last().Value.Data.Length + 1;
+        // Log immediate values and pointers (summary)
+        Logging.LogDebug(
+            $"Successfully parsed {immediateValues.Count} immediate value(s) and " +
+            $"{pointers.Count} pointer(s) with a total size of " +
+            $"{immediateValues.Count + pointers.Select(ptr => ptr.Value.Data.Length).Sum()} " +
+            "words.");
+
+        uint currentOffset = 0;
+        if (pointers.Count > 0)
+            currentOffset = pointers.Last().Value.Offset + (uint)pointers.Last().Value.Data.Length + 1;
+        else if (immediateValues.Count > 0)
+            currentOffset = (uint)immediateValues.Count;
 
         // Actually parse blocks, as immediate values and pointers have now been processed
         foreach (KeyValuePair<string, string> innerBlock in blocks)
@@ -175,9 +194,17 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 if (words[0] == KEYWORD_IMMEDIATE)
                 {
                     string name = words[1];
-                    if (!immediateValues.ContainsKey(name))
-                        throw new Exception($"Immediate value \"{name}\", specified in block \"{innerBlock.Key}\" was never declared.");
-                    blockOffsetToDataMap.Add(offset, immediateValues[name]);
+                    if (name == KEYWORD_SPECIAL_LENGTH)
+                    {
+                        // Store the length of an immediate value / pointer instead of the value itself.
+                        blockOffsetToDataMap.Add(offset, new ImmediateValue(currentOffset + offset, 1));
+                    }
+                    else
+                    {
+                        if (!immediateValues.ContainsKey(name))
+                            throw new Exception($"Immediate value \"{name}\", specified in block \"{innerBlock.Key}\" was never declared.");
+                        blockOffsetToDataMap.Add(offset, immediateValues[name]);
+                    }
                     offset += 1;
                 }
                 else if (words[0] == KEYWORD_POINTER)
@@ -195,7 +222,9 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
             currentOffset += offset;
         }
 
-        return new DataSection(isRelocatable, fixedLoadAddress, immediateValues, pointers, blockPointers);
+        DataSection resultDataSection = new(fixedLoadAddress, immediateValues, pointers, blockPointers);
+        Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
+        return resultDataSection;
     }
 
     /// <summary>
@@ -207,9 +236,8 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static (bool, uint?) ParseHeader(string headerLine)
+    private static uint? ParseHeader(string headerLine)
     {
-        bool isRelocatable = true;
         uint? fixedLoadAddress = null;
         // Parse section header
         string[] headerWords = SplitLineIntoWords(headerLine);
@@ -223,8 +251,8 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
             headerWords = [.. headerWords.Skip(1).SkipLast(1)];
             // Split by brackets
             string[] attributes =
-                [.. string.Join("", headerWords)
-                .Split(["(", ")"], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+                [.. string.Join(" ", headerWords)
+                .Split(["(", ")"], StringSplitOptions.RemoveEmptyEntries)];
 
             foreach (string attribute in attributes)
             {
@@ -243,9 +271,6 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 // TODO: Throw exception when encountering same attribute multiple times
                 switch (identifier)
                 {
-                    case ASM_ATTRIBUTE_SECTION_RELOCATABLE:
-                        isRelocatable = bool.Parse(value);
-                        break;
                     case ASM_ATTRIBUTE_SECTION_LOADADDRESS:
                         fixedLoadAddress = ConvertStringToUInt(value);
                         break;
@@ -254,13 +279,12 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 }
 
                 // Identify possibly illegal attribute combinations
-                if (!isRelocatable && !fixedLoadAddress.HasValue)
-                    throw new Exception("Data section is not relocatable, but no load address was specified.");
+                // None
             }
         }
         Logging.LogDebug("Successfully verified and parsed .data section header.");
 
-        return (isRelocatable, fixedLoadAddress);
+        return fixedLoadAddress;
     }
 
     /// <summary>
@@ -293,11 +317,28 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 string name = words[1];
                 string assignment = words[2];
                 string value = words[3];
-                if (assignment != "=")
-                    throw new ArgumentException($"Assignment operator \"=\" expected. Got \"{assignment}\" instead.");
+                if (assignment != "=" && assignment != KEYWORD_SPECIAL_LENGTH)
+                    throw new ArgumentException($"Assignment operator \"=\" or \"{KEYWORD_SPECIAL_LENGTH}\" expected. " +
+                        $"Got \"{assignment}\" instead.");
 
-                immediateValues.Add(name, new ImmediateValue(currentOffset, ConvertStringToUInt(value)));
-                Logging.LogDebug($"Immediate value \"{name}\" has value {ConvertStringToUInt(value):x8} at offset {currentOffset:x8}");
+                if (assignment == "=")
+                {
+                    immediateValues.Add(name, new ImmediateValue(currentOffset, ConvertStringToUInt(value)));
+                    Logging.LogDebug($"Immediate value \"{name}\" has value {ConvertStringToUInt(value):x8} at offset {currentOffset:x8}");
+                }
+                else if (assignment == KEYWORD_SPECIAL_LENGTH)
+                {
+                    // Store the size of the variable instead of some fixed value.
+                    uint valueSize = 0;
+                    if (immediateValues.ContainsKey(value))
+                        valueSize = 1;
+                    else if (pointers.TryGetValue(value, out Pointer pointer))
+                        valueSize = (uint)pointer.Data.Length;
+                    else
+                        throw new Exception($"Cannot determine length of immediate / pointer \"{value}\". It has not been declared.");
+                    immediateValues.Add(name, new ImmediateValue(currentOffset, valueSize));
+                }
+                
                 currentOffset++;
             }
 
@@ -320,10 +361,15 @@ internal readonly struct DataSection(bool isRelocatable, uint? fixedLoadAddress,
                 List<uint> valueAsUIntArray = [];
                 foreach (string value in valueAsString)
                 {
-                    if (uint.TryParse(value, out uint n))
-                        valueAsUIntArray.Add(n);
-                    else
-                        throw new Exception($"Unable to parse pointer value \"{value}\" as uint array.");
+                    try
+                    {
+                        uint valueAsUInt = ConvertStringToUInt(value);
+                        valueAsUIntArray.Add(valueAsUInt);
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception($"Unable to parse pointer value \"{value}\" as uint.");
+                    }
                 }
                 pointers.Add(name, new Pointer(currentOffset, [.. valueAsUIntArray]));
                 Logging.LogDebug($"Pointer \"{name}\" points to data: \"{string.Join(", ", valueAsString)}\" at offset {currentOffset:x8}");

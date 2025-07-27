@@ -1,7 +1,7 @@
 #VERSION 3.0
 #ENTRY _start
 
-#SECTION (__attribute__ relocatable = false) (__attribute__ loadaddress = 0x00000100) .data
+#SECTION (__attribute__ loadaddress = 0x00000100) .data
 ; immediate is basically the same as #define in C
 immediate int_syscall = 1
 immediate int_syscall_conwrite = 10
@@ -10,6 +10,7 @@ immediate int_syscall_conwrite = 10
 pointer hello_world_msg, "Hello, World!" + 0xA ; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
+immediate hello_world_msg_words len: hello_world_msg
 block params_helloworld_call
 {
     ; Data in a block does not have individual names
@@ -18,17 +19,17 @@ block params_helloworld_call
     immediate len: hello_world_msg
 }
 
-#SECTION (__attribute__ relocatable = false) (__attribute__ loadaddress = 0x00000200) .text
+#SECTION (__attribute__ loadaddress = 0x00000200) .text
 _start:
     ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
-    load  (hello_world_msg + 0), r0
-    store r0, CON:0
-    load  (hello_world_msg + 1), r0
-    store r0, CON:1
-    load  (hello_world_msg + 2), r0
-    store r0, CON:2
-    load  (hello_world_msg + 3), r0
-    store r0, CON:3
+    load  gp1, (hello_world_msg + 0)
+    store gp1, 70
+    load  gp1, (hello_world_msg + 1)
+    store gp1, 71
+    load  gp1, (hello_world_msg + 2)
+    store gp1, 72
+    load  gp1, (hello_world_msg + 3)
+    store gp1, 73
 
     ; Alternative variant using software interrupts:
 
@@ -37,7 +38,8 @@ _start:
     ; r8: parameter 2 (pointer or 32 bit value)
     ; If more parameters needed, use parameter blocks and pointers to them
 
-    load  int_syscall_conwrite, r6 ; Load the function to be called by the syscall (console write)
-    load  hello_world_msg, r7          ; Load pointer to the data to be printed
-    load  hello_world_msg_words, r8    ; Load the number of words to be printed
-    int   int_syscall              ; Trigger the interrupt -> syscall
+    load  gp6, int_syscall_conwrite  ; Load the function to be called by the syscall (console write)
+    load  gp7, hello_world_msg       ; Load pointer to the data to be printed
+    load  gp8, hello_world_msg_words ; Load the number of words to be printed
+    ; INT instruction not implemented yet
+    ;int   int_syscall                ; Trigger the interrupt -> syscall

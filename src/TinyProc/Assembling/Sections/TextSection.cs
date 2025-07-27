@@ -8,18 +8,20 @@ namespace TinyProc.Assembling.Sections;
 internal readonly struct TextSection : IAssemblySection
 {
     public uint Size { get; }
-    public bool IsRelocatable { get; }
     public uint? FixedLoadAddress { get; }
 
     public List<IInstruction> Instructions { get; }
+    public Dictionary<string, uint> LabelAddressMap { get; }
     public List<uint> BinaryRepresentation { get; }
 
-    public TextSection(bool isRelocatable, uint? fixedLoadAddress, List<IInstruction> instructions)
+    public TextSection(uint? fixedLoadAddress,
+        List<IInstruction> instructions,
+        Dictionary<string, uint> labelAddressMap)
     {
         Size = (uint)instructions.Count * 2;
-        IsRelocatable = isRelocatable;
         FixedLoadAddress = fixedLoadAddress;
         Instructions = instructions;
+        LabelAddressMap = labelAddressMap;
 
         BinaryRepresentation = [];
         foreach (IInstruction instruction in Instructions)
@@ -36,14 +38,31 @@ internal readonly struct TextSection : IAssemblySection
         List<string> lines = [.. assemblyCodeTextSection.Split("\n")];
         lines = FilterCommentsAndRemoveExcessWhitespace(lines);
 
-        bool isRelocatable;
         uint? fixedLoadAddress;
         List<IInstruction> instructions = [];
+        Dictionary<string, uint> labelAddressMap = [];
 
-        (bool, uint?) headerAttributes = ParseHeader(lines[0]);
-        isRelocatable = headerAttributes.Item1;
-        fixedLoadAddress = headerAttributes.Item2;
+        uint? headerAttributes = ParseHeader(lines[0]);
+        fixedLoadAddress = headerAttributes;
         lines.RemoveAt(0);
+
+        // .text section pre-parser:
+        // Replace label encounters with their corresponding address.
+        uint currentAddress = 0;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            string line = lines[i];
+            if (line.EndsWith(':'))
+            {
+                string labelName = new([.. line.SkipLast(1)]);
+                labelAddressMap.Add(labelName, currentAddress);
+                Logging.LogDebug($"Found label declaration \"{labelName}\" at address {currentAddress:x8}");
+                lines.RemoveAt(i);
+                i--;
+                continue;
+            }
+            currentAddress += 2;
+        }
 
         foreach (string lineUnparsed in lines)
         {
@@ -52,7 +71,7 @@ internal readonly struct TextSection : IAssemblySection
             // with their corresponding numeric value.
             List<string> constantExpressions = [.. lineUnparsed.Split(["(", ")"], StringSplitOptions.None)];
             // Remove parts not lying between opening and closing brackets (in that order)
-            constantExpressions = [.. constantExpressions.Where((str, index) => index % 2 != 0 )];
+            constantExpressions = [.. constantExpressions.Where((str, index) => index % 2 != 0)];
             foreach (string expression in constantExpressions)
             {
                 string expressionPreParsed = expression;
@@ -67,26 +86,39 @@ internal readonly struct TextSection : IAssemblySection
                         continue;
 
                     if (dataSection.ImmediateValues.ContainsKey(word))
-                        expressionPreParsed.Replace(word, dataSection.ImmediateValues[word].ToString());
+                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.ImmediateValues[word].Value.ToString());
                     else if (dataSection.Pointers.ContainsKey(word))
-                        expressionPreParsed.Replace(word, dataSection.Pointers[word].Offset.ToString());
+                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.Pointers[word].Offset.ToString());
                     else if (dataSection.BlockPointers.ContainsKey(word))
-                        expressionPreParsed.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
+                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
                 }
 
                 // Evaluate constant expression
                 uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expressionPreParsed, null));
                 line = line.Replace("(" + expression + ")", expressionValue.ToString());
             }
-
+            // Evaluate constant expressions consisting of a single immediate / pointer
             string[] words = SplitLineIntoWords(line);
+            foreach (string word in words)
+            {
+                if (dataSection.ImmediateValues.ContainsKey(word))
+                    line = line.Replace(word, dataSection.ImmediateValues[word].Value.ToString());
+                else if (dataSection.Pointers.ContainsKey(word))
+                    line = line.Replace(word, dataSection.Pointers[word].Offset.ToString());
+                else if (dataSection.BlockPointers.ContainsKey(word))
+                    line = line.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
+            }
+
+            Logging.LogDebug($"\"{lineUnparsed}\" -> \"{line}\"");
+            words = SplitLineIntoWords(line);
 
             // Parse assembly line as instruction object
             IInstruction instruction = InstructionLookup.ParseAsInstruction(words);
-            
+
             // Replace occurrences of jump addresses with their fixed offset applied
-            if (!isRelocatable && instruction.InstructionType == InstructionType.Jump)
+            if (fixedLoadAddress.HasValue && instruction.InstructionType == InstructionType.Jump)
             {
+                // FIXME: Instead of just fixing jump instructions, fix every instruction that is related to memory access (load, store, etc.)
                 uint baseAddress = fixedLoadAddress ?? throw new Exception(
                     ".text section relocatable but no load address specified. Cannot determine jump base address.");
                 instruction = new JumpInstruction(instruction.Opcode, instruction.Conditional, baseAddress + instruction.J_JumpTargetAddress);
@@ -94,7 +126,8 @@ internal readonly struct TextSection : IAssemblySection
             instructions.Add(instruction);
         }
 
-        return new TextSection(isRelocatable, fixedLoadAddress, instructions);
+        Logging.LogDebug($".text section successfully parsed into a total of {instructions.Count * 2} word(s).");
+        return new TextSection(fixedLoadAddress, instructions, labelAddressMap);
     }
 
     /// <summary>
@@ -106,9 +139,8 @@ internal readonly struct TextSection : IAssemblySection
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static (bool, uint?) ParseHeader(string headerLine)
+    private static uint? ParseHeader(string headerLine)
     {
-        bool isRelocatable = true;
         uint? fixedLoadAddress = null;
         // Parse section header
         string[] headerWords = SplitLineIntoWords(headerLine);
@@ -122,7 +154,7 @@ internal readonly struct TextSection : IAssemblySection
             headerWords = [.. headerWords.Skip(1).SkipLast(1)];
             // Split by brackets
             string[] attributes =
-                [.. string.Join("", headerWords)
+                [.. string.Join(" ", headerWords)
                 .Split(["(", ")"], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
 
             foreach (string attribute in attributes)
@@ -142,9 +174,6 @@ internal readonly struct TextSection : IAssemblySection
                 // TODO: Throw exception when encountering same attribute multiple times
                 switch (identifier)
                 {
-                    case ASM_ATTRIBUTE_SECTION_RELOCATABLE:
-                        isRelocatable = bool.Parse(value);
-                        break;
                     case ASM_ATTRIBUTE_SECTION_LOADADDRESS:
                         fixedLoadAddress = ConvertStringToUInt(value);
                         break;
@@ -153,12 +182,11 @@ internal readonly struct TextSection : IAssemblySection
                 }
 
                 // Identify possibly illegal attribute combinations
-                if (!isRelocatable && !fixedLoadAddress.HasValue)
-                    throw new Exception("Text section is not relocatable, but no load address was specified.");
+                // None
             }
         }
         Logging.LogDebug("Successfully verified and parsed .text section header.");
 
-        return (isRelocatable, fixedLoadAddress);
+        return fixedLoadAddress;
     }
 }

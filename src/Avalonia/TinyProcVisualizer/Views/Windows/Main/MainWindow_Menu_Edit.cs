@@ -29,7 +29,7 @@ public partial class MainWindow : Window
         try
         {
             ExecutableWrapper programWrapper = new(binaryFilePathToDisassemble);
-            string disassembledProgram = TinyProc.Assembler.Assembler.DisassembleFromProgramWithHeader(programWrapper);
+            string disassembledProgram = TinyProc.Assembling.Assembler.DisassembleFromProgramWithHeader(programWrapper);
             await Dispatcher.UIThread.InvokeAsync(() => TextBox_SourceAssemblyCodeEditor.Text = disassembledProgram);
         }
         catch (Exception ex)
@@ -88,7 +88,7 @@ public partial class MainWindow : Window
             // This is a half-satisfying workaround currently in use:
             TextBox_SourceAssemblyCodeEditor.Text = "[Disassembly in progress...]";
             string disassembledProgram = "";
-            await Task.Run(() => disassembledProgram = TinyProc.Assembler.Assembler.DisassembleFromProgramWithHeader(memoryDisassembleSlice));
+            await Task.Run(() => disassembledProgram = TinyProc.Assembling.Assembler.DisassembleFromProgramWithHeader(memoryDisassembleSlice));
             TextBox_SourceAssemblyCodeEditor.Text = disassembledProgram;
         }
         catch (Exception ex)
@@ -119,7 +119,7 @@ public partial class MainWindow : Window
         try
         {
             // Using async await, since the assembling process might take a long time
-            assembledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceCodeText));
+            assembledBinary = await Task.Run(() => TinyProc.Assembling.Assembler.AssembleToMachineCode(sourceCodeText));
         }
         catch (Exception ex)
         {
@@ -163,13 +163,13 @@ public partial class MainWindow : Window
         try
         {
             // Using async await, since the assembling process might take a long time
-            assembledBinary = await Task.Run(() => TinyProc.Assembler.Assembler.AssembleToMachineCode(sourceCodeText));
+            assembledBinary = await Task.Run(() => TinyProc.Assembling.Assembler.AssembleToMachineCode(sourceCodeText));
         }
         catch (Exception ex)
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Assembler error",
-                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.InnerException?.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
