@@ -36,7 +36,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Disassembler error",
-                $"Disassembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Disassembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.InnerException?.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -96,7 +96,7 @@ public partial class MainWindow : Window
             TextBox_SourceAssemblyCodeEditor.Text = previousDisassemblyText;
             await MessageBoxManager.GetMessageBoxStandard(
                 "Disassembler error",
-                $"Disassembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Disassembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.InnerException?.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
@@ -125,7 +125,7 @@ public partial class MainWindow : Window
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Assembler error",
-                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.StackTrace}",
+                $"Assembler error. Message:\n{ex.Message}\n{ex.InnerException?.Message}\n\nStacktrace:\n{ex.InnerException?.StackTrace}",
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
