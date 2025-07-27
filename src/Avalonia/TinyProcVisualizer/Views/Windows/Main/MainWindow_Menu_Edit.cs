@@ -181,7 +181,7 @@ public partial class MainWindow : Window
         uint? address = messageAddress?.LoadAddress;
         if (!address.HasValue)
         {
-            Console.WriteLine("User cancelled assmble and load memory address selection.");
+            Console.WriteLine("User cancelled assemble and load memory address selection.");
             return;
         }
 

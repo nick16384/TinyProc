@@ -56,13 +56,34 @@ public partial class CPU
         RCODE_SPECIAL_VOID = RCODE_SPECIAL_CONST_ZERO
     }
 
+    public enum ClockState : byte
+    {
+        HIGH = 1,
+        LOW = 0
+    }
+    private ClockState _currentClockState = ClockState.LOW;
+    public ClockState CurrentClockState
+    {
+        get => _currentClockState;
+        set
+        {
+            ClockState oldState = _currentClockState;
+            _currentClockState = value;
+            if (oldState == ClockState.LOW && value == ClockState.HIGH)
+            {
+                Logging.LogDebug("Clock toggled from low to high.");
+                NextClock();
+            }
+        }
+    }
+
     private readonly ControlUnit _CU;
     private readonly ALU _ALU;
     private readonly MMU _MMU;
     private readonly CPUDebugPort _debugPort;
     public CPUDebugPort DebugPort { get => _debugPort; }
 
-    public CPU(Dictionary<(uint, uint), RawMemory> rams, uint entryPoint)
+    public CPU(Dictionary<uint, RawMemory> rams)
     {
         GP1 = new Register();
         GP2 = new Register();
@@ -74,8 +95,8 @@ public partial class CPU
         GP8 = new Register();
 
         _ALU = new ALU();
-        _MMU = new MMU(null, (0x0, 0x0), rams);
-        _CU = new ControlUnit(this, entryPoint, _ALU, _MMU);
+        _MMU = new MMU(new ROM(0), rams);
+        _CU = new ControlUnit(this, _ALU, _MMU);
         _debugPort = new CPUDebugPort(this);
     }
 

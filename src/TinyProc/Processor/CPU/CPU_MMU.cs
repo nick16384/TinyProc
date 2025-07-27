@@ -76,22 +76,24 @@ public partial class CPU
 
         // Facilitates and encapsulates mechanisms to read from and write to arbitrary memory.
         // Combines attached memory objects' address spaces into one continuous address space.
-        public MMU(ROM rom, (uint, uint) romSpace, Dictionary<(uint, uint), RawMemory> rams)
+        public MMU(ROM rom, Dictionary<uint, RawMemory> rams)
         {
             _MemorySpaces = [];
             // TODO: Implement ROMs
             Logging.LogWarn(
                 "Warning: ROM not implemented yet in MMU. Access to its space will result in a NullReferenceException.");
             //_MemorySpaces.Add(null, romSpace);
-            foreach (((uint, uint) ramSpace, RawMemory ram) in rams)
+            foreach ((uint ramStart, RawMemory ram) in rams)
             {
-                _MemorySpaces.Add(ram, ramSpace);
+                if (rom.Size - 1 > ramStart)
+                    throw new Exception($"RAM starts before ROM ends!");
+                _MemorySpaces.Add(ram, (ramStart, ram._words - 1));
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
 
             int idx = 0;
-            foreach (((uint, uint) ramSpace, RawMemory ram) in rams)
+            foreach ((uint ramStart, RawMemory ram) in rams)
             {
                 MemoryAddressBusses.Add(
                     ram,

@@ -26,9 +26,9 @@ public partial class CPU
         private readonly ALU _alu;
         private readonly MMU _mmu;
 
-        internal ControlUnit(CPU cpu, uint entryPoint, ALU alu, MMU mmu)
+        internal ControlUnit(CPU cpu, ALU alu, MMU mmu)
         {
-            PC.ValueDirect = entryPoint;
+            PC.ValueDirect = 0;
             _cpu = cpu;
             _alu = alu;
             _mmu = mmu;

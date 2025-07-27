@@ -28,8 +28,8 @@ Future (unplanned) ToDo's:
 - Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
 
 Upcoming / In progress ToDo's:
-- Fix occasional TaskCanceledException on app exit [in progress]
-- Bump versions [done]
+- Fix occasional TaskCanceledException on app exit
+- Fix GUI errors popping up behind the main window
 
 - Find out where the assembly pre-parser got stuck and if it does not exist on the Laptop, rewrite it [in progress]
 (Parse labels as addresses first, then assemble the rest.
@@ -42,8 +42,9 @@ This prevents errors with jumps to labels that occur before the label was specif
 - ASMv3: Fixes:
 -> Make empty .data section possible (still requires definition, but does not need lines afterwards)
 -> Check no attributes work too
+-> TS: Every time a memory op needs to be done, shift target address if fixed
 
-- New CPU features: Interrupts, CV registers
+- New CPU features: ROM, Loader, Interrupts, Reset-Vector, CV registers in assembly
 
 - Add CPU init controls in separate border box / section
 1. Button "Initialize CPU" [done]
