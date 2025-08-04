@@ -3,7 +3,7 @@ namespace TinyProc.Memory;
 using TinyProc.Application;
 using TinyProc.Processor;
 
-public class RawMemory : IBusAttachable
+public class RawMemory : IReadWriteMemoryDevice
 {
     public readonly uint _words;
     public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
@@ -34,6 +34,8 @@ public class RawMemory : IBusAttachable
         }
     }
     private bool _writeEnable;
+    // It is important to note, that a write operation to the bus only effectively stores its data,
+    // if the WriteEnable (WE) line is set after the data has been written to the bus.
     public bool WriteEnable
     {
         get => _writeEnable;
@@ -51,10 +53,12 @@ public class RawMemory : IBusAttachable
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
-    public RawMemory(uint words) : this(words, new uint[0]) {}
+    public RawMemory(uint words) : this(words, new uint[words]) {}
 
     public RawMemory(uint words, uint[] initialData) : this(words, [initialData]) {}
 
+    // Number of words must be specified, because the memory is usually intended to be much larger
+    // than the number of elements in the initialData array.
     public RawMemory(uint words, uint[][] initialData)
     {
         if (words <= 0)

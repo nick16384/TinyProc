@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using TinyProc.Assembling.Sections;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
@@ -13,6 +14,10 @@ public class ExecutionContainer
     // exposed externally to be used by e.g. GUIs.
     public static ExecutionContainer? INSTANCE0 { get; set; }
 
+    private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";
+    private const string LOADER_ASM_PROGRAM_PATH = "System Programs/00000100_Loader.hltp32.asm";
+
+    private readonly ROM _rom1;
     private readonly RawMemory _mem1;
     private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
@@ -55,16 +60,33 @@ public class ExecutionContainer
     {
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
-        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x00100000!");
-        _mem1 = new RawMemory(0x00100000, mainProgramWrapper.ExecutableProgram);
+        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x30000000!");
+        _mem1 = new RawMemory(0x30000000, mainProgramWrapper.ExecutableProgram);
         _tmem1 = new ConsoleMemory(0x200);
 
+        Logging.LogDebug("Assembling Reset and Loader programs");
+        string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
+        string loaderProgramCode = File.ReadAllText(LOADER_ASM_PROGRAM_PATH);
+        (uint, DataSection, TextSection) resetProgram = Assembling.Assembler.AssembleToDirectMachineCode(resetProgramCode);
+        (uint, DataSection, TextSection) loaderProgram = Assembling.Assembler.AssembleToDirectMachineCode(loaderProgramCode);
+        Logging.LogDebug("Saving Reset and Loader programs in ROM");
+        uint resetLoadAddress = resetProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);
+        uint loaderLoadAddress = loaderProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);
+        List<uint> resetExecutableProgram = resetProgram.Item3.BinaryRepresentation;
+        List<uint> loaderExecutableProgram = loaderProgram.Item3.BinaryRepresentation;
+        uint[] romData = new uint[loaderLoadAddress + loaderProgram.Item3.Size];
+        Array.Copy(resetExecutableProgram.ToArray(), 0, romData, resetLoadAddress, resetExecutableProgram.Count);
+        Array.Copy(loaderExecutableProgram.ToArray(), 0, romData, loaderLoadAddress, loaderExecutableProgram.Count);
+        _rom1 = new ROM(romData);
+
         Logging.LogDebug("Creating CPU object, loading main program");
-        _cpu = new(new Dictionary<(uint, uint), RawMemory>
+        _cpu = new(
+            _rom1,
+            new Dictionary<uint, RawMemory>
             {
-                { (0, _mem1._words - 1), _mem1 },
-                { (_mem1._words, _mem1._words + _tmem1._words - 1), _tmem1 }
-            }, mainProgramWrapper.EntryPoint
+                { _rom1._size - 1, _mem1 },
+                { _rom1._size - 1 + _mem1._words, _tmem1 }
+            }
         );
 
         Logging.LogDebug("Reading loaded program.");

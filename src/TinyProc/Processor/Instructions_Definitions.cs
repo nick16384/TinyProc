@@ -15,6 +15,10 @@ public sealed partial class Instructions
 
         public static readonly Opcode JMP   = new(0x01, "JMP");
         public static readonly Opcode B     = new(0x02, "B");
+        public static readonly Opcode CALL  = new(0x03, "CALL");
+        public static readonly Opcode RET   = new(0x04, "RET");
+        public static readonly Opcode INT   = new(0x05, "INT");
+        public static readonly Opcode IRET  = new(0x06, "IRET");
 
         public static readonly Opcode AOPR  = new(0x10, "AOPR");
         public static readonly Opcode AOPI  = new(0x11, "AOPI");
@@ -27,6 +31,8 @@ public sealed partial class Instructions
         public static readonly Opcode LOADR = new(0x31, "LOADR");
         public static readonly Opcode STORE = new(0x32, "STORE");
         public static readonly Opcode STORR = new(0x33, "STORR");
+        public static readonly Opcode PUSH  = new(0x34, "PUSH");
+        public static readonly Opcode POP   = new(0x35, "POP");
 
         private readonly uint _value;
         private readonly string _name;

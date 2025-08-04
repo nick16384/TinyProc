@@ -5,7 +5,7 @@ using System.Data;
 
 namespace TinyProc.Assembling.Sections;
 
-internal readonly struct TextSection : IAssemblySection
+public readonly struct TextSection : IAssemblySection
 {
     public uint Size { get; }
     public uint? FixedLoadAddress { get; }
@@ -107,6 +107,15 @@ internal readonly struct TextSection : IAssemblySection
                     line = line.Replace(word, dataSection.Pointers[word].Offset.ToString());
                 else if (dataSection.BlockPointers.ContainsKey(word))
                     line = line.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
+            }
+            // Replace occurrences of labels with their corresponding addresses
+            foreach (string word in words)
+            {
+                foreach ((string label, uint address) in labelAddressMap)
+                {
+                    if (word == label)
+                        line = line.Replace(word, address.ToString());
+                }
             }
 
             Logging.LogDebug($"\"{lineUnparsed}\" -> \"{line}\"");

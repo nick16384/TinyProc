@@ -4,7 +4,8 @@ using TinyProc.Application;
 
 namespace TinyProc.Assembling.Sections;
 
-internal readonly struct DataSection(uint? fixedLoadAddress,
+public readonly struct DataSection(uint? fixedLoadAddress,
+    bool inlineAll,
     Dictionary<string, ImmediateValue> immediateValues,
     Dictionary<string, Pointer> pointers,
     Dictionary<string, ContinuousBlock> blockPointers)
@@ -24,22 +25,35 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
         }
     }
     public uint? FixedLoadAddress { get; } = fixedLoadAddress;
-    public List<uint> BinaryRepresentation { get; } = [
-        .. immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
-        .. pointers.Select(identifierAndPointerValue => identifierAndPointerValue.Value.Data).SelectMany(x => x),
-        .. blockPointers.Select(identifierAndBlock => identifierAndBlock.Value.BinaryRepresentation).SelectMany(x => x)
-        ];
+    public bool InlineAll { get; } = inlineAll;
+    public List<uint> BinaryRepresentation
+    {
+        get
+        {
+            if (InlineAll)
+            {
+                Logging.LogDebug("Specified inline = all attribute. .data section binary representation stays empty.");
+                return [];
+            }
+            else
+                return [
+                    ..immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
+                    .. pointers.Select(identifierAndPointerValue => identifierAndPointerValue.Value.Data).SelectMany(x => x),
+                    .. blockPointers.Select(identifierAndBlock => identifierAndBlock.Value.BinaryRepresentation).SelectMany(x => x)
+                    ];
+        }
+    }
 
     public Dictionary<string, ImmediateValue> ImmediateValues { get; } = immediateValues;
     public Dictionary<string, Pointer> Pointers { get; } = pointers;
     public Dictionary<string, ContinuousBlock> BlockPointers { get; } = blockPointers;
 
-    internal readonly struct ImmediateValue(uint offset, uint value)
+    public readonly struct ImmediateValue(uint offset, uint value)
     {
         public readonly uint Offset = offset;
         public readonly uint Value = value;
     }
-    internal readonly struct Pointer(uint offset, uint[] data)
+    public readonly struct Pointer(uint offset, uint[] data)
     {
         public readonly uint Offset = offset;
         public readonly uint[] Data = data;
@@ -69,7 +83,7 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
     }
 
     // A block of memory, which is (from external view) continuous in its address space.
-    internal readonly struct ContinuousBlock(uint offset, Dictionary<uint, Either<ImmediateValue, Pointer>> offsetToDataMap)
+    public readonly struct ContinuousBlock(uint offset, Dictionary<uint, Either<ImmediateValue, Pointer>> offsetToDataMap)
     {
         public readonly uint Offset = offset;
         readonly Dictionary<uint, Either<ImmediateValue, Pointer>> _offsetToDataMap = offsetToDataMap;
@@ -113,12 +127,15 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
 
         // These variables need to be determined by this parser
         uint? fixedLoadAddress;
+        bool inlineAll;
         Dictionary<string, ImmediateValue> immediateValues;
         Dictionary<string, Pointer> pointers;
         Dictionary<string, ContinuousBlock> blockPointers = [];
 
-        uint? headerAttributes = ParseHeader(lines[0]);
-        fixedLoadAddress = headerAttributes;
+        (uint?, bool) headerAttributes = ParseHeader(lines[0]);
+        fixedLoadAddress = headerAttributes.Item1;
+        inlineAll = headerAttributes.Item2;
+
         lines.RemoveAt(0);
 
         // Main parser for .data section
@@ -222,7 +239,12 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
             currentOffset += offset;
         }
 
-        DataSection resultDataSection = new(fixedLoadAddress, immediateValues, pointers, blockPointers);
+        // Check for illegal attribute combinations (again)
+        if ((inlineAll && pointers.Count > 0) || (inlineAll && blockPointers.Count > 0))
+            throw new Exception("Cannot inline pointers / blocks.");
+        // The inline attribute does not prevent creation of the .data section object.
+        // However, its binary representation will be empty.
+        DataSection resultDataSection = new(fixedLoadAddress, inlineAll, immediateValues, pointers, blockPointers);
         Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
         return resultDataSection;
     }
@@ -233,12 +255,13 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
     /// since some attributes are section specific.
     /// </summary>
     /// <param name="lines"></param>
-    /// <returns></returns>
+    /// <returns>A possibly fixed load address and whether to inline all or not</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static uint? ParseHeader(string headerLine)
+    private static (uint?, bool) ParseHeader(string headerLine)
     {
         uint? fixedLoadAddress = null;
+        bool inlineAll = false;
         // Parse section header
         string[] headerWords = SplitLineIntoWords(headerLine);
         if (headerWords[0] != ASM_DIRECTIVE_SECTION || headerWords.Last() != ASM_DIRECTIVE_SECTION_DATA)
@@ -274,17 +297,23 @@ internal readonly struct DataSection(uint? fixedLoadAddress,
                     case ASM_ATTRIBUTE_SECTION_LOADADDRESS:
                         fixedLoadAddress = ConvertStringToUInt(value);
                         break;
+                    case ASM_ATTRIBUTE_INLINE:
+                        if (value != ASM_ATTRIBUTE_INLINE_ALL)
+                            throw new ArgumentException($"Cannot apply identifier {ASM_ATTRIBUTE_INLINE} on unknown value {value}");
+                        inlineAll = true;
+                        break;
                     default:
                         throw new ArgumentException($"Invalid attribute identifier \"{identifier}\"");
                 }
 
                 // Identify possibly illegal attribute combinations
-                // None
+                if (fixedLoadAddress.HasValue && inlineAll)
+                    Logging.LogWarn("Warning: Specified load address, but .data section is inlined anyways.");
             }
         }
         Logging.LogDebug("Successfully verified and parsed .data section header.");
 
-        return fixedLoadAddress;
+        return (fixedLoadAddress, inlineAll);
     }
 
     /// <summary>

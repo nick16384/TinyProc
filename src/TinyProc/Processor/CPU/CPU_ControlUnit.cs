@@ -26,9 +26,15 @@ public partial class CPU
         private readonly ALU _alu;
         private readonly MMU _mmu;
 
+        // Is called when the CPU Reset interrupt has occurred.
+        internal void Reset_Hardware()
+        {
+            // Reset the PC to address 0 (where the reset code resides)
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_PC);
+        }
+
         internal ControlUnit(CPU cpu, ALU alu, MMU mmu)
         {
-            PC.ValueDirect = 0;
             _cpu = cpu;
             _alu = alu;
             _mmu = mmu;
@@ -49,6 +55,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
                 {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
                 {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
+                {InternalRegisterCode.RCODE_SPECIAL_SP, _mmu.SP},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},
@@ -67,8 +74,9 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
                 {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
                 {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
-                //{RegisterCode.RCODE_SR, _alu.SR},
+                {InternalRegisterCode.RCODE_SR, _alu.SR},
                 {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
+                {InternalRegisterCode.RCODE_SPECIAL_SP, _mmu.SP},
                 {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
                 {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
@@ -101,6 +109,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
                 {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
                 {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
+                {InternalRegisterCode.RCODE_SPECIAL_SP, _mmu.SP},
                 {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
                 {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
                 {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},

@@ -34,6 +34,8 @@ public partial class Assembler
     // Attributes
     internal const string ASM_ATTRIBUTE = "__attribute__";
     internal const string ASM_ATTRIBUTE_SECTION_LOADADDRESS = "loadaddress";
+    internal const string ASM_ATTRIBUTE_INLINE = "inline";
+    internal const string ASM_ATTRIBUTE_INLINE_ALL = "all";
 
     // Keywords
     internal const string KEYWORD_IMMEDIATE = "immediate";

@@ -14,6 +14,58 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
         }
 
+        // Useful methods for CPU data flow
+        internal void CopyFromRegisterToRegister(InternalRegisterCode source, InternalRegisterCode destination)
+        {
+            lock (_alu)
+            {
+                if (B1_REGISTERS.ContainsKey(source) && B3_REGISTERS.ContainsKey(destination))
+                {
+                    _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+                    _IntBus1.BusSourceRegisterCode = source;
+                    _IntBus3.BusTargetRegisterCode = destination;
+                }
+                else if (B2_REGISTERS.ContainsKey(source) && B3_REGISTERS.ContainsKey(destination))
+                {
+                    _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+                    _IntBus2.BusSourceRegisterCode = source;
+                    _IntBus3.BusTargetRegisterCode = destination;
+                }
+                else
+                {
+                    if (!B1_REGISTERS.ContainsKey(source) && !B2_REGISTERS.ContainsKey(source))
+                        throw new Exception($"Inter-register copy error: Internal source register code {source:x} is invalid.");
+                    else if (!B3_REGISTERS.ContainsKey(destination))
+                        throw new Exception($"Inter-register copy error: Internal destination register code {destination:x} is invalid.");
+                }
+                ResetBus3();
+            }
+        }
+        internal void PushOntoStack(InternalRegisterCode sourceRegister)
+        {
+            // Add 1 to stack pointer
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            ResetBus3();
+            // Push the data onto the stack
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            CopyFromRegisterToRegister(sourceRegister, InternalRegisterCode.RCODE_SPECIAL_MDR);
+        }
+        internal void PopFromStack(InternalRegisterCode destinationRegister)
+        {
+            // Pop element from the stack
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, destinationRegister);
+            // Subtract 1 from the stack pointer
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            ResetBus3();
+        }
+
         // Load first instruction word
         private void InstructionFetch1()
         {
@@ -24,18 +76,12 @@ public partial class CPU
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
                 $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
-            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+
             // PC -> MAR
-            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
-            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_PC, InternalRegisterCode.RCODE_SPECIAL_MAR);
 
             // MDR -> IRA
-            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
-            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
-            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRA;
-
-            // Set void as target to not mess up IRA values in Fetch2
-            ResetBus3();
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRA);
         }
         // Load second instruction word
         private void InstructionFetch2()
@@ -48,9 +94,7 @@ public partial class CPU
 
             // MDR -> IRB
             ResetBus3();
-            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
-            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
-            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRB);
 
             ResetBus3();
             Logging.LogInfo($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
@@ -123,7 +167,9 @@ public partial class CPU
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
-                $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
+                $"CR[{(_alu.Status_Carry ? 1 : 0)}] " +
+                $"INTD[{(_alu.Status_Interrupted ? 1 : 0)}] " +
+                $"EINT[{(_alu.Status_InterruptsEnabled ? 1 : 0)}]");
         }
 
         // Differs from InstructionExecute() in the fact that this method does not check for conditionals.
@@ -140,6 +186,8 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
                     else if (_currentInstruction.Opcode == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
                     else if (_currentInstruction.Opcode == Opcode.STORR) { INSTRUCTION_R_STORR(); }
+                    else if (_currentInstruction.Opcode == Opcode.PUSH)  { INSTRUCTION_R_PUSH(); }
+                    else if (_currentInstruction.Opcode == Opcode.POP)   { INSTRUCTION_R_POP(); }
                     break;
 
                 case InstructionType.Immediate:
@@ -152,6 +200,10 @@ public partial class CPU
                     if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
                     else if (_currentInstruction.Opcode == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
                     else if (_currentInstruction.Opcode == Opcode.B)     { INSTRUCTION_J_B(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALL)  { INSTRUCTION_J_CALL(); }
+                    else if (_currentInstruction.Opcode == Opcode.RET)   { INSTRUCTION_J_RET(); }
+                    else if (_currentInstruction.Opcode == Opcode.INT)   { INSTRUCTION_J_INT(); }
+                    else if (_currentInstruction.Opcode == Opcode.IRET)  { INSTRUCTION_J_IRET(); }
                     break;
             }
         }

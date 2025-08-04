@@ -114,19 +114,33 @@ public partial class CPU
             }
         }
 
+        public class ALUStatusRegister() : Register(0, true)
+        {
+            // This is the ONLY register, that requires both the bus to access it, as well as
+            // direct write access (for flags). Therefore, it hides the original ValueDirect,
+            // which would throw an exception if the bus were to be attached to a bus and instead
+            // allows direct writes as flags are set and cleared.
+            internal new uint ValueDirect
+            {
+                get => Value;
+                set => Value = value;
+            }
+        }
+
         public readonly ALUInputRegister A;
         public readonly ALUInputRegister B;
         public ALUOpcode CurrentOpcode = new((false, false, false, false, false, false));
         public readonly ALUResultRegister R;
 
         // Status register
-        // Currently independent of internal busses
-        public readonly Register SR = new(0, true);
-        private const uint SR_FLAG_MASK_ENABLE   = 0b10000000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_OVERFLOW = 0b01000000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_ZERO     = 0b00100000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_NEGATIVE = 0b00010000_00000000_00000000_00000000u;
-        private const uint SR_FLAG_MASK_CARRY    = 0b00001000_00000000_00000000_00000000u;
+        public readonly ALUStatusRegister SR = new();
+        private const uint SR_FLAG_MASK_ENABLE             = 0b10000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_OVERFLOW           = 0b01000000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_ZERO               = 0b00100000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_NEGATIVE           = 0b00010000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_CARRY              = 0b00001000_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_INTERRUPTED        = 0b00000100_00000000_00000000_00000000u;
+        private const uint SR_FLAG_MASK_INTERRUPTS_ENABLED = 0b00000010_00000000_00000000_00000000u;
         public bool Status_EnableFlags
         {
             get => (SR.ValueDirect & SR_FLAG_MASK_ENABLE) >> 31 == 1;
@@ -167,6 +181,24 @@ public partial class CPU
             set
             {
                 SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_CARRY) | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_CARRY);
+            }
+        }
+        public bool Status_Interrupted
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_INTERRUPTED) >> 26 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_INTERRUPTED)
+                                | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_INTERRUPTED);
+            }
+        }
+        public bool Status_InterruptsEnabled
+        {
+            get => (SR.ValueDirect & SR_FLAG_MASK_INTERRUPTS_ENABLED) >> 25 == 1;
+            set
+            {
+                SR.ValueDirect = (SR.ValueDirect & ~SR_FLAG_MASK_INTERRUPTS_ENABLED)
+                                | ((value ? 0xFFFFFFFF : 0x0) & SR_FLAG_MASK_INTERRUPTS_ENABLED);
             }
         }
 

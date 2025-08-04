@@ -19,6 +19,10 @@ Instruction set:
 Branching:
 01 - JMP [Target address] : Jump to address
 02 - B? [Target address] : Branch(=jump) on condition
+03 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+04 - RET : Returns from subroutine (restores previous state by popping data on the stack)
+05 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
+06 - IRET : Special instruction to return from interrupt subroutine
 
 Inter-register non-arithmetic operations:
 05 - TST : Test command; Sets all flags
@@ -50,6 +54,9 @@ Memory:
 31 - LOADR [Destination register] [Memory address from register]
 32 - STORE [Source register] [Memory address] : Store register at memory address
 33 - STORR [Source register] [Memory address from register]
+(Does it make sense, that store instructions have destination / source syntax swapped? Revise!)
+34 - PUSH [Source register]
+35 - POP  [Destination register]
 
 3F - <Highest possible value for opcode>
 
@@ -118,6 +125,19 @@ Internal registers (Not addressable):
 - Bus 1, 2, 3 selectors
 - IRA / IRB
 - MAR / MDR
+
+Proposed memory layout:
+[Start of ROM]
+0x00000000 - 0x000000FF : Reset code
+0x00000100 - 0x0000FFFF : Program loader
+[End of ROM]
+0x00010000 - 0x000100FF : Service handler interrupt table (SHIT, similar to the x86 real mode IVT)
+0x00010100 - 0x0001FFFF : Reserved
+0x00020000 - 0x0002FFFF : CPU global stack (grows from lower to higher address)
+[Start of unprotected memory region; Attempting write before will cause an illegal secure memory write exception to trigger.]
+0x00030000 - arbitrary  : Unloaded initial executable (incl. header, .data and .text section)
+0x10000000 - arbitrary  : Loaded .data section (If no fixed address in header)
+0x20000000 - arbitrary  : Loaded .text section (If no fixed address in header)
 
 === Create separate documentation for HLTP32 Assembler ===
 

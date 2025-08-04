@@ -44,6 +44,10 @@ public sealed partial class Instructions
         if      (opcode == Opcode.NOP)   { return InstructionType.Jump; }
         else if (opcode == Opcode.JMP)   { return InstructionType.Jump; }
         else if (opcode == Opcode.B)     { return InstructionType.Jump; }
+        else if (opcode == Opcode.CALL)  { return InstructionType.Jump; }
+        else if (opcode == Opcode.RET)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.INT)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.IRET)  { return InstructionType.Jump; }
         else if (opcode == Opcode.AOPI)  { return InstructionType.Immediate; }
         else if (opcode == Opcode.AOPR)  { return InstructionType.Register; }
         else if (opcode == Opcode.CLZ)   { return InstructionType.Register; }
@@ -53,6 +57,8 @@ public sealed partial class Instructions
         else if (opcode == Opcode.LOADR) { return InstructionType.Register; }
         else if (opcode == Opcode.STORE) { return InstructionType.Immediate; }
         else if (opcode == Opcode.STORR) { return InstructionType.Register; }
+        else if (opcode == Opcode.PUSH)  { return InstructionType.Jump; }
+        else if (opcode == Opcode.POP)   { return InstructionType.Jump; }
         throw new NotImplementedException($"Instruction opcode {opcode:x8} not linked to instruction type (R/I/J).");
     }
     public static InstructionType DetermineInstructionType(Opcode opcode)

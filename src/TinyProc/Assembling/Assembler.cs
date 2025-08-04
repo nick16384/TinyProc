@@ -7,26 +7,13 @@ namespace TinyProc.Assembling;
 public partial class Assembler()
 {
     /// <summary>
-    /// The assembler reads assembly program code (as a string) and assembles (converts) it into a binary file.
-    /// It is crucial to note that this is the only step this class is supposed to do. The following happens
-    /// after the program has been assembled by this method:
-    /// The resulting binary file can be read by the CPU loader program, which copies the binary data
-    /// into the space it finds the most appropriate and start execution of this machine code.
+    /// This method is (mostly) used internally. It extracts and parses the .data and .text section
+    /// of a program, but returns them directly instead of merging them together with a header.
     /// </summary>
     /// <param name="assemblyCode"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public static uint[] AssembleToMachineCode(string assemblyCode)
+    /// <returns>The entry point, the .data section and the .text section</returns>
+    public static (uint, DataSection, TextSection) AssembleToDirectMachineCode(string assemblyCode)
     {
-        Logging.LogInfo($"HLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
-
-        // Assembling steps:
-        // 1. Parse assembly header
-        // 2. Pre-parser (labels, string literals)
-        // 3. .data section
-        // 4. .text section (assemble)
-        // 5. Combine header & sections and return
-
         // FIXME: Edge case: When a comment is enclosed in quotes, it will still be discarded as a comment,
         // which is obviously not intended behaviour.
 
@@ -142,39 +129,69 @@ public partial class Assembler()
                 catch (Exception) { throw new Exception($"Failed to convert entry point {entryPointStr} into a valid address."); }
                 Logging.LogDebug($"Base entry point: {entryPoint:x8}");
             }
+            entryPoint += textSection.FixedLoadAddress.GetValueOrDefault(0x0);
 
-            // ========== Merge .data & .text sections and add header ==========
-
-            // Assembly header metadata words:
-            // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
-            // 2. Entry point (offset in .text section)
-            // 3. .data section fixed load address (or 0x0 if relocatable)
-            // 4. .data segment size in words
-            // 5. .text section fixed load address (ox 0x0 if relocatable)
-            // 6. .text segment size in words
-            // 7. 0x0
-            // 8. 0x0
-            Logging.LogDebug($"Actual entry point: {entryPoint + textSection.FixedLoadAddress.GetValueOrDefault(0x0):x8}");
-            List<uint> assembledBinary =
-            [
-                ASSEMBLER_VERSION_ENCODED,
-                entryPoint.Value + textSection.FixedLoadAddress.GetValueOrDefault(0x0),
-                dataSection.FixedLoadAddress.GetValueOrDefault(0x0),
-                dataSection.Size,
-                textSection.FixedLoadAddress.GetValueOrDefault(0x0),
-                textSection.Size,
-                0x0,
-                0x0
-            ];
-            assembledBinary.AddRange(dataSection.BinaryRepresentation);
-            assembledBinary.AddRange(textSection.BinaryRepresentation);
-
-            return [.. assembledBinary];
+            return (entryPoint.Value, dataSection, textSection);
         }
         catch (Exception ex)
         {
             throw new Exception($"Error while assembling: ", ex);
         }
+    }
+
+    /// <summary>
+    /// The assembler reads assembly program code (as a string) and assembles (converts) it into a binary file.
+    /// It is crucial to note that this is the only step this class is supposed to do. The following happens
+    /// after the program has been assembled by this method:
+    /// The resulting binary file can be read by the CPU loader program, which copies the binary data
+    /// into the space it finds the most appropriate and start execution of this machine code.
+    /// </summary>
+    /// <param name="assemblyCode"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public static uint[] AssembleToLoadableProgram(string assemblyCode)
+    {
+        Logging.LogInfo($"HLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
+
+        // Assembling steps:
+        // 1. Parse assembly header
+        // 2. Pre-parser (labels, string literals)
+        // 3. .data section
+        // 4. .text section (assemble)
+        // 5. Combine header & sections and return
+
+        (uint, DataSection, TextSection) assembledDataRaw = AssembleToDirectMachineCode(assemblyCode);
+        uint entryPoint = assembledDataRaw.Item1;
+        DataSection dataSection = assembledDataRaw.Item2;
+        TextSection textSection = assembledDataRaw.Item3;
+
+        // ========== Merge .data & .text sections and add header ==========
+
+        // Assembly header metadata words:
+        // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
+        // 2. Entry point (offset in .text section)
+        // 3. .data section fixed load address (or 0x0 if relocatable)
+        // 4. .data segment size in words
+        // 5. .text section fixed load address (ox 0x0 if relocatable)
+        // 6. .text segment size in words
+        // 7. 0x0
+        // 8. 0x0
+        Logging.LogDebug($"Actual entry point: {entryPoint:x8}");
+        List<uint> assembledBinary =
+        [
+            ASSEMBLER_VERSION_ENCODED,
+            entryPoint,
+            dataSection.FixedLoadAddress.GetValueOrDefault(0x0),
+            dataSection.Size,
+            textSection.FixedLoadAddress.GetValueOrDefault(0x0),
+            textSection.Size,
+            0x0,
+            0x0
+        ];
+        assembledBinary.AddRange(dataSection.BinaryRepresentation);
+        assembledBinary.AddRange(textSection.BinaryRepresentation);
+
+        return [.. assembledBinary];
     }
 
     // Converts a number string from

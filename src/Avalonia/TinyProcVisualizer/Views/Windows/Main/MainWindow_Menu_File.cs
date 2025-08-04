@@ -60,7 +60,7 @@ public partial class MainWindow : Window
         try
         {
             // Using async await, since the assembling process might take a long time
-            assembledBinary = await Task.Run(() => TinyProc.Assembling.Assembler.AssembleToMachineCode(sourceFileText));
+            assembledBinary = await Task.Run(() => TinyProc.Assembling.Assembler.AssembleToLoadableProgram(sourceFileText));
         }
         catch (Exception ex)
         {

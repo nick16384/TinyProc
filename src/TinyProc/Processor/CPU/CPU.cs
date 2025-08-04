@@ -40,17 +40,19 @@ public partial class CPU
 
         // Memory address register
         RCODE_SPECIAL_MAR = 0x70000000u,
+        // Stack pointer
+        RCODE_SPECIAL_SP = 0x70000001u,
         // Memory data register
-        RCODE_SPECIAL_MDR = 0x70000001u,
+        RCODE_SPECIAL_MDR = 0x70000002u,
         // Instruction registers A and B
-        RCODE_SPECIAL_IRA = 0x70000002u,
-        RCODE_SPECIAL_IRB = 0x70000003u,
+        RCODE_SPECIAL_IRA = 0x70000003u,
+        RCODE_SPECIAL_IRB = 0x70000004u,
 
         // Constant value, read-only registers
-        RCODE_SPECIAL_CONST_POS1 = 0x70000004u,
-        RCODE_SPECIAL_CONST_NEG1 = 0x70000005u,
-        RCODE_SPECIAL_CONST_POS2 = 0x70000006u,
-        RCODE_SPECIAL_CONST_ZERO = 0x70000007u,
+        RCODE_SPECIAL_CONST_POS1 = 0x70000005u,
+        RCODE_SPECIAL_CONST_NEG1 = 0x70000006u,
+        RCODE_SPECIAL_CONST_POS2 = 0x70000007u,
+        RCODE_SPECIAL_CONST_ZERO = 0x70000008u,
 
         // Void register: Since writes to CONST_ZERO are discarded, this refers to it in another context.
         RCODE_SPECIAL_VOID = RCODE_SPECIAL_CONST_ZERO
@@ -83,7 +85,7 @@ public partial class CPU
     private readonly CPUDebugPort _debugPort;
     public CPUDebugPort DebugPort { get => _debugPort; }
 
-    public CPU(Dictionary<uint, RawMemory> rams)
+    public CPU(ROM rom, Dictionary<uint, RawMemory> rams)
     {
         GP1 = new Register();
         GP2 = new Register();
@@ -95,7 +97,7 @@ public partial class CPU
         GP8 = new Register();
 
         _ALU = new ALU();
-        _MMU = new MMU(new ROM(0), rams);
+        _MMU = new MMU(this, rom, rams);
         _CU = new ControlUnit(this, _ALU, _MMU);
         _debugPort = new CPUDebugPort(this);
     }

@@ -37,7 +37,7 @@ class Program
                 Logging.LogWarn("Warning: Source file name does not end with standard suffix \".lltp32.asm\".");
 
             string assemblyCode = File.ReadAllText(sourceFilePath);
-            uint[] MAIN_PROGRAM = Assembler.AssembleToMachineCode(assemblyCode);
+            uint[] MAIN_PROGRAM = Assembler.AssembleToLoadableProgram(assemblyCode);
 
             ExecutableWrapper programWrapper = new(MAIN_PROGRAM);
 

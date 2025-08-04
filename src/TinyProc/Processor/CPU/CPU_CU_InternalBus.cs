@@ -102,7 +102,7 @@ public partial class CPU
             private void SetSourceRegisterCode(InternalRegisterCode newSrcRegisterCode)
             {
                 if (!_sourceCodeRegisterMap.ContainsKey(newSrcRegisterCode))
-                    throw new ArgumentException($"Illegal bus source address {newSrcRegisterCode:x8}");
+                    throw new ArgumentException($"Illegal bus source address {newSrcRegisterCode:x}");
 
                 // Disable old transfer route so no garbage data remains on the bus.
                 BusSourceRegister.BusReadEnable = false;
@@ -154,7 +154,7 @@ public partial class CPU
             private void SetTargetRegisterCode(InternalRegisterCode newDstRegisterCode)
             {
                 if (!_targetCodeRegisterMap.ContainsKey(newDstRegisterCode))
-                    throw new ArgumentException($"Illegal bus target address {newDstRegisterCode:x8}");
+                    throw new ArgumentException($"Illegal bus target address {newDstRegisterCode:x}");
 
                 // Disable old transfer route so no garbage data remains on the bus.
                 _fixedSourceRegister.BusReadEnable = false;

@@ -11,26 +11,32 @@ public sealed class InstructionLookup
     // Maps instruction mnemonics from a specific type to 1. an Opcode and 2. an optional ALU opcode.
     // This lookup table can both be used by the assembler and the disassembler.
     public static readonly Dictionary<(string, Instructions.InstructionType), (Instructions.Opcode, CPU.ALU.ALUOpcode)> MnemonicOpcodeMap = new()
-    {
-        { ("NOP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.NOP,   DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("MOV",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.TransferB) },
-        { ("MOV",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.TransferA) },
-        { ("ADD",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.Addition) },
-        { ("ADD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.Addition) },
-        { ("SUB",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
-        { ("SUB",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.BA_SubtractionSigned) },
+	{
+		{ ("NOP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.NOP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("MOV",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.TransferB) },
+		{ ("MOV",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.TransferA) },
+		{ ("ADD",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.Addition) },
+		{ ("ADD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.Addition) },
+		{ ("SUB",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
+		{ ("SUB",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.BA_SubtractionSigned) },
 		{ ("INC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Increment) },
 		{ ("DEC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Decrement) },
 		{ ("AND",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalAND) },
-        { ("AND",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalAND) },
-        { ("OR",    Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalOR) },
-        { ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
-        { ("LOADR", Instructions.InstructionType.Register),  (Instructions.Opcode.LOADR, DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("LOAD",  Instructions.InstructionType.Immediate), (Instructions.Opcode.LOAD,  DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("STORR", Instructions.InstructionType.Register),  (Instructions.Opcode.STORR, DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("STORE", Instructions.InstructionType.Immediate), (Instructions.Opcode.STORE, DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
-        { ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.B,     DEFAULT_EMPTY_ALU_OPCODE) }
+		{ ("AND",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalAND) },
+		{ ("OR",    Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalOR) },
+		{ ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
+		{ ("LOADR", Instructions.InstructionType.Register),  (Instructions.Opcode.LOADR, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("LOAD",  Instructions.InstructionType.Immediate), (Instructions.Opcode.LOAD,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("STORR", Instructions.InstructionType.Register),  (Instructions.Opcode.STORR, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("STORE", Instructions.InstructionType.Immediate), (Instructions.Opcode.STORE, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("PUSH",  Instructions.InstructionType.Register),  (Instructions.Opcode.PUSH,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.B,     DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CALL",  Instructions.InstructionType.Jump),      (Instructions.Opcode.CALL,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("RET",   Instructions.InstructionType.Jump),      (Instructions.Opcode.RET,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("INT",   Instructions.InstructionType.Jump),      (Instructions.Opcode.INT,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("IRET",  Instructions.InstructionType.Jump),      (Instructions.Opcode.IRET,  DEFAULT_EMPTY_ALU_OPCODE) }
     };
 
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words)
@@ -72,9 +78,15 @@ public sealed class InstructionLookup
 		else if (mnemonic == "LOADR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "STORE") { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "STORR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "B") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "CALL") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "RET") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "INT") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "IRET") { type = Instructions.InstructionType.Jump; }
 		else { throw new ArgumentException("Cannot determine instruction type."); }
 
 		Logging.LogDebug($"Type: {type}");
@@ -103,6 +115,24 @@ public sealed class InstructionLookup
 					(Instructions.AddressableRegisterCode)words[1],
 					(Instructions.AddressableRegisterCode)words[2],
 					aluOpcode),
+			
+			"PUSH"
+				=> new Instructions.RegRegInstruction(
+					opcode,
+					conditional,
+					(Instructions.AddressableRegisterCode)words[1],
+					default,
+					aluOpcode
+				),
+
+			"POP"
+				=> new Instructions.RegRegInstruction(
+					opcode,
+					conditional,
+					default,
+					(Instructions.AddressableRegisterCode)words[1],
+					aluOpcode
+				),
 
 			// No INC / DEC; They are exclusively immediate type instructions
 
@@ -163,11 +193,18 @@ public sealed class InstructionLookup
 					conditional,
 					IMMEDIATE_DEFAULT_VALUE),
 
-			"JMP" or "B"
+			"JMP" or "B" or "CALL" or "INT"
 				=> new Instructions.JumpInstruction(
 					opcode,
 					conditional,
 					ConvertStringToUInt(words[1])),
+			
+			"RET" or "IRET"
+				=> new Instructions.JumpInstruction(
+					opcode,
+					conditional,
+					IMMEDIATE_DEFAULT_VALUE
+				),
 
 			_ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated J-Type instruction.")
 		};

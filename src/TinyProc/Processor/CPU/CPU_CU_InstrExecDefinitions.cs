@@ -42,7 +42,7 @@ public partial class CPU
                 $" --> Dst:{_currentInstruction.R_DestRegCode}" +
                 $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}]\n");
         }
-        
+
         private void INSTRUCTION_R_LOADR()
         {
             Logging.LogDebug(
@@ -78,6 +78,18 @@ public partial class CPU
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             ResetBus3();
+        }
+        private void INSTRUCTION_R_PUSH()
+        {
+            Logging.LogDebug($"Push register {_currentInstruction.R_DestRegCode} to stack\n" +
+                $"SP: {_mmu.SP.ValueDirect:x8}");
+            PushOntoStack(_currentInstruction.R_SrcRegCode);
+        }
+        private void INSTRUCTION_R_POP()
+        {
+            Logging.LogDebug($"Pop from stack to register {_currentInstruction.R_DestRegCode}\n"
+                + $"SP: {_mmu.SP.ValueDirect:x8}");
+            PopFromStack(_currentInstruction.R_DestRegCode);
         }
 
         private void INSTRUCTION_I_AOPI()
@@ -150,6 +162,32 @@ public partial class CPU
         {
             // Conditionals have already been handled at this point
             INSTRUCTION_J_JMP();
+        }
+        private void INSTRUCTION_J_CALL()
+        {
+            Logging.LogDebug($"Call subroutine at {_currentInstruction.J_JumpTargetAddress:x8}");
+            PushOntoStack(InternalRegisterCode.RCODE_SR);
+            PushOntoStack(InternalRegisterCode.RCODE_PC);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_IRB, InternalRegisterCode.RCODE_PC);
+        }
+        private void INSTRUCTION_J_RET()
+        {
+            Logging.LogDebug("Return from subroutine");
+            PopFromStack(InternalRegisterCode.RCODE_PC);
+            PopFromStack(InternalRegisterCode.RCODE_SR);
+        }
+        private void INSTRUCTION_J_INT()
+        {
+            Logging.LogDebug($"Trigger software interrupt with vector {_currentInstruction.J_JumpTargetAddress:x8}");
+            throw new NotImplementedException();
+        }
+        private void INSTRUCTION_J_IRET()
+        {
+            Logging.LogDebug("Return from interrupt");
+            PopFromStack(InternalRegisterCode.RCODE_PC);
+            PopFromStack(InternalRegisterCode.RCODE_SR);
+            _alu.Status_Interrupted = false;
+            _alu.Status_InterruptsEnabled = true;
         }
     }
 }
