@@ -146,8 +146,6 @@ public partial class MainWindow : Window
 
     private async void Menu_Edit_AssembleAndLoadAtAddress(object? sender, RoutedEventArgs e)
     {
-        //string 
-
         string sourceCodeText = TextBox_SourceAssemblyCodeEditor.Text ?? "";
         if (string.IsNullOrWhiteSpace(sourceCodeText))
         {

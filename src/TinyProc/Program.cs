@@ -60,7 +60,8 @@ class Program
                 ExitClean();
             };
 
-            ExecutionContainer.Initialize(programWrapper);
+            ExecutionContainer.Initialize();
+            ExecutionContainer.INSTANCE0.LoadInitialProgram(programWrapper);
 
             // If this program is at this stage, it is probably running in CLI mode.
             Logging.LogInfo("Program ready to execute. Press enter to start first cycle. Press \"q\" to exit.");

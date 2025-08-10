@@ -79,3 +79,5 @@ Stack pointer (Points to absolute address of uppermost stack element)
 - Make registers overridable (esp. PC)
 1. Make CPUDebugPort bi-directional
 1. -> Don't break internal CPU register access restrictions!
+
+Uselessly neglibly simple processor (UNSC)

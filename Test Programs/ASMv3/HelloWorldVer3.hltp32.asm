@@ -1,7 +1,7 @@
 #VERSION 3.0
 #ENTRY _start
 
-#SECTION (__attribute__ loadaddress = 0x00000100) .data
+#SECTION .data
 ; immediate is basically the same as #define in C
 immediate int_syscall = 1
 immediate int_syscall_conwrite = 10
@@ -19,7 +19,7 @@ block params_helloworld_call
     immediate len: hello_world_msg
 }
 
-#SECTION (__attribute__ loadaddress = 0x00000200) .text
+#SECTION .text
 _start:
     ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
     load  gp1, (hello_world_msg + 0)

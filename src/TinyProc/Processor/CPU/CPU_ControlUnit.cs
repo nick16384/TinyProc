@@ -108,6 +108,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
                 {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
                 {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                {InternalRegisterCode.RCODE_SR, _alu.SR},
                 {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
                 {InternalRegisterCode.RCODE_SPECIAL_SP, _mmu.SP},
                 {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},

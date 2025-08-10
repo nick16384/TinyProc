@@ -8,14 +8,14 @@ using Avalonia.Controls.ApplicationLifetimes;
 using TinyProcVisualizer.ViewModels.Main;
 using AvaloniaHex.Rendering;
 using Avalonia.Media;
-using MsBox.Avalonia;
-using MsBox.Avalonia.Enums;
 using CommunityToolkit.Mvvm.Messaging;
 using TinyProcVisualizer.Messages;
 using TinyProcVisualizer.Views.Windows.Dialog_DisassembleFromRAM;
 using TinyProcVisualizer.ViewModels.Dialog_DisassembleFromRAM;
 using TinyProcVisualizer.Views.Windows.Dialog_AssembleAndLoad;
 using TinyProcVisualizer.ViewModels.Dialog_AssembleAndLoad;
+using System.Web;
+using TinyProc.Application;
 
 namespace TinyProcVisualizer.Views.Windows.Main;
 
@@ -28,6 +28,8 @@ public partial class MainWindow : Window
         Title = $"TinyProc CPU Emulator v{TinyProc.Application.VersionData.TINYPROC_PROGRAM_VERSION_STR} Visualizer";
         TinyProc.Application.Logging.SuppressDebugMessages = true;
         TinyProc.Application.Logging.SuppressInfoMessages = true;
+        Console.WriteLine("Initializing CPU...");
+        TinyProc.Application.ExecutionContainer.Initialize();
 
         HexEditor1.HexView.BytesPerLine = 8;
         HexEditor2.HexView.BytesPerLine = 8;
@@ -69,6 +71,11 @@ public partial class MainWindow : Window
         // TODO: Launch updater thread as daemon
         InitCPUGUIDataSyncThread();
         CPUGUIDataSyncThread.Start();
+
+        // Reinitialize the hex editor RAM document, since the size changed (because the CPU was initialized)
+        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
+        HexEditorDocumentRAM.Changed += (sender, eventArgs) => HexEditorDocumentRAM.AddLockedRange(eventArgs.AffectedRange);
+        ReloadHexEditorDocuments();
     }
 
     public void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
@@ -161,38 +168,14 @@ public partial class MainWindow : Window
         ChangeHexEditorWithNewComboBoxSelection(ComboBox_HexEditor2Selector, HexEditor2);
     }
 
-    private async void Button_InitCPU_OnClick(object? sender, RoutedEventArgs e)
+    private void Button_ResetCPU_OnClick(object? sender, RoutedEventArgs e)
     {
-        Console.WriteLine("Initializing new CPU");
+        Console.WriteLine("Resetting CPU");
         string? binaryExecutableFilePath = _binaryExecutableFilePath;
-        if (binaryExecutableFilePath == null)
-        {
-            await MessageBoxManager.GetMessageBoxStandard(
-                "Unable to initialize CPU",
-                "Cannot initialize CPU: Missing binary file.",
-                ButtonEnum.Ok).ShowAsync();
-            return;
-        }
-        try
-        {
-            TinyProc.Application.ExecutionContainer.Initialize(
-                new TinyProc.Application.ExecutableWrapper(binaryExecutableFilePath));
-        }
-        catch (Exception ex)
-        {
-            await MessageBoxManager.GetMessageBoxStandard(
-                "Unable to initialize CPU",
-                $"Cannot initialize CPU: Error during initialization phase.\nMessage: {ex.Message}\n\nStacktrace:\n{ex.StackTrace}",
-                ButtonEnum.Ok).ShowAsync();
-            return;
-        }
-
-        // Reinitialize the hex editor RAM document, since the size changed (because the CPU was initialized)
-        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
-        HexEditorDocumentRAM.Changed += (sender, eventArgs) => HexEditorDocumentRAM.AddLockedRange(eventArgs.AffectedRange);
+        TinyProc.Application.ExecutionContainer.INSTANCE0.ResetCPU();
 
         // Simple CPU stepping
-        Button_InitCPU.IsEnabled = false;
+        //Button_ResetCPU.IsEnabled = false;
         Button_CPUStepSingleCycle.IsEnabled = true;
         Button_CPURunIndefinitely.IsEnabled = true;
         Button_CPUFastForwardIndefinitely.IsEnabled = true;
@@ -201,6 +184,17 @@ public partial class MainWindow : Window
         // Other
         Button_CPUStop.IsEnabled = true;
         ReloadHexEditorDocuments();
+    }
+
+    private async void Button_LoadInitialProgram_OnClick(object? sender, RoutedEventArgs e)
+    {
+        Console.WriteLine("Loading initial program for CPU...");
+
+        var files = await OpenSingleFileSelectionDialog("Select binary executable file...");
+        string executableBinaryPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        ExecutableWrapper initialProgram = new(executableBinaryPath);
+        TinyProc.Application.ExecutionContainer.INSTANCE0.LoadInitialProgram(initialProgram);
+        Button_LoadInitialProgram.IsEnabled = false;
     }
 
     private void Button_HexEditor1_OverrideMemoryContents(object? sender, RoutedEventArgs e)

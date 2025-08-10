@@ -17,6 +17,8 @@ public class ExecutionContainer
     private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";
     private const string LOADER_ASM_PROGRAM_PATH = "System Programs/00000100_Loader.hltp32.asm";
 
+    private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
+
     private readonly ROM _rom1;
     private readonly RawMemory _mem1;
     private readonly ConsoleMemory _tmem1;
@@ -50,18 +52,18 @@ public class ExecutionContainer
         }
     }
 
-    public static ExecutionContainer Initialize(ExecutableWrapper mainProgramWrapper)
+    public static ExecutionContainer Initialize()
     {
-        INSTANCE0 = new ExecutionContainer(mainProgramWrapper);
+        INSTANCE0 = new ExecutionContainer();
         return INSTANCE0;
     }
 
-    private ExecutionContainer(ExecutableWrapper mainProgramWrapper)
+    private ExecutionContainer()
     {
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
-        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x30000000!");
-        _mem1 = new RawMemory(0x30000000, mainProgramWrapper.ExecutableProgram);
+        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x50000000!");
+        _mem1 = new RawMemory(0x50000000);
         _tmem1 = new ConsoleMemory(0x200);
 
         Logging.LogDebug("Assembling Reset and Loader programs");
@@ -97,6 +99,16 @@ public class ExecutionContainer
         Logging.LogDebug("Done.");
 
         INSTANCE0 ??= this;
+    }
+
+    public void ResetCPU() => _cpu.Reset();
+
+    public void LoadInitialProgram(ExecutableWrapper executable)
+    {
+        for (uint i = 0; i < executable.ExecutableProgram.Length; i++)
+        {
+            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET + i, executable.ExecutableProgram[i]);
+        }
     }
 
     public void LoadBytesAtAddress(byte[] byteData, uint address)
@@ -135,10 +147,10 @@ public class ExecutionContainer
     // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    public IEnumerable<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
+    public ReadOnlySpan<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
 
-    public const int MAX_BYTES_READ_ALLOWED = 1_000_000;
-    private static IEnumerable<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
+    public const int MAX_BYTES_READ_ALLOWED = 0xFFFFF;
+    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
     {
         // FIXME: Before making RAM reading dynamic and shit, just impose a strict limit
         // on the number of bytes read, because the GUI is constantly crashing due to OOM errors.
@@ -156,16 +168,8 @@ public class ExecutionContainer
         // bitwise manipulations using advanced AVX / AVX2 SIMD instructions supported by most modern x86 CPUs.
         // There is no need to implement anything faster by hand.
         BinaryPrimitives.ReverseEndianness(uintArray, uintArrayBigEndian);
-        for (int i = 0; i < uintArray.Length; i++)
-        {
-            uint reversedEndianUInt = BinaryPrimitives.ReverseEndianness(uintArray[i]);
-            yield return (byte)((reversedEndianUInt & 0xFF000000) >> 24);
-            yield return (byte)((reversedEndianUInt & 0x00FF0000) >> 16);
-            yield return (byte)((reversedEndianUInt & 0x000FF000) >> 8);
-            yield return (byte)((reversedEndianUInt & 0x000000FF) >> 0);
-        }
 
-        //return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
+        return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
     }
     private static ReadOnlySpan<uint> ConvertByteArrayToUIntArrayAndReverseEndianness(byte[] byteArray)
     {

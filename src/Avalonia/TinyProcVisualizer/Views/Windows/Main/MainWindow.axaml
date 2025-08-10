@@ -54,7 +54,9 @@
                 </MenuItem>
             </Menu>
             <Button Grid.Row="0" Grid.Column="1"
-                Click="Button_InitCPU_OnClick" Name="Button_InitCPU" IsEnabled="True" Margin="20, 0, 20, 0">Init CPU</Button>
+                Click="Button_ResetCPU_OnClick" Name="Button_ResetCPU" IsEnabled="True" Margin="20, 0, 20, 0">Reset CPU</Button>
+            <Button Grid.Row="0" Grid.Column="2"
+                Click="Button_LoadInitialProgram_OnClick" Name="Button_LoadInitialProgram" IsEnabled="True" Margin="20, 0, 20, 0">Load...</Button>
             <Button Grid.Row="0" Grid.Column="2" Click="Button_CPUStop_OnClick" Name="Button_CPUStop"
                 IsEnabled="False" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Margin="1">
                 <Image HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
