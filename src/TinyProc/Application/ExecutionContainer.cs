@@ -135,16 +135,20 @@ public class ExecutionContainer
     // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    public ReadOnlySpan<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
-    
-    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
+    public IEnumerable<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
+
+    public const int MAX_BYTES_READ_ALLOWED = 1_000_000;
+    private static IEnumerable<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
     {
-        if ((ulong)uintArray.Length * sizeof(uint) > int.MaxValue)
+        // FIXME: Before making RAM reading dynamic and shit, just impose a strict limit
+        // on the number of bytes read, because the GUI is constantly crashing due to OOM errors.
+        if ((ulong)uintArray.Length * sizeof(uint) > MAX_BYTES_READ_ALLOWED/*int.MaxValue*/)
         {
             Logging.LogWarn(
-                $"Accessing a uint[] as byte[] only allows {int.MaxValue} " +
-                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArray.Length * sizeof(uint)} " +
+                $"Accessing a uint[] as byte[] only allows {int.MaxValue:N0} " +
+                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArray.Length * sizeof(uint):N0} " +
                 "bytes. Only a partial amount is returned!");
+            uintArray = [.. uintArray.Take(MAX_BYTES_READ_ALLOWED/*int.MaxValue*/ / sizeof(uint))];
         }
 
         uint[] uintArrayBigEndian = new uint[uintArray.Length];
@@ -152,8 +156,16 @@ public class ExecutionContainer
         // bitwise manipulations using advanced AVX / AVX2 SIMD instructions supported by most modern x86 CPUs.
         // There is no need to implement anything faster by hand.
         BinaryPrimitives.ReverseEndianness(uintArray, uintArrayBigEndian);
+        for (int i = 0; i < uintArray.Length; i++)
+        {
+            uint reversedEndianUInt = BinaryPrimitives.ReverseEndianness(uintArray[i]);
+            yield return (byte)((reversedEndianUInt & 0xFF000000) >> 24);
+            yield return (byte)((reversedEndianUInt & 0x00FF0000) >> 16);
+            yield return (byte)((reversedEndianUInt & 0x000FF000) >> 8);
+            yield return (byte)((reversedEndianUInt & 0x000000FF) >> 0);
+        }
 
-        return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
+        //return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
     }
     private static ReadOnlySpan<uint> ConvertByteArrayToUIntArrayAndReverseEndianness(byte[] byteArray)
     {

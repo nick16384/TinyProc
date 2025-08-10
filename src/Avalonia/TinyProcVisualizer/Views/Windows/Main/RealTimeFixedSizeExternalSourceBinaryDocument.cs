@@ -9,11 +9,11 @@ namespace TinyProcVisualizer.Views.Windows.Main;
 
 public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocument
 {
-    private readonly Func<ReadOnlySpan<byte>> _backingSource;
+    private readonly Func<IEnumerable<byte>> _backingSource;
     private readonly TimeSpan _updateInterval;
     private List<BitRange> _updatingBitRanges = [];
 
-    public RealTimeFixedSizeExternalSourceBinaryDocument(Func<ReadOnlySpan<byte>> backingSource, TimeSpan updateInterval)
+    public RealTimeFixedSizeExternalSourceBinaryDocument(Func<IEnumerable<byte>> backingSource, TimeSpan updateInterval)
         : base(backingSource().ToArray())
     {
         ResetUpdateRanges();
@@ -25,12 +25,13 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
             while (true)
             {
                 Thread.Sleep(_updateInterval);
-                ReadOnlySpan<byte> newData = _backingSource();
-                if (newData.Length != Memory.Length)
+                IEnumerable<byte> newData = _backingSource();
+                /*newData.TryGetNonEnumeratedCount(out int count);
+                if (count != Memory.Length)
                 {
-                    Console.Error.WriteLine($"Backing source length {newData.Length} mismatches internal length {Memory.Length}");
+                    Console.Error.WriteLine($"Backing source length {count} mismatches internal length {Memory.Length}");
                     return;
-                }
+                }*/
                 WriteNewDataToLiveBuffer(newData);
             }
         });
@@ -209,11 +210,12 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
         }
     }
 
-    public void WriteNewDataToLiveBuffer(ReadOnlySpan<byte> bytes)
+    public void WriteNewDataToLiveBuffer(IEnumerable<byte> bytes)
     {
-        if (bytes.Length != Memory.Length)
+        // Works on the assumption that the length is correct (since an enumeration is too time intensive)
+        /*if (bytes.Length != Memory.Length)
             throw new ArgumentOutOfRangeException(
-                $"Cannot override hexview data: New size {bytes.Length} does not match internal size {Memory.Length}");
+                $"Cannot override hexview data: New size {bytes.Length} does not match internal size {Memory.Length}");*/
         lock (_updatingBitRanges)
         {
             foreach (BitRange updateRange in _updatingBitRanges)
@@ -221,7 +223,8 @@ public class RealTimeFixedSizeExternalSourceBinaryDocument : MemoryBinaryDocumen
                 // Create a temporary buffer, which contains the new updated data for this update range
                 byte[] updateRangeNewBytes = new byte[updateRange.ByteLength];
                 // Fill the buffer with the new data (update range section only)
-                Array.Copy(bytes.ToArray(), (int)updateRange.Start.ByteIndex, updateRangeNewBytes, 0, updateRangeNewBytes.Length);
+                updateRangeNewBytes = [.. bytes.TakeWhile(
+                    (b, idx) => (int)updateRange.Start.ByteIndex < idx && idx < (int)updateRange.End.ByteIndex)];
                 // Copy the new updated section to the update range on the internal memory
                 updateRangeNewBytes.CopyTo(Memory.Span[(int)updateRange.Start.ByteIndex..]);
             }
