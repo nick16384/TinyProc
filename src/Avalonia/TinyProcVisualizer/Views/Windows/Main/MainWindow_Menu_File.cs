@@ -13,9 +13,6 @@ namespace TinyProcVisualizer.Views.Windows.Main;
 
 public partial class MainWindow : Window
 {
-    private string? _executableTargetPath;
-    private string? _binaryExecutableFilePath;
-
     #region File menu
 
     private async Task<IReadOnlyList<IStorageFile>> OpenSingleFileSelectionDialog(string title)
@@ -40,11 +37,11 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected assembly source file: " + files[0].Name);
-        _executableTargetPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        string executableTargetPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
 
         // Assemble loaded assembly file
         // Read assembly source file contents
-        string? sourceFilePath = _executableTargetPath;
+        string? sourceFilePath = executableTargetPath;
         if (string.IsNullOrWhiteSpace(sourceFilePath))
         {
             await MessageBoxManager.GetMessageBoxStandard(
@@ -77,7 +74,7 @@ public partial class MainWindow : Window
         await Task.Run(() => programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath));
 
         // Set binary file in GUI
-        _binaryExecutableFilePath = outputBinaryFilePath;
+        UpdateHexEditorBinaryExecutableFile(outputBinaryFilePath);
         ReloadHexEditorDocuments();
     }
     private async void Menu_File_BinaryExecutableFileSelect_OnClick(object? sender, RoutedEventArgs e)
@@ -89,7 +86,7 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected binary executable file: " + files[0].Name);
-        _binaryExecutableFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        UpdateHexEditorBinaryExecutableFile(HttpUtility.UrlDecode(files[0].Path.AbsolutePath));
         ReloadHexEditorDocuments();
     }
 

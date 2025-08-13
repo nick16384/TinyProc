@@ -140,8 +140,9 @@ public partial class MainWindow : Window
             return;
         }
         Console.WriteLine("Selected executable target file: " + files[0].Name);
-        _executableTargetPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        await Task.Run(() => programWrapper.WriteExecutableBinaryToFile(_executableTargetPath));
+        string outputBinaryFilePath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
+        UpdateHexEditorBinaryExecutableFile(outputBinaryFilePath);
+        await Task.Run(() => programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath));
     }
 
     private async void Menu_Edit_AssembleAndLoadAtAddress(object? sender, RoutedEventArgs e)

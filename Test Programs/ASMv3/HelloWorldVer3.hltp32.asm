@@ -41,5 +41,4 @@ _start:
     load  gp6, int_syscall_conwrite  ; Load the function to be called by the syscall (console write)
     load  gp7, hello_world_msg       ; Load pointer to the data to be printed
     load  gp8, hello_world_msg_words ; Load the number of words to be printed
-    ; INT instruction not implemented yet
-    ;int   int_syscall                ; Trigger the interrupt -> syscall
+    int   int_syscall                ; Trigger the interrupt -> syscall

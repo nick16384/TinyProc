@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         CPUGUIDataSyncThread.Start();
 
         // Reinitialize the hex editor RAM document, since the size changed (because the CPU was initialized)
-        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveRAMBytes, UPDATE_INTERVAL_DOC_RAM);
+        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveVirtualMemoryBytes, UPDATE_INTERVAL_DOC_RAM);
         HexEditorDocumentRAM.Changed += (sender, eventArgs) => HexEditorDocumentRAM.AddLockedRange(eventArgs.AffectedRange);
         ReloadHexEditorDocuments();
     }
@@ -102,21 +102,16 @@ public partial class MainWindow : Window
     };
     // TODO: Make arbitrary register contents be interpretable as addresses and highlight them.
 
-    private RealTimeFixedSizeExternalSourceBinaryDocument _HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
-    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentBinaryExecutableFile
+    private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentBinaryExecutableFile = EMPTY_RT_DOCUMENT;
+    private void UpdateHexEditorBinaryExecutableFile(string binaryExecutableFilePath)
     {
-        get
+        string? binFilePath = binaryExecutableFilePath;
+        if (string.IsNullOrWhiteSpace(binFilePath) || !File.Exists(binFilePath))
+            Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is invalid.");
+        else
         {
-            // Update contents from file and return
-            string? binFilePath = _binaryExecutableFilePath;
-            if (string.IsNullOrWhiteSpace(binFilePath) || !File.Exists(binFilePath))
-                Console.Error.WriteLine("Cannot apply hex editor document: Binary executable file path is invalid.");
-            else
-            {
-                _HexEditorDocumentBinaryExecutableFile
-                    = new RealTimeFixedSizeExternalSourceBinaryDocument(() => File.ReadAllBytes(binFilePath), UPDATE_INTERVAL_DOC_BINARY);
-            }
-            return _HexEditorDocumentBinaryExecutableFile;
+            HexEditorDocumentBinaryExecutableFile
+                = new RealTimeFixedSizeExternalSourceBinaryDocument(() => File.ReadAllBytes(binFilePath), UPDATE_INTERVAL_DOC_BINARY);
         }
     }
     private RealTimeFixedSizeExternalSourceBinaryDocument HexEditorDocumentRAM = EMPTY_RT_DOCUMENT;
@@ -171,7 +166,6 @@ public partial class MainWindow : Window
     private void Button_ResetCPU_OnClick(object? sender, RoutedEventArgs e)
     {
         Console.WriteLine("Resetting CPU");
-        string? binaryExecutableFilePath = _binaryExecutableFilePath;
         TinyProc.Application.ExecutionContainer.INSTANCE0.ResetCPU();
 
         // Simple CPU stepping

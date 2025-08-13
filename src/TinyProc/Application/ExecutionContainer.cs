@@ -107,7 +107,7 @@ public class ExecutionContainer
     {
         for (uint i = 0; i < executable.ExecutableProgram.Length; i++)
         {
-            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET + i, executable.ExecutableProgram[i]);
+            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.ExecutableProgram[i]);
         }
     }
 
@@ -147,29 +147,36 @@ public class ExecutionContainer
     // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
     // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
     // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    public ReadOnlySpan<byte> LiveRAMBytes { get => ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0]); }
+    public ReadOnlySpan<byte> LiveVirtualMemoryBytes
+    {
+        get
+        {
+            byte[] virtualMemoryBytes = [];
+            virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_rom1.FixedData)];
+            virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0])];
+            return virtualMemoryBytes;
+        }
+    }
 
     public const int MAX_BYTES_READ_ALLOWED = 0xFFFFF;
-    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArray)
+    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArraySource)
     {
-        // FIXME: Before making RAM reading dynamic and shit, just impose a strict limit
-        // on the number of bytes read, because the GUI is constantly crashing due to OOM errors.
-        if ((ulong)uintArray.Length * sizeof(uint) > MAX_BYTES_READ_ALLOWED/*int.MaxValue*/)
+        if ((ulong)uintArraySource.Length * sizeof(uint) > MAX_BYTES_READ_ALLOWED/*int.MaxValue*/)
         {
             Logging.LogWarn(
                 $"Accessing a uint[] as byte[] only allows {int.MaxValue:N0} " +
-                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArray.Length * sizeof(uint):N0} " +
+                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArraySource.Length * sizeof(uint):N0} " +
                 "bytes. Only a partial amount is returned!");
-            uintArray = [.. uintArray.Take(MAX_BYTES_READ_ALLOWED/*int.MaxValue*/ / sizeof(uint))];
+            uintArraySource = uintArraySource[..(MAX_BYTES_READ_ALLOWED / sizeof(uint))];
         }
 
-        uint[] uintArrayBigEndian = new uint[uintArray.Length];
+        uint[] uintArrayReversedEndian = new uint[uintArraySource.Length];
         // This method is the fastest way for endian reversal, since it already utilizes
         // bitwise manipulations using advanced AVX / AVX2 SIMD instructions supported by most modern x86 CPUs.
         // There is no need to implement anything faster by hand.
-        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayBigEndian);
+        BinaryPrimitives.ReverseEndianness(uintArraySource, uintArrayReversedEndian);
 
-        return MemoryMarshal.AsBytes<uint>(uintArrayBigEndian);
+        return MemoryMarshal.AsBytes<uint>(uintArrayReversedEndian);
     }
     private static ReadOnlySpan<uint> ConvertByteArrayToUIntArrayAndReverseEndianness(byte[] byteArray)
     {
