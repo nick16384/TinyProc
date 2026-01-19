@@ -33,7 +33,7 @@ immediate opcode_STORR = 0x33
         load gp7, (unloaded_program_source + progheader_offset_data_size)
         mov  gp8, data_fixed_load_address
         call copySection
-        jmp dataSectionCopyFinished
+        jmp  dataSectionCopyFinished
 
     dataLoadAddressIsNotZero:
         mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
@@ -82,7 +82,7 @@ immediate opcode_STORR = 0x33
         inc   gp6
         inc   gp8
         dec   gp7
-        intng 0 ; If the program is empty, the decrement operation results in an underflow. This is not correct: Trigger reset interrupt
+        intng 0xfffffeff ; If the program is empty, the decrement operation results in an underflow. This is not correct: Trigger reset interrupt
         mov   gp7, gp7
         bnz   copySection
         ret

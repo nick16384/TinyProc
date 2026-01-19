@@ -33,5 +33,9 @@ immediate VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_ILLEGAL_SECURE_MEMORY_WRITE)
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
 
+    ; Save the SHIT base offset at address 0xFF
+    mov   gp1, SHIT_BASE_OFFSET
+    STORE gp1, 0x00010100
+
     ; Jump to the loader
     JMP   0x00000100

@@ -71,7 +71,8 @@ public class ExecutableWrapper
         }
         return uintArray;
     }
-    private static byte[] UIntArrayToByteArray(uint[] uintArray)
+    // FIXME: Set to private again after testing assembler is working
+    public static byte[] UIntArrayToByteArray(uint[] uintArray)
     {
         // TODO: Fix potential errors with very large programs exceeding C# array size limits.
         byte[] byteArray = new byte[uintArray.Length * 4];

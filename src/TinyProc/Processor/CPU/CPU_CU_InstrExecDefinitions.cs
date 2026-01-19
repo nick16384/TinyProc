@@ -179,12 +179,74 @@ public partial class CPU
         private void INSTRUCTION_J_INT()
         {
             Logging.LogDebug($"Trigger software interrupt with vector {_currentInstruction.J_JumpTargetAddress:x8}");
-            throw new NotImplementedException();
+            PushOntoStack(InternalRegisterCode.RCODE_SR);
+            // Push working state to stack
+            PushOntoStack(InternalRegisterCode.RCODE_GP1);
+            PushOntoStack(InternalRegisterCode.RCODE_GP2);
+            PushOntoStack(InternalRegisterCode.RCODE_GP3);
+            PushOntoStack(InternalRegisterCode.RCODE_GP4);
+            PushOntoStack(InternalRegisterCode.RCODE_GP5);
+            PushOntoStack(InternalRegisterCode.RCODE_GP6);
+            PushOntoStack(InternalRegisterCode.RCODE_GP7);
+            PushOntoStack(InternalRegisterCode.RCODE_GP8);
+            _alu.Status_InterruptsEnabled = false;
+            _alu.Status_Interrupted = true;
+            PushOntoStack(InternalRegisterCode.RCODE_PC);
+
+            // Extract interrupt vector from instruction operand, get address from vector, jump to vector address
+
+            // Load SHIT offset into GP1
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_SHIT_OFFSET_ADDRESS;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_GP1;
+            ResetBus3();
+
+            
+            Console.Error.WriteLine("Moin moin");
+
+            // ALU: Vector + SHIT offset ==> IRB ()
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            // TODO: Maybe change fixed offset (special CV register) to value in memory (changeable later)
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_GP1;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            ResetBus3();
+
+            // Load address IRB into IRB
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            ResetBus3();
+
+            // Jump to IRB
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
+
+            
         }
         private void INSTRUCTION_J_IRET()
         {
             Logging.LogDebug("Return from interrupt");
             PopFromStack(InternalRegisterCode.RCODE_PC);
+            PopFromStack(InternalRegisterCode.RCODE_GP8);
+            PopFromStack(InternalRegisterCode.RCODE_GP7);
+            PopFromStack(InternalRegisterCode.RCODE_GP6);
+            PopFromStack(InternalRegisterCode.RCODE_GP5);
+            PopFromStack(InternalRegisterCode.RCODE_GP4);
+            PopFromStack(InternalRegisterCode.RCODE_GP3);
+            PopFromStack(InternalRegisterCode.RCODE_GP2);
+            PopFromStack(InternalRegisterCode.RCODE_GP1);
             PopFromStack(InternalRegisterCode.RCODE_SR);
             _alu.Status_Interrupted = false;
             _alu.Status_InterruptsEnabled = true;

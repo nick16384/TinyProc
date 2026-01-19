@@ -80,4 +80,4 @@ Stack pointer (Points to absolute address of uppermost stack element)
 1. Make CPUDebugPort bi-directional
 1. -> Don't break internal CPU register access restrictions!
 
-Uselessly neglibly simple processor (UNSC)
+Useless neglibly simple processor (UNSC)

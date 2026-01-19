@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using TinyProc.Application;
 using TinyProc.Memory;
 
@@ -19,6 +18,7 @@ public partial class CPU
     private static readonly Register CONST_NEG1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
     private static readonly Register CONST_POS2_SPECIAL_REG = new(2u, true, false, false, true, true);
     private static readonly Register CONST_ZERO_SPECIAL_REG = new(0u, true, false, false, true, true);
+    private static readonly Register CONST_SHIT_OFFSET_ADDRESS_REG = new(0x00010100u, true, false, false, true, true);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
     internal enum InternalRegisterCode : uint
@@ -53,6 +53,7 @@ public partial class CPU
         RCODE_SPECIAL_CONST_NEG1 = 0x70000006u,
         RCODE_SPECIAL_CONST_POS2 = 0x70000007u,
         RCODE_SPECIAL_CONST_ZERO = 0x70000008u,
+        RCODE_SPECIAL_CONST_SHIT_OFFSET_ADDRESS = 0x70000009u,
 
         // Void register: Since writes to CONST_ZERO are discarded, this refers to it in another context.
         RCODE_SPECIAL_VOID = RCODE_SPECIAL_CONST_ZERO

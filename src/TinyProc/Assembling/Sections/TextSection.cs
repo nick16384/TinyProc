@@ -125,7 +125,7 @@ public readonly struct TextSection : IAssemblySection
             IInstruction instruction = InstructionLookup.ParseAsInstruction(words);
 
             // Replace occurrences of jump addresses with their fixed offset applied
-            if (fixedLoadAddress.HasValue && instruction.InstructionType == InstructionType.Jump)
+            if (fixedLoadAddress.HasValue && (instruction.InstructionType == InstructionType.Jump))
             {
                 // FIXME: Instead of just fixing jump instructions, fix every instruction that is related to memory access (load, store, etc.)
                 uint baseAddress = fixedLoadAddress ?? throw new Exception(
