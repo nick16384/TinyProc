@@ -82,10 +82,6 @@ public class ExecutionContainer
         _rom1 = new ROM(romData);
 
         // FIXME: Make debug dump of loader program (ensure intng has correct address 0x0)
-        Console.Error.WriteLine("Debug: Dumping loader exec binary.");
-        File.WriteAllBytes("System Programs/00000100_Loader.hltp32.bin",
-            ExecutableWrapper.UIntArrayToByteArray(loaderExecutableProgram.ToArray()));
-        Environment.Exit(1);
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(

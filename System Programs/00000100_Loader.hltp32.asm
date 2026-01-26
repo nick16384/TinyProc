@@ -2,11 +2,13 @@
 #ENTRY _start
 
 #SECTION (__attribute__ inline = all) .data
-immediate unloaded_program_source = 0x00010100
-immediate progheader_offset_data_addr = 1
-immediate progheader_offset_data_size = 2
-immediate progheader_offset_text_addr = 3
-immediate progheader_offset_text_size = 4
+immediate unloaded_program_source = 0x00030000 ; 0x00010100
+immediate progheader_offset_version = 0
+immediate progheader_offset_entrypoint = 1
+immediate progheader_offset_data_addr = 2
+immediate progheader_offset_data_size = 3
+immediate progheader_offset_text_addr = 4
+immediate progheader_offset_text_size = 5
 immediate data_fixed_load_address = 0x10000000
 immediate text_fixed_load_address = 0x20000000
 immediate opcode_JMP = 0x01
