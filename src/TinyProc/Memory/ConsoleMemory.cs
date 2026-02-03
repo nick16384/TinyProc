@@ -16,7 +16,7 @@ public class ConsoleMemory(uint words) : RawMemory(words, new uint[0])
     private void PrintToConsole()
     {
         Logging.LogInfo("CON memory received update; Current contents:");
-        for (uint address = 0; address < _words; address++)
+        for (uint address = 0; address < _numWords; address++)
         {
             uint data = Read(address);
             char c1 = (char)((data & 0xFF000000) >> 24);

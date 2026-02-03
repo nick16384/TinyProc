@@ -62,8 +62,7 @@ public class ExecutionContainer
     {
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
-        Logging.LogWarn("Warning: Using dynamically growing RAM not implemented. Using arbitrary size 0x50000000!");
-        _mem1 = new RawMemory(0x50000000);
+        _mem1 = new RawMemory(RawMemory.FULL_SIZE);
         _tmem1 = new ConsoleMemory(0x200);
 
         Logging.LogDebug("Assembling Reset and Loader programs");
@@ -89,12 +88,12 @@ public class ExecutionContainer
             new Dictionary<uint, RawMemory>
             {
                 { _rom1._size - 1, _mem1 },
-                { _rom1._size - 1 + _mem1._words, _tmem1 }
+                { _rom1._size - 1 + _mem1._numWords, _tmem1 }
             }
         );
 
         Logging.LogDebug("Reading loaded program.");
-        if (_mem1._words < 4096)
+        if (_mem1._numWords < 4096)
             _mem1.Debug_DumpAll();
         else
             Logging.LogDebug("Memory object too large to dump.");

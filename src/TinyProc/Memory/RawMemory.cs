@@ -5,15 +5,21 @@ using TinyProc.Processor;
 
 public class RawMemory : IReadWriteMemoryDevice
 {
-    public readonly uint _words;
-    public ulong TotalSizeBits { get => (ulong)_words * (ulong)Register.SYSTEM_WORD_SIZE; }
+    public const uint FULL_SIZE = 0xFFFFFFFFu;
+    // The memory is internally managed via a paged address space. This is not exposed to
+    // the outside, but necessary to allocate pages dynamically, since allocating a 32-bit flat array
+    // would consume around 4GiB of host memory and would therefore be unfeasable.
+    private const uint PAGE_SIZE = 4192u;
+
+    public readonly uint _numWords;
+    public ulong TotalSizeBits { get => (ulong)_numWords * (ulong)Register.SYSTEM_WORD_SIZE; }
     // The data array can hold a maximum of ~4 billion elements, however an array can
     // only hold up to ~2 billion elements in C#.
     // This necessitates the usage of an array of uint arrays, that can hold up the required amount
     // of uints in total.
     // Externally, this appears as one continuous address space.
-    private readonly uint[][] _data;
-    public uint[][] Data { get => _data; }
+    private readonly uint[]?[] _data;
+    public uint[]?[] Data { get => _data; }
     // Write directly to the memory without a bus attached;
     // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
     public void WriteDirect(uint address, uint value) => Write(address, value);
@@ -53,34 +59,31 @@ public class RawMemory : IReadWriteMemoryDevice
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
-    public RawMemory(uint words) : this(words, new uint[words]) {}
+    public RawMemory(uint numWords = FULL_SIZE) : this(numWords, []) {}
 
-    public RawMemory(uint words, uint[] initialData) : this(words, [initialData]) {}
-
-    // Number of words must be specified, because the memory is usually intended to be much larger
-    // than the number of elements in the initialData array.
-    public RawMemory(uint words, uint[][] initialData)
+    /// <summary>
+    /// Creates a virtual memory device.
+    /// </summary>
+    /// <param name="numWords">The number of words that should be addressable via the bus.</param>
+    /// <param name="initialData">Data inside the memory device starting from the lowest address.</param>
+    /// <exception cref="ArgumentException"></exception>
+    public RawMemory(uint numWords, IEnumerable<uint> initialData)
     {
-        if (words <= 0)
+        if (numWords <= 0)
             throw new ArgumentException("Word count 0 disallowed");
-        if (words > 1_000_000)
-            Logging.LogWarn(
-                "Warning: *Attempting* to initialize very large memory (>1,000,000 words). Expect out-of-memory errors.");
-        _words = words;
-        if (_words > int.MaxValue)
-            _data = [new uint[int.MaxValue], new uint[_words - int.MaxValue]];
-        else
-            _data = [new uint[_words]];
+        _numWords = numWords;
 
-        if (initialData.Length > words)
+        // Precondition checks
+        if (initialData.Count() > _numWords)
             throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
-        if (initialData.Length >= 1 && initialData[0].Length != 0)
-            Array.Copy(initialData[0], _data[0], initialData[0].Length);
-        if (initialData.Length >= 2 && initialData[1].Length != 0)
-            Array.Copy(initialData[1], _data[1], initialData[1].Length);
+        
+        // Always add another page to ensure enough memory is addressable
+        uint numPages = (numWords / PAGE_SIZE) + 1;
+
+
         Logging.LogDebug(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
-            $"WORDS:{_words}; Total space:{TotalSizeBits} bits");
+            $"WORDS:{_numWords}; Total space:{TotalSizeBits} bits");
     }
 
     // Reads block of 32 bits
@@ -107,7 +110,7 @@ public class RawMemory : IReadWriteMemoryDevice
     {
         Logging.LogDebug("[Mem] Dumping full memory contents (Big endian)");
         int addressesPerLine = 4;
-        for (uint baseAddr = 0; baseAddr < _words; baseAddr += 4)
+        for (uint baseAddr = 0; baseAddr < _numWords; baseAddr += 4)
         {
             Logging.PrintDebug($"{baseAddr:x8}:");
             // Print address values as hexadecimal
@@ -138,8 +141,8 @@ public class RawMemory : IReadWriteMemoryDevice
     // Checks if address is below the amount of words. If not, an exception is thrown.
     private void CheckValidAddress(uint addr)
     {
-        if (addr > _words - 1)
-            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:x8} above 0x{(_words - 1):x8}.");
+        if (addr > _numWords - 1)
+            throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:x8} above 0x{(_numWords - 1):x8}.");
     }
 
     // Implicitly treats first call as address bus and second call as data bus,

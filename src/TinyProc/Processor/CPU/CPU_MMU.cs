@@ -111,7 +111,7 @@ public partial class CPU
             {
                 if (rom._size - 1 > ramStart)
                     throw new Exception($"RAM starts before ROM ends!");
-                _MemorySpaces.Add(ram, (ramStart, ram._words - 1));
+                _MemorySpaces.Add(ram, (ramStart, ram._numWords - 1));
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
