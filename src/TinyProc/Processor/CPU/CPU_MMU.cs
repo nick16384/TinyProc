@@ -1,3 +1,4 @@
+using TinyProc.Application;
 using TinyProc.Memory;
 
 namespace TinyProc.Processor.CPU;
@@ -109,6 +110,7 @@ public partial class CPU
             _MemorySpaces.Add(rom, (0, rom._size - 1));
             foreach ((uint ramStart, RawMemory ram) in rams)
             {
+                Logging.LogDebug($"ROM until:{rom._size - 1:x8}; RAM start:{ramStart:x8}");
                 if (rom._size - 1 > ramStart)
                     throw new Exception($"RAM starts before ROM ends!");
                 _MemorySpaces.Add(ram, (ramStart, ram._numWords - 1));

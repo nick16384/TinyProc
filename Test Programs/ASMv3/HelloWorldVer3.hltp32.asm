@@ -11,13 +11,14 @@ pointer hello_world_msg, "Hello, World!" + 0xA ; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
 immediate hello_world_msg_words len: hello_world_msg
-block params_helloworld_call
-{
-    ; Data in a block does not have individual names
-    pointer hello_world_msg
-    ; immediate length_bytes: hello_world_msg
-    immediate len: hello_world_msg
-}
+; TODO: Do we really need this block structure? If yes, implement it properly!
+;block params_helloworld_call
+;{
+;    ; Data in a block does not have individual names
+;    pointer hello_world_msg
+;    ; immediate length_bytes: hello_world_msg
+;    immediate len: hello_world_msg
+;}
 
 #SECTION .text
 _start:
@@ -38,7 +39,7 @@ _start:
     ; r8: parameter 2 (pointer or 32 bit value)
     ; If more parameters needed, use parameter blocks and pointers to them
 
-    load  gp6, int_syscall_conwrite  ; Load the function to be called by the syscall (console write)
-    load  gp7, hello_world_msg       ; Load pointer to the data to be printed
-    load  gp8, hello_world_msg_words ; Load the number of words to be printed
-    int   int_syscall                ; Trigger the interrupt -> syscall
+    ;load  gp6, int_syscall_conwrite  ; Load the function to be called by the syscall (console write)
+    ;load  gp7, hello_world_msg       ; Load pointer to the data to be printed
+    ;load  gp8, hello_world_msg_words ; Load the number of words to be printed
+    ;int   int_syscall                ; Trigger the interrupt -> syscall

@@ -43,6 +43,7 @@ Upcoming / In progress ToDo's:
 --> Optionally make header usable; When header detected, switch to full assembly mode (requires header, .data and .text)
 -> Add constant value registers in assembly (for whatever reason?)
 -> Revise "STORE" instruction: It requires an immediate and an address, however, only one of them fits in the 32 bit operand 2
+-> Find out why the heck random instructions add 0x100 to their operands (e.g. jmp [textsection] in loader)
 
 - New CPU instructions: int, call, ret
 -> Implement stack
@@ -81,3 +82,7 @@ Stack pointer (Points to absolute address of uppermost stack element)
 1. -> Don't break internal CPU register access restrictions!
 
 Useless neglibly simple processor (UNSC)
+
+Resources:
+Virtual memory (paging):
+https://github.com/archanox/Win32Emu/blob/15318808/Win32Emu/Memory/VirtualMemory.cs

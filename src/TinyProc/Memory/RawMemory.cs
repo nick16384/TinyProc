@@ -1,5 +1,6 @@
 namespace TinyProc.Memory;
 
+using System.Runtime.CompilerServices;
 using TinyProc.Application;
 using TinyProc.Processor;
 
@@ -9,20 +10,21 @@ public class RawMemory : IReadWriteMemoryDevice
     // The memory is internally managed via a paged address space. This is not exposed to
     // the outside, but necessary to allocate pages dynamically, since allocating a 32-bit flat array
     // would consume around 4GiB of host memory and would therefore be unfeasable.
-    private const uint PAGE_SIZE = 4192u;
+    private const int PAGE_SIZE_BITS = 12;
+    private const uint PAGE_SIZE = 1u << PAGE_SIZE_BITS; // 4096
+    private const uint PAGE_OFFSET_MASK = PAGE_SIZE - 1u; // 
+    private const uint PAGE_NUMBER_MASK = ~PAGE_OFFSET_MASK;
 
     public readonly uint _numWords;
     public ulong TotalSizeBits { get => (ulong)_numWords * (ulong)Register.SYSTEM_WORD_SIZE; }
-    // The data array can hold a maximum of ~4 billion elements, however an array can
-    // only hold up to ~2 billion elements in C#.
-    // This necessitates the usage of an array of uint arrays, that can hold up the required amount
-    // of uints in total.
-    // Externally, this appears as one continuous address space.
+    private readonly uint _numPages;
     private readonly uint[]?[] _data;
-    public uint[]?[] Data { get => _data; }
+
     // Write directly to the memory without a bus attached;
     // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteDirect(uint address, uint value) => Write(address, value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint ReadDirect(uint address) => Read(address);
 
     // Logic that allows only either write or read line to be set:
@@ -72,14 +74,19 @@ public class RawMemory : IReadWriteMemoryDevice
         if (numWords <= 0)
             throw new ArgumentException("Word count 0 disallowed");
         _numWords = numWords;
+        Logging.LogWarn("Warning: Word count is currently ignored for memory creation. Assuming FULL_SIZE.");
 
         // Precondition checks
         if (initialData.Count() > _numWords)
             throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
         
         // Always add another page to ensure enough memory is addressable
-        uint numPages = (numWords / PAGE_SIZE) + 1;
+        _numPages = (numWords / PAGE_SIZE) + 1;
+        Logging.LogDebug($"Memory: {_numPages} pages ({PAGE_SIZE} words / page)");
 
+        _data = new uint[]?[_numPages];
+        for (uint addr = 0u; addr < initialData.Count(); addr++)
+            Write(addr, initialData.ElementAt((int)addr));
 
         Logging.LogDebug(
             $"Init memory done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
@@ -87,23 +94,36 @@ public class RawMemory : IReadWriteMemoryDevice
     }
 
     // Reads block of 32 bits
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
-        if (addr > int.MaxValue)
-            return _data[1][addr - int.MaxValue + 1];
+        uint pageNumber = (addr & PAGE_NUMBER_MASK) >> PAGE_SIZE_BITS;
+        uint pageOffset = addr & PAGE_OFFSET_MASK;
+        if (_data[pageNumber] == null)
+            return 0u;
         else
-            return _data[0][addr];
+            return _data[pageNumber][pageOffset];
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual void Write(uint addr, uint value)
     {
-        if (addr == 0x39u || addr == 39)
-            Logging.LogDebug("Miku says thank you!");
         CheckValidAddress(addr);
-        if (addr > int.MaxValue)
-            _data[1][addr - int.MaxValue + 1] = value;
-        else
-            _data[0][addr] = value;
+        uint pageNumber = (addr & PAGE_NUMBER_MASK) >> PAGE_SIZE_BITS;
+        uint pageOffset = addr & PAGE_OFFSET_MASK;
+        if (_data[pageNumber] == null)
+            _data[pageNumber] = new uint[PAGE_SIZE];
+        
+        _data[pageNumber][pageOffset] = value;
+    }
+
+    /// <summary>
+    /// Returns the memory content as byte array.
+    /// FIXME: How to avoid running into the 32-bit array addressing limit in C#?
+    /// </summary>
+    public Span<byte> ReadAllAsBytes()
+    {
+        throw new NotImplementedException();
     }
 
     public void Debug_DumpAll()
@@ -139,6 +159,7 @@ public class RawMemory : IReadWriteMemoryDevice
     }
 
     // Checks if address is below the amount of words. If not, an exception is thrown.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CheckValidAddress(uint addr)
     {
         if (addr > _numWords - 1)

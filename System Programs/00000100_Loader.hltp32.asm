@@ -2,8 +2,8 @@
 #ENTRY _start
 
 #SECTION (__attribute__ inline = all) .data
-immediate unloaded_program_source = 0x00030000 ; 0x00010100
-immediate progheader_offset_version = 0
+immediate unloaded_program_source = 0x00030000
+immediate progheader_offset_version = 0 ; The version attribute is technically unnecessary, but is kept for simplicity.
 immediate progheader_offset_entrypoint = 1
 immediate progheader_offset_data_addr = 2
 immediate progheader_offset_data_size = 3
@@ -11,6 +11,7 @@ immediate progheader_offset_text_addr = 4
 immediate progheader_offset_text_size = 5
 immediate data_fixed_load_address = 0x10000000
 immediate text_fixed_load_address = 0x20000000
+; The operands of these opcodes need to be modified for their new memory location:
 immediate opcode_JMP = 0x01
 immediate opcode_B = 0x02
 immediate opcode_LOAD = 0x30
@@ -21,7 +22,7 @@ immediate opcode_STORR = 0x33
 #SECTION (__attribute__ loadaddress = 0x00000100) .text
     ; The program loader assumes that up until this point, the Reset vector has been called and
     ; it has started to execute this loader.
-    ; It is also assumed that a valid program (including header) has been loaded at address 0x00010100
+    ; It is also assumed that a valid program (including header) has been loaded at address 0x00030000
 
     _start:
         ; Check whether .data section load address is 0 or not

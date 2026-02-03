@@ -30,9 +30,8 @@ public class ROM : IMemoryDevice
     private Bus MemoryAddressBus;
     private Bus MemoryDataBus;
 
-    public ROM(uint[] fixedData)
+    public ROM(uint size, uint[] fixedData)
     {
-        uint size = (uint)fixedData.Length;
         if (size > 1_000_000)
             Logging.LogWarn(
                 "Warning: *Attempting* to initialize very large ROM (>1,000,000 words). Expect out-of-memory errors.");
@@ -41,13 +40,15 @@ public class ROM : IMemoryDevice
 
         Logging.LogDebug(
             $"Init ROM done; WORD SIZE:{Register.SYSTEM_WORD_SIZE}, " +
-            $"WORDS:{_size}; Total occupation:{TotalSizeBits} bits");
+            $"WORDS:{_size}; Total occupation:{TotalSizeBits} bits; Usage:{100.0 * _fixedData.Length / _size:N2}%");
     }
 
     // Reads block of 32 bits
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
+        if (addr > _fixedData.Length - 1)
+            return 0;
         return _fixedData[addr];
     }
 

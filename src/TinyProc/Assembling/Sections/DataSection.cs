@@ -37,7 +37,7 @@ public readonly struct DataSection(uint? fixedLoadAddress,
             }
             else
                 return [
-                    ..immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
+                    .. immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
                     .. pointers.Select(identifierAndPointerValue => identifierAndPointerValue.Value.Data).SelectMany(x => x),
                     .. blockPointers.Select(identifierAndBlock => identifierAndBlock.Value.BinaryRepresentation).SelectMany(x => x)
                     ];
@@ -377,11 +377,11 @@ public readonly struct DataSection(uint? fixedLoadAddress,
             if (words[0] == KEYWORD_POINTER)
             {
                 if (words.Length < 3)
-                    throw new ArgumentException("Number of words in pointer declaration is less than 4.");
+                    throw new ArgumentException("Number of literal words in pointer declaration is less than 4.");
                 string name = new([.. words[1].SkipLast(1)]);
                 string assignment = words[1].Last().ToString();
                 // A value can consist of multiple concatenated values
-                string[] valueAsString = [.. words[3..]
+                string[] valueAsString = [.. words[2..]
                 .Select(value => value.Split("+", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
                 .SelectMany(a => a)];
                 if (assignment != ",")

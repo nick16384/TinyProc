@@ -80,7 +80,7 @@ public partial class Assembler()
                                 | char2 << 16
                                 | char3 << 8
                                 | char4 << 0;
-                            wordUInts.Add(textBlockAsUInt.ToString());
+                            wordUInts.Add("0x" + textBlockAsUInt.ToString("x8"));
                         }
                         string wordUIntRepresentation = string.Join(" + ", wordUInts);
                         assemblyCode = assemblyCode.Replace(word, wordUIntRepresentation);

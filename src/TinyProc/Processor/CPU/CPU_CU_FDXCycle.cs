@@ -69,13 +69,15 @@ public partial class CPU
         // Load first instruction word
         private void InstructionFetch1()
         {
-            Logging.LogDebug("Entering FETCH stage...");
+            Logging.LogDebug("F");
             Logging.LogDebug(
                 $"PC at {PC.ValueDirect:x8}; " +
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
-                $"CR[{(_alu.Status_Carry ? 1 : 0)}]");
+                $"CR[{(_alu.Status_Carry ? 1 : 0)}]" +
+                $"INTD[{(_alu.Status_Interrupted ? 1 : 0)}] " +
+                $"EINT[{(_alu.Status_InterruptsEnabled ? 1 : 0)}]");
 
             // PC -> MAR
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_PC, InternalRegisterCode.RCODE_SPECIAL_MAR);
@@ -112,7 +114,7 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
 
-            Logging.LogDebug("Entering DECODE stage...");
+            Logging.LogDebug("D");
 
             InstructionType instructionType = DetermineInstructionType(IRA.ValueDirect);
             if (instructionType == InstructionType.Register)
@@ -132,7 +134,7 @@ public partial class CPU
         // Equivalent to the execute stage in a real CPU's Fetch-Decode-Execute cycle.
         private void InstructionExecute()
         {
-            Logging.LogDebug("Entering EXECUTE stage...");
+            Logging.LogDebug("X");
             bool execute;
             if (_currentInstruction.Conditional == Condition.ALWAYS)
                 execute = true;

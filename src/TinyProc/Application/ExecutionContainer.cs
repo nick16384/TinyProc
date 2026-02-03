@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TinyProc.Assembling.Sections;
 using TinyProc.Memory;
@@ -17,11 +18,11 @@ public class ExecutionContainer
     private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";
     private const string LOADER_ASM_PROGRAM_PATH = "System Programs/00000100_Loader.hltp32.asm";
 
+    private const uint ROM_SIZE = 0x00010000;
     private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
 
     private readonly ROM _rom1;
     private readonly RawMemory _mem1;
-    private readonly ConsoleMemory _tmem1;
     private readonly CPU _cpu;
     public CPUDebugPort CPUDebugPort { get => _cpu.DebugPort; }
     // An invalid CPU state is raised, when the CPU is unable to execute the next instruction,
@@ -63,7 +64,6 @@ public class ExecutionContainer
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
         _mem1 = new RawMemory(RawMemory.FULL_SIZE);
-        _tmem1 = new ConsoleMemory(0x200);
 
         Logging.LogDebug("Assembling Reset and Loader programs");
         string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
@@ -78,17 +78,14 @@ public class ExecutionContainer
         uint[] romData = new uint[loaderLoadAddress + loaderProgram.Item3.Size];
         Array.Copy(resetExecutableProgram.ToArray(), 0, romData, resetLoadAddress, resetExecutableProgram.Count);
         Array.Copy(loaderExecutableProgram.ToArray(), 0, romData, loaderLoadAddress, loaderExecutableProgram.Count);
-        _rom1 = new ROM(romData);
-
-        // FIXME: Make debug dump of loader program (ensure intng has correct address 0x0)
+        _rom1 = new ROM(ROM_SIZE, romData);
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(
             _rom1,
             new Dictionary<uint, RawMemory>
             {
-                { _rom1._size - 1, _mem1 },
-                { _rom1._size - 1 + _mem1._numWords, _tmem1 }
+                { _rom1._size, _mem1 }
             }
         );
 
@@ -106,15 +103,16 @@ public class ExecutionContainer
 
     public void LoadInitialProgram(ExecutableWrapper executable)
     {
-        for (uint i = 0; i < executable.ExecutableProgram.Length; i++)
+        for (uint i = 0; i < executable.Program.Length; i++)
         {
-            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.ExecutableProgram[i]);
+            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.Program[i]);
         }
     }
 
     public void LoadBytesAtAddress(byte[] byteData, uint address)
     {
-        uint[] dataAsUIntArray = ConvertByteArrayToUIntArrayAndReverseEndianness(byteData).ToArray();
+        uint[] dataAsUIntArray = new uint[byteData.Length / sizeof(uint)];
+        BinaryPrimitives.ReverseEndianness(Unsafe.As<uint[]>(byteData), dataAsUIntArray);
         LoadDataAtAddress(dataAsUIntArray, address);
     }
 
@@ -128,48 +126,24 @@ public class ExecutionContainer
 
     public uint VirtualMemorySizeWords { get => (uint)(_mem1.TotalSizeBits / 32); }
 
-    public uint[][] LiveMemoryDump {
-        get
-        {
-            uint[][] memoryDump = new uint[_mem1.Data.Length][];
-            for (int i = 0; i < memoryDump.Length; i++)
-                memoryDump[i] = new uint[_mem1.Data[i].Length];
-            _mem1.Data.CopyTo(memoryDump.AsMemory());
-            return memoryDump;
-        }}
-
-    // TODO: Replace direct read / write methods with an array and underlying yield methods.
-    public uint ReadRAMDirect(uint address) => _mem1.ReadDirect(address);
-    
-    public void WriteRAMDirect(uint address, int uintOffset, byte value)
-        => _mem1.WriteDirect(address, _mem1.ReadDirect(address) & ((uint)value << (uintOffset * 8)));
-    // Returns the bytes that currently reside within the working memory.
-    // Note that using a byte[] instead of a uint[][] is not guaranteed to return all RAM data (because of C# limitations).
-    // TODO: Maybe use some sort of List<byte> instead of byte[] to overcome this limit
-    // Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
-    // comparatively long to compute the byte[] resulting from the current RawMemory's uint[][].
-    public ReadOnlySpan<byte> LiveVirtualMemoryBytes
+    /// <summary>
+    /// Dumps the entire address space as a byte array.
+    /// Warning: Accessing this property may have a significant performance impact when run after each CPU cycle, since it takes
+    /// comparatively long to compute the byte[] resulting from the current RawMemory's internal paging layout.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public ReadOnlySpan<byte> GetFullMemoryDump()
     {
-        get
-        {
-            byte[] virtualMemoryBytes = [];
-            virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_rom1.FixedData)];
-            virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0])];
-            return virtualMemoryBytes;
-        }
-    }
-
-    public const int MAX_BYTES_READ_ALLOWED = 0xFFFFF;
-    private static ReadOnlySpan<byte> ConvertUIntArrayToByteArrayAndReverseEndianness(uint[] uintArraySource)
-    {
-        if ((ulong)uintArraySource.Length * sizeof(uint) > MAX_BYTES_READ_ALLOWED/*int.MaxValue*/)
-        {
-            Logging.LogWarn(
-                $"Accessing a uint[] as byte[] only allows {int.MaxValue:N0} " +
-                $"bytes to be read, however, the actual uint[] is larger with {(ulong)uintArraySource.Length * sizeof(uint):N0} " +
-                "bytes. Only a partial amount is returned!");
-            uintArraySource = uintArraySource[..(MAX_BYTES_READ_ALLOWED / sizeof(uint))];
-        }
+        // TODO: Either lazy-evaluate, or write a Read(address) method to prevent a huge byte[] array from being created
+        // and slowing everything down.
+        // If that won't do, rewrite the hex editor part of the GUI, such that it no longer updates every second, but instead
+        // only on user button presses.
+        /*
+        byte[] virtualMemoryBytes = [];
+        virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_rom1.FixedData)];
+        virtualMemoryBytes = [.. virtualMemoryBytes, .. ConvertUIntArrayToByteArrayAndReverseEndianness(_mem1.Data[0])];
+        return virtualMemoryBytes;
 
         uint[] uintArrayReversedEndian = new uint[uintArraySource.Length];
         // This method is the fastest way for endian reversal, since it already utilizes
@@ -178,16 +152,15 @@ public class ExecutionContainer
         BinaryPrimitives.ReverseEndianness(uintArraySource, uintArrayReversedEndian);
 
         return MemoryMarshal.AsBytes<uint>(uintArrayReversedEndian);
+        */
+        throw new NotImplementedException();
     }
-    private static ReadOnlySpan<uint> ConvertByteArrayToUIntArrayAndReverseEndianness(byte[] byteArray)
-    {
-        if (byteArray.Length % sizeof(uint) != 0)
-            throw new ArgumentException("Cannot convert byte[] to uint[]: Size not divisible by 4.");
-        ReadOnlySpan<uint> uintArray = MemoryMarshal.Cast<byte, uint>(byteArray);
-        Span<uint> uintArrayReversedEndian = new uint[byteArray.Length / 4];
-        BinaryPrimitives.ReverseEndianness(uintArray, uintArrayReversedEndian);
-        return uintArrayReversedEndian;
-    }
+
+    // TODO: Replace direct read / write methods with an array and underlying yield methods.
+    public uint ReadRAMDirect(uint address) => _mem1.ReadDirect(address);
+    
+    public void WriteRAMDirect(uint address, int uintOffset, byte value)
+        => _mem1.WriteDirect(address, _mem1.ReadDirect(address) & ((uint)value << (uintOffset * 8)));
 
     public TimeSpan StepSingleCycle()
     {

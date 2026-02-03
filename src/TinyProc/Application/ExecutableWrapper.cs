@@ -20,8 +20,8 @@ public class ExecutableWrapper
     public void LoadProgramFromFile(string executableFilePath)
     {
         Logging.LogInfo($"Attempting to load binary executable {executableFilePath}");
-        if (executableFilePath.Trim().EndsWith(".lltp32.bin"))
-            Logging.LogWarn("Warning: Binary file name does not end with standard suffix \".lltp32.bin\".");
+        if (executableFilePath.Trim().EndsWith(".hltp32.bin"))
+            Logging.LogWarn("Warning: Binary file name does not end with standard suffix \".hltp32.bin\".");
 
         Logging.LogDebug("Reading binary file");
         byte[] binFileContent = File.ReadAllBytes(executableFilePath);

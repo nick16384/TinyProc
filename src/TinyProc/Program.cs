@@ -33,8 +33,8 @@ class Program
         {
             string sourceFilePath = args[1];
             Logging.LogInfo($"Assembling source file {sourceFilePath}");
-            if (sourceFilePath.Trim().EndsWith(".lltp32.asm"))
-                Logging.LogWarn("Warning: Source file name does not end with standard suffix \".lltp32.asm\".");
+            if (sourceFilePath.Trim().EndsWith(".hltp32.asm"))
+                Logging.LogWarn("Warning: Source file name does not end with standard suffix \".hltp32.asm\".");
 
             string assemblyCode = File.ReadAllText(sourceFilePath);
             uint[] MAIN_PROGRAM = Assembler.AssembleToLoadableProgram(assemblyCode);
@@ -63,13 +63,39 @@ class Program
             ExecutionContainer.Initialize();
             ExecutionContainer.INSTANCE0.LoadInitialProgram(programWrapper);
 
+            for (uint a = 0x00020000; a < 0x00020000 + 100; a++)
+                Console.WriteLine($"{ExecutionContainer.INSTANCE0.ReadRAMDirect(a):x8}");
+
             // If this program is at this stage, it is probably running in CLI mode.
-            Logging.LogInfo("Program ready to execute. Press enter to start first cycle. Press \"q\" to exit.");
+            Logging.LogInfo("Program ready to execute. Press enter to start first cycle. Press \"q\" to exit. Press \"r\" to dump registers.");
             while (true)
             {
-                if (Console.ReadLine() == "q")
+                string? input = Console.ReadLine();
+                if (input == "q")
+                {
+                    // Quit the emulator.
                     break;
-                ExecutionContainer.INSTANCE0.StepSingleCycle();
+                }
+                else if (input == "r")
+                {
+                    // Dump all registers without advancing the CPU.
+                    Logging.LogDebug("Current register states:");
+                    Logging.LogDebug($"GP1: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP1Value:x8}");
+                    Logging.LogDebug($"GP2: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP2Value:x8}");
+                    Logging.LogDebug($"GP3: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP3Value:x8}");
+                    Logging.LogDebug($"GP4: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP4Value:x8}");
+                    Logging.LogDebug($"GP5: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP5Value:x8}");
+                    Logging.LogDebug($"GP6: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP6Value:x8}");
+                    Logging.LogDebug($"GP7: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP7Value:x8}");
+                    Logging.LogDebug($"GP8: {ExecutionContainer.INSTANCE0.CPUDebugPort.GP8Value:x8}");
+                    Logging.LogDebug($"MAR: {ExecutionContainer.INSTANCE0.CPUDebugPort.MARValue:x8}");
+                    Logging.LogDebug($"MDR: {ExecutionContainer.INSTANCE0.CPUDebugPort.MDRValue:x8}");
+                    Logging.LogDebug($"IRA: {ExecutionContainer.INSTANCE0.CPUDebugPort.IRAValue:x8}");
+                    Logging.LogDebug($"IRB: {ExecutionContainer.INSTANCE0.CPUDebugPort.IRBValue:x8}");
+                    Logging.LogDebug($"PC:  {ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:x8}");
+                    Logging.LogDebug($"SR:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:x8}");
+                }
+                else { ExecutionContainer.INSTANCE0.StepSingleCycle(); }
             }
             ExitClean();
         }
@@ -78,5 +104,8 @@ class Program
     private static void ExitClean()
     {
         Logging.LogInfo("Leaving cycle loop and exiting...");
+        Console.Out.Flush();
+        Console.Error.Flush();
+        Environment.Exit(0);
     }
 }
