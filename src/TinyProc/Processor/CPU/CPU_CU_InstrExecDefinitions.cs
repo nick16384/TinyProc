@@ -126,7 +126,6 @@ public partial class CPU
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = _currentInstruction.I_DestRegCode;
             ResetBus3();
-            Console.Error.WriteLine($"{CU_ADDRESSABLE_REGISTERS[InternalRegisterCode.RCODE_GP7].ValueDirect:x8}");
         }
         private void INSTRUCTION_I_STORE()
         {
@@ -206,9 +205,6 @@ public partial class CPU
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_GP1;
             ResetBus3();
-
-            
-            Console.Error.WriteLine("Moin moin");
 
             // ALU: Vector + SHIT offset ==> IRB ()
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
