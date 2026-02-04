@@ -1,0 +1,110 @@
+%YAML 1.1
+---
+defaults:
+  # Layout options
+  unit_size: 0x00015000
+  unit_height: 0.325
+  min_height: 0.600
+  max_height: 1.2
+  discontinuity_height: 0.625
+  region_width: 2.5
+
+  # Presentation options
+  background: "#fff"
+  fill: '#C7E3EC'
+  outline: '#336DA5'
+  position: "ic,ib"
+
+  # Address labels
+  address_format: c8
+  size_format: c8
+
+layout:
+  0x00000000:
+    size: 0x00000100
+    label: "Reset Code"
+    labels:
+      "tl": "ROM, Protected"
+  0x00000100:
+    size: 0x0000FF00
+    label: "Program Loader"
+    labels:
+      "tl": "ROM, Protected"
+      "elf,it": "END OF ROM"
+  0x00010000:
+    size: 0x00000100
+    label: "Service Handler\nInterrupt Table"
+    labels:
+      "tl": "Protected"
+  0x00010100:
+    size: 0x0000FF00
+    labels:
+      "c": "[Reserved]"
+      "tl": "Protected"
+  0x00020000:
+    size: 0x00010000
+    label: "Stack"
+    labels:
+      "tl": "Protected"
+      "elf,it": "END OF PROTECTED REGION"
+
+  0x00030000:
+    size: 0x00010000
+    label: "Unloaded Initial Executable"
+    junction_high: dotted
+  0x00040000:
+    size: 0x0FFC0000
+    fill: "#DDFFEE"
+    labels:
+      "c": "[Free]"
+    junction_low: dotted
+  0x10000000:
+    size: 0x00010000
+    label: ".data Section\n(default location)"
+    fill: "#A7F3DC"
+    junction_high: dotted
+  0x10010000:
+    size: 0x0FFF0000
+    fill: "#DDFFEE"
+    labels:
+      "c": "[Free]"
+    junction_low: dotted
+  0x20000000:
+    size: 0x00010000
+    label: ".text Section\n(default location)"
+    fill: "#A7F3DC"
+    junction_high: dotted
+  0x20010000:
+    size: 0xDFFEF000
+    fill: "#DDFFEE"
+    labels:
+      "c": "[Free]"
+    junction_low: dotted
+
+  0xFFFFF000:
+    size: 0x00001000
+    labels:
+      "c": "[Reserved]"
+
+automatic:
+  discontinuities:
+    fill: "#fff"
+    outline: "#336DA5"
+    style: zig-zag
+    # Discontinuities always show solid junctions at bottom / top. Therefore, they aren't used.
+    # Only enable discontinuities when editing to view possible errors / miscalculations.
+    enable: true
+  addresses:
+    side: right
+    start: true
+    end: true
+    size: false
+    final_end: false
+    end_exclusive: false
+    omit:
+      - 0x0003FFFF
+      - 0x00040000
+      - 0x1000FFFF
+      - 0x10010000
+      - 0x2000FFFF
+      - 0x20010000

@@ -24,6 +24,12 @@ immediate opcode_STORR = 0x33
     ; it has started to execute this loader.
     ; It is also assumed that a valid program (including header) has been loaded at address 0x00030000
 
+    ; After _start, these things will happen in order:
+    ; 1. The .data section is loaded from memory address 0x00030000 into a location it specifies or 0x10000000
+    ; 2. The .text section is loaded from memory address 0x00030000 into a location it specifies or 0x20000000
+    ; 3. The program's entry point will be calculated and called (NOT jumped to!)
+    ; (4. Once the program returns (via the "ret" instruction), this forces a hardware reset)
+
     _start:
         ; Check whether .data section load address is 0 or not
         load gp1, (unloaded_program_source + progheader_offset_data_addr)
@@ -65,7 +71,9 @@ immediate opcode_STORR = 0x33
         load gp7, (unloaded_program_source + progheader_offset_text_size)
         mov  gp8, text_fixed_load_address
         call copySection
-        jmp  text_fixed_load_address ; Start the actual program
+        call clearRegisters
+        call text_fixed_load_address ; Start the actual program
+        jmp  programReturned
 
     ; The text section load address is NOT zero. This means it has to be loaded at a specified address.
     ; Since the load address is specified, load it it that address.
@@ -78,7 +86,9 @@ immediate opcode_STORR = 0x33
         load gp7, (unloaded_program_source + progheader_offset_text_size)
         load gp8, (unloaded_program_source + progheader_offset_text_addr)
         call copySection
-        jmp  (unloaded_program_source + progheader_offset_text_addr) ; Start the actual program
+        call clearRegisters
+        call (unloaded_program_source + progheader_offset_text_addr) ; Start the actual program
+        jmp  programReturned
 
     ; Copies a section of memory to another section.
     ; Parameters:
@@ -159,3 +169,19 @@ immediate opcode_STORR = 0x33
     
         adjustRelocatableAddresses_ret:
             ret
+    
+    ; Self-explanatory function
+    clearRegisters:
+        mov   gp1, 0
+        mov   gp2, 0
+        mov   gp3, 0
+        mov   gp4, 0
+        mov   gp5, 0
+        mov   gp6, 0
+        mov   gp7, 0
+        mov   gp8, 0
+        ret
+    
+    ; Call this when the main program has used the "ret" instruction and gave back control to the loader.
+    programReturned:
+        int   0 ; Reset

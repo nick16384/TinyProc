@@ -80,7 +80,7 @@ public partial class Assembler()
                                 | char2 << 16
                                 | char3 << 8
                                 | char4 << 0;
-                            wordUInts.Add("0x" + textBlockAsUInt.ToString("x8"));
+                            wordUInts.Add(textBlockAsUInt.ToString("x8") + "h");
                         }
                         string wordUIntRepresentation = string.Join(" + ", wordUInts);
                         assemblyCode = assemblyCode.Replace(word, wordUIntRepresentation);
@@ -201,21 +201,19 @@ public partial class Assembler()
     // to a uint
     internal static uint ConvertStringToUInt(string numStr)
     {
+        numStr = numStr.ToLower();
+        // Base-2 (binary)
         if (numStr.StartsWith("0b"))
-        {
-            // Base 2
-            return Convert.ToUInt32(numStr, 2);
-        }
+            return Convert.ToUInt32(numStr[2..], 2);
+        else if (numStr.EndsWith('b'))
+            return Convert.ToUInt32(numStr[..1], 2);
+        // Base-16 (hexadecimal)
         else if (numStr.StartsWith("0x"))
-        {
-            // Base 16
-            return Convert.ToUInt32(numStr, 16);
-        }
-        else
-        {
-            // Base 10 or unknown
-            return Convert.ToUInt32(numStr);
-        }
+            return Convert.ToUInt32(numStr[2..], 16);
+        else if (numStr.EndsWith('h'))
+            return Convert.ToUInt32(numStr[..1], 16);
+        // Base-10 (decimal) or unknown
+        return Convert.ToUInt32(numStr);
     }
 
     internal static List<string> FilterCommentsAndRemoveExcessWhitespace(List<string> textLines)

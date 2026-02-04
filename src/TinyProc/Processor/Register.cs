@@ -22,7 +22,7 @@ public class Register(uint initialValue = 0, bool isSpecial = false,
     // ValueDirect is used, when the register's value is used directly externally
     // ValueChecked checks if the register allows read / write accesses and whether to fail silently or with an exception.
     // Value is the variable which internally handles reads / writes. This is used to be overridable by subclasses.
-    // _storedValue is the actual uint, which stores the contents of the register. It is only modified by ValueChecked.
+    // _storedValue is the actual uint, which stores the contents of the register. It is only modified by Value.
 
     // The value actually stored in the register
     private protected uint _storedValue = initialValue;

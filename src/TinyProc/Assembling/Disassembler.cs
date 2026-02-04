@@ -15,7 +15,7 @@ public partial class Assembler
         $".text addr:  {programWrapper.TextSectionLoadAddress:X8}\n" +
         $".text size:  {programWrapper.TextSectionSize:X8}");
 
-        return DisassembleFromProgram(programWrapper.ExecutableProgram);
+        return DisassembleFromProgram(programWrapper.Program);
     }
 
     public static string DisassembleFromProgram(uint[] executableProgram)

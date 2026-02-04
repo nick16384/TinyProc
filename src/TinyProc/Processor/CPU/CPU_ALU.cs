@@ -68,7 +68,7 @@ public partial class CPU
             public static bool operator !=(ALUOpcode opcode1, ALUOpcode opcode2) => opcode1._opcodeBits != opcode2._opcodeBits;
 
             // List of all commonly used opcodes; Acts as a kind of enum or Dictionary<OpName, ALUOpcode>.
-            public static readonly ALUOpcode TransferA = new((false, false, true, true, false, false));
+            public static readonly ALUOpcode TransferA            = new((false, false, true, true, false, false));
             public static readonly ALUOpcode TransferB            = new((true, true, false, false, false, false));
             public static readonly ALUOpcode Addition             = new((false, false, false, false, true, false));
             public static readonly ALUOpcode AB_SubtractionSigned = new((false, true, false, false, true, true));
@@ -85,7 +85,7 @@ public partial class CPU
             public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true));
         }
 
-        public class ALUInputRegister(ALU alu) : Register(0, true)
+        public class ALUInputRegister(ALU alu) : Register(0, isSpecial: true)
         {
             private readonly ALU _alu = alu;
             private protected override uint Value
@@ -100,7 +100,7 @@ public partial class CPU
             }
         }
 
-        public class ALUResultRegister(ALU alu) : Register(0, true)
+        public class ALUResultRegister(ALU alu) : Register(0, isSpecial: true)
         {
             private readonly ALU _alu = alu;
             private protected override uint Value
@@ -110,11 +110,13 @@ public partial class CPU
                     _storedValue = _alu.ComputeResult();
                     return _storedValue;
                 }
+                // TODO: Why can someone externally manipulate the ALU's result?
+                // We should probably remove this?
                 set => _storedValue = value;
             }
         }
 
-        public class ALUStatusRegister() : Register(0, true)
+        public class ALUStatusRegister() : Register(0, isSpecial: true)
         {
             // This is the ONLY register, that requires both the bus to access it, as well as
             // direct write access (for flags). Therefore, it hides the original ValueDirect,
@@ -240,6 +242,11 @@ public partial class CPU
                 Status_Negative = ((@out & 0x80000000) >> 31) == 1;
                 Status_Carry    = Status_Overflow;
             }
+
+            // Special cases (Hardware: Special gates)
+            // TODO: Possibly check if PC+X overflowed and if yes, trigger hardware interrupt.
+            // Where would this be implemented though?
+            // if (Status_Overflow && InternalBus1Source == PC && InternalBus3Destination == PC)
 
             return @out;
         }

@@ -7,7 +7,6 @@ using TinyProc.Assembling;
 public class ExecutableWrapper
 {
     public uint[] Program;
-    public uint[] ExecutableProgram { get => [.. Program.Skip(Assembler.ASSEMBLER_HEADER_SIZE_WORDS)]; }
 
     public uint AssemblerVersion { get => Program[Assembler.HEADER_INDEX_VERSION]; }
     public uint EntryPoint { get => Program[Assembler.HEADER_INDEX_ENTRY_POINT]; }
@@ -71,8 +70,7 @@ public class ExecutableWrapper
         }
         return uintArray;
     }
-    // FIXME: Set to private again after testing assembler is working
-    public static byte[] UIntArrayToByteArray(uint[] uintArray)
+    private static byte[] UIntArrayToByteArray(uint[] uintArray)
     {
         // TODO: Fix potential errors with very large programs exceeding C# array size limits.
         byte[] byteArray = new byte[uintArray.Length * 4];

@@ -13,11 +13,13 @@ public interface ISelectableBusAttachable : IBusAttachable
     public bool[] HandleBusUpdateSelected(uint ubid, bool[] newBusData);
 }
 
-// A bus is a set of parallel lines (bits) that connect to multiple components.
-// Every bus member holds a reference to the bus object.
-// There should be at most one bus master, who controls data flow to mitigate garbled data from multiple sources.
-// All other bus members update the data array, when the HandleBusUpdate() method is called.
-// An externally managed bus with zero bus masters is also possible.
+/// <summary>
+/// A bus is a set of parallel lines (bits) that connect to multiple components.
+/// Every bus member holds a reference to the bus object.
+/// There should be at most one bus master, who controls data flow to mitigate garbled data from multiple sources.
+/// All other bus members update the data array, when the HandleBusUpdate() method is called.
+/// An externally managed bus with zero bus masters is also possible.
+/// </summary>
 public class Bus
 {
     private readonly IBusAttachable[] _registeredComponents;
@@ -36,6 +38,7 @@ public class Bus
     }
     // Unique bus identifier
     // Useful, when attaching multiple busses to a single class, to identify which bus is "speaking"
+    // Every bus has a unique UBID, even if they're independent of each other.
     public readonly uint _UBID;
     private static readonly List<uint> KnownUBIDs = [];
 

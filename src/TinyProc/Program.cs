@@ -63,9 +63,6 @@ class Program
             ExecutionContainer.Initialize();
             ExecutionContainer.INSTANCE0.LoadInitialProgram(programWrapper);
 
-            for (uint a = 0x00020000; a < 0x00020000 + 100; a++)
-                Console.WriteLine($"{ExecutionContainer.INSTANCE0.ReadRAMDirect(a):x8}");
-
             // If this program is at this stage, it is probably running in CLI mode.
             Logging.LogInfo("Program ready to execute. Press enter to start first cycle. Press \"q\" to exit. Press \"r\" to dump registers.");
             while (true)

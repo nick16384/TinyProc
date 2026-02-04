@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using TinyProc.Application;
 using TinyProc.Processor;
 
@@ -22,8 +23,13 @@ public class ROM : IMemoryDevice
                 MemoryDataBus.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0)));
         }
     }
-    // Read directly from ROM without a bus attached;
-    // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct access.
+    /// <summary>
+    /// Read directly from ROM without a bus attached;
+    /// It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct access.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint ReadDirect(uint address) => Read(address);
 
     // Initialized as soon as attached to bus
@@ -44,6 +50,7 @@ public class ROM : IMemoryDevice
     }
 
     // Reads block of 32 bits
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual uint Read(uint addr)
     {
         CheckValidAddress(addr);
@@ -85,6 +92,7 @@ public class ROM : IMemoryDevice
     }
 
     // Checks if address is below the amount of words. If not, an exception is thrown.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CheckValidAddress(uint addr)
     {
         if (addr > _size - 1)

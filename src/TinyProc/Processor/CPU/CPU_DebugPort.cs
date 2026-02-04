@@ -2,8 +2,11 @@ namespace TinyProc.Processor.CPU;
 
 public partial class CPU
 {
-    // The debug port is a piece of pseudo-hardware, allowing external code to read
-    // the internal CPU's state.
+    /// <summary>
+    /// The debug port is a piece of pseudo-hardware, allowing external code to read
+    /// the internal CPU's state.
+    /// </summary>
+    /// <param name="cpu"></param>
     public class CPUDebugPort(CPU cpu)
     {
         private CPU _cpu = cpu;

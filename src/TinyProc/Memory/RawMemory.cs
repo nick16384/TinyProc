@@ -20,8 +20,12 @@ public class RawMemory : IReadWriteMemoryDevice
     private readonly uint _numPages;
     private readonly uint[]?[] _data;
 
-    // Write directly to the memory without a bus attached;
-    // It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
+    /// <summary>
+    /// Write directly to the memory without a bus attached;
+    /// It is strongly discouraged to use this method unless some external element (e.g. a GUI) needs direct write access.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <param name="value"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteDirect(uint address, uint value) => Write(address, value);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
