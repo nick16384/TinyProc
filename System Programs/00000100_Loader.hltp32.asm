@@ -31,6 +31,8 @@ immediate opcode_STORR = 0x33
         bzr  dataLoadAddressIsZero
         jmp  dataLoadAddressIsNotZero
     
+    ; The data section load address is zero. This means it is relocatable.
+    ; For simplicity, copy it to the default address 0x10000000
     dataLoadAddressIsZero:
         mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
         load gp7, (unloaded_program_source + progheader_offset_data_size)
@@ -38,6 +40,8 @@ immediate opcode_STORR = 0x33
         call copySection
         jmp  dataSectionCopyFinished
 
+    ; The data section load address is NOT zero. This means it has to be loaded at a specified address.
+    ; Since the load address is specified, load it it that address.
     dataLoadAddressIsNotZero:
         mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
         load gp7, (unloaded_program_source + progheader_offset_data_size)
@@ -52,6 +56,8 @@ immediate opcode_STORR = 0x33
         bzr  textLoadAddressIsZero
         jmp  textLoadAddressIsNotZero
         
+    ; The text section load address is zero. This means it is relocatable.
+    ; For simplicity, copy it to the default address 0x20000000
     textLoadAddressIsZero:
         ; No need for relocating memory addresses, since they have been set by the assembler,
         ; because they are fixed.
@@ -61,6 +67,8 @@ immediate opcode_STORR = 0x33
         call copySection
         jmp  text_fixed_load_address ; Start the actual program
 
+    ; The text section load address is NOT zero. This means it has to be loaded at a specified address.
+    ; Since the load address is specified, load it it that address.
     textLoadAddressIsNotZero:
         mov  gp6, (unloaded_program_source + progheader_offset_text_addr)
         load gp7, (unloaded_program_source + progheader_offset_text_size)
