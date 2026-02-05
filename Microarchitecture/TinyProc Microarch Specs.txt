@@ -17,24 +17,29 @@ Instruction set:
 00 - NOP : Do nothing
 
 Branching:
-01 - JMP [Target address] : Jump to address
-02 - B? [Target address] : Branch(=jump) on condition
-03 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
-04 - RET : Returns from subroutine (restores previous state by popping data on the stack)
-05 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
-06 - IRET : Special instruction to return from interrupt subroutine
+01 - AJMP [Target address] : Jump to absolute address
+02 - JMP [Target offset] : Jump to address relative to PC-2
+03 - AB? [Target address] : Branch(=jump) on condition
+04 - B? [Target offset] : Branch relative to PC-2
+05 - ACALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+06 - CALL [Target offset] : Call a subroutine relative to PC-2
+07 - RET : Returns from subroutine (restores previous state by popping data on the stack)
+08 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
+09 - IRET : Special instruction to return from interrupt subroutine
+
 
 Inter-register non-arithmetic operations:
-05 - TST : Test command; Sets all flags
+0A - TST : Test command; Sets all flags
 
 Flags:
-07 - CLZ : Clear zero flag
-08 - CLOF : Clear overflow flag
-09 - CLNG : Clear negative flag
+0B - CLC : Clear carry flag
+0C - CLZ : Clear zero flag
+0D - CLOF : Clear overflow flag
+0E - CLNG : Clear negative flag
 
 Arithmetic operations:
 10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
-11 - AOPI [Destination register] [Immediate] : Arithmetic operation between
+11 - AOPI [Destination register] [Immediate] : Arithmetic operation between register and immediate
 
 ALU Opcodes for arithmetic instructions:
 001100 - MOV

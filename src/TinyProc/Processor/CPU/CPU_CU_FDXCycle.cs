@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using TinyProc.Application;
 using static TinyProc.Processor.Instructions;
 
@@ -9,6 +10,7 @@ public partial class CPU
     {
         // Resets internal bus 3 so its destination is the void register.
         // Otherwise, previously addressed registers could be overridden by new operations.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResetBus3()
         {
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;

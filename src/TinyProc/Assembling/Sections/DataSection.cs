@@ -137,6 +137,12 @@ public readonly struct DataSection(uint? fixedLoadAddress,
         inlineAll = headerAttributes.Item2;
 
         lines.RemoveAt(0);
+        if (!lines.Any(line => string.IsNullOrEmpty(line)))
+        {
+            // If no further lines exist or they're all empty, the .data section is empty.
+            Logging.LogDebug(".data section is empty.");
+            return DataSection.CreateEmpty();
+        }
 
         // Main parser for .data section
         // Search for blocks, save their contents for after immediate values and pointers have been parsed.
@@ -407,5 +413,13 @@ public readonly struct DataSection(uint? fixedLoadAddress,
         }
 
         return (immediateValues, pointers);
+    }
+
+    public static DataSection CreateEmpty()
+    {
+        return new DataSection(
+                fixedLoadAddress: 0x00000000u,
+                inlineAll: true,
+                [], [], []);
     }
 }

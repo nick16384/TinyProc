@@ -26,6 +26,7 @@ public partial class CPU
         public uint IRAValue { get => _cpu._CU.Debug_IRAValue; }
         public uint IRBValue { get => _cpu._CU.Debug_IRBValue; }
         public uint SRValue { get => _cpu._ALU.SR.ValueDirect; }
+        public uint SPValue { get => _cpu._MMU.SP.ValueDirect; }
         public uint MARValue { get => _cpu._MMU.MAR.ValueDirect; }
         public uint MDRValue { get => _cpu._MMU.MDR.ValueDirect; }
     }

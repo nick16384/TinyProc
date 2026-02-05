@@ -2,6 +2,7 @@ using static TinyProc.Processor.Instructions;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
 using System.Data;
+using System.Reflection.Emit;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -124,14 +125,10 @@ public readonly struct TextSection : IAssemblySection
             // Parse assembly line as instruction object
             IInstruction instruction = InstructionLookup.ParseAsInstruction(words);
 
-            // Replace occurrences of jump addresses with their fixed offset applied
-            if (fixedLoadAddress.HasValue && (instruction.InstructionType == InstructionType.Jump))
-            {
-                // FIXME: Instead of just fixing jump instructions, fix every instruction that is related to memory access (load, store, etc.)
-                uint baseAddress = fixedLoadAddress ?? throw new Exception(
-                    ".text section relocatable but no load address specified. Cannot determine jump base address.");
-                instruction = new JumpInstruction(instruction.Opcode, instruction.Conditional, baseAddress + instruction.J_JumpTargetAddress);
-            }
+            // Note: Since the introduction of relative / absolute jumps, it is no longer necessary
+            // to adjust any instructions pointing to memory, since they're either absolute in memory
+            // or relative to PC-2.
+            
             instructions.Add(instruction);
         }
 

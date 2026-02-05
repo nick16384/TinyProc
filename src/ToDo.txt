@@ -37,8 +37,8 @@ Upcoming / In progress ToDo's:
 - Implement new assembly syntax (v3.0) [done]
 
 - ASMv3: Fixes [in progress]
--> Make empty .data section possible (still requires definition, but does not need lines afterwards)
--> Check no attributes work too
+-> Make empty .data section possible (still requires definition, but does not need lines afterwards) [done]
+-> Check no attributes work too [done]
 -> TS: Every time a memory op needs to be done, shift target address if fixed
 -> Implement attribute "inline = all" (expects only immediate values, does not create a .data section in memory, but instead
    writes immediate values directly into the operands of instructions)
@@ -47,43 +47,19 @@ Upcoming / In progress ToDo's:
 -> Add constant value registers in assembly (for whatever reason?)
 -> Revise "STORE" instruction: It requires an immediate and an address, however, only one of them fits in the 32 bit operand 2
 -> Find out why the heck random instructions add 0x100 to their operands (e.g. jmp [textsection] in loader)
-Documentation: Assembly binary structure
+-> Add ajmp/rjmp/acall/rcall instructions (absolute / relative jump; Removes necessity to readjust memory locations;
+   Assembler only needs to determine relative positions of labels and calls/jumps are always relative e.g. jmpr _label)
 
-- New CPU instructions: int, call, ret
--> Implement stack
-- New CPU features: ROM, Loader, Interrupts, Reset-Vector, CV registers in assembly
+- Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
+- Implement stack and call, ret, int, and iret [done]
 
-Interrupts are just special subroutines (they only differ in the fact that the interrupt flags get set)
-
-When interrupt is caused:
-1. push SR to stack
-2. "Interrupt enable" flag is cleared (set to 0)
-3. "Interrupted" flag is set
-4. push PC to stack
-5. Extract interrupt vector from instruction operand, get address from vector, jump to vector address
-6. ... ISR code runs ...
-7. ISR eventually ends with the "iret" instruction
-8. Pop PC from stack
-9. Pop SR from stack
-10. Resume execution at PC
-
-Add new status flags:
-Interrupt enable (If 0, won't trigger interrupts except NMIs (Non-maskable interrupts))
-Interrupted (Has IRQ or is running ISR, cleared at the end of ISR with iret instruction)
--> If an NMI is triggered while the Interrupted flag is set, a double fault is caused, resulting in a reset
-New registers:
-Stack pointer (Points to absolute address of uppermost stack element)
+- Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
+-> NMIs still trigger if Interrupt Enable is not set
+-> Trigger double fault when NMI is triggered when Interrupted flag is already set
 
 - Add interrupt queue?
 
-- Add CPU init controls in separate border box / section
-1. Button "Initialize CPU" [done]
-2.1. Slider "RAM size (words)" + TextBox for exact values
-2.2. Slider "CON size (words)" + TextBox for exact values
-
-- Make registers overridable (esp. PC)
-1. Make CPUDebugPort bi-directional
-1. -> Don't break internal CPU register access restrictions!
+- Implement clock cycles, such that every clock doesn't automatically execute the whole instruction
 
 Useless neglibly simple processor (UNSC)
 

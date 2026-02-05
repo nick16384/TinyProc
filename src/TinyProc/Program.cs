@@ -91,6 +91,7 @@ class Program
                     Logging.LogDebug($"IRB: {ExecutionContainer.INSTANCE0.CPUDebugPort.IRBValue:x8}");
                     Logging.LogDebug($"PC:  {ExecutionContainer.INSTANCE0.CPUDebugPort.PCValue:x8}");
                     Logging.LogDebug($"SR:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:x8}");
+                    Logging.LogDebug($"SP:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue:x8}");
                 }
                 else { ExecutionContainer.INSTANCE0.StepSingleCycle(); }
             }

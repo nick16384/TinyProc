@@ -14,10 +14,6 @@ immediate text_fixed_load_address = 0x20000000
 ; The operands of these opcodes need to be modified for their new memory location:
 immediate opcode_JMP = 0x01
 immediate opcode_B = 0x02
-immediate opcode_LOAD = 0x30
-immediate opcode_LOADR = 0x31
-immediate opcode_STORE = 0x32
-immediate opcode_STORR = 0x33
 
 #SECTION (__attribute__ loadaddress = 0x00000100) .text
     ; The program loader assumes that up until this point, the Reset vector has been called and
