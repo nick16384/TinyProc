@@ -59,10 +59,4 @@ Upcoming / In progress ToDo's:
 
 - Add interrupt queue?
 
-- Implement clock cycles, such that every clock doesn't automatically execute the whole instruction
-
 Useless neglibly simple processor (UNSC)
-
-Resources:
-Virtual memory (paging):
-https://github.com/archanox/Win32Emu/blob/15318808/Win32Emu/Memory/VirtualMemory.cs
