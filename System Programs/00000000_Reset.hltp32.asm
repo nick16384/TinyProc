@@ -24,7 +24,7 @@ immediate VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     ; contains 1 absolute address for where the handler is stored.
     ; One interrupt occupies 1 vector, of which there are 256 (starting at address 0x00010000).
     ; By default, every handler points to the address 0, where the reset code is located, causing a reset loop.
-    mov   gp1, 0x00000000
+    MOV   gp1, 0x00000000
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_RESET)
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_DOUBLE_FAULT)
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_UNKNOWN_INSTRUCTION)
@@ -34,8 +34,12 @@ immediate VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     STORE gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
 
     ; Save the SHIT base offset at address 0xFF
-    mov   gp1, SHIT_BASE_OFFSET
+    MOV   gp1, SHIT_BASE_OFFSET
     STORE gp1, 0x00010100
 
+    ; Set, then clear all flags
+    TST
+    CLA
+
     ; Jump to the loader
-    JMP   0x00000100
+    AJMP  0x00000100

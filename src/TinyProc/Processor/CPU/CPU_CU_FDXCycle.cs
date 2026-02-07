@@ -184,9 +184,12 @@ public partial class CPU
             switch (_currentInstruction.InstructionType)
             {
                 case InstructionType.Register:
-                    if      (_currentInstruction.Opcode == Opcode.CLZ)   { INSTRUCTION_R_CLZ(); }
+                    if      (_currentInstruction.Opcode == Opcode.TST)   { INSTRUCTION_R_TST(); }
+                    else if (_currentInstruction.Opcode == Opcode.CLC)   { INSTRUCTION_R_CLC(); }
+                    else if (_currentInstruction.Opcode == Opcode.CLZ)   { INSTRUCTION_R_CLZ(); }
                     else if (_currentInstruction.Opcode == Opcode.CLOF)  { INSTRUCTION_R_CLOF(); }
                     else if (_currentInstruction.Opcode == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
+                    else if (_currentInstruction.Opcode == Opcode.CLA)   { INSTRUCTION_R_CLA(); }
                     else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
                     else if (_currentInstruction.Opcode == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
                     else if (_currentInstruction.Opcode == Opcode.STORR) { INSTRUCTION_R_STORR(); }
@@ -202,8 +205,11 @@ public partial class CPU
 
                 case InstructionType.Jump:
                     if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
+                    else if (_currentInstruction.Opcode == Opcode.AJMP)  { INSTRUCTION_J_AJMP(); }
                     else if (_currentInstruction.Opcode == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
+                    else if (_currentInstruction.Opcode == Opcode.AB)    { INSTRUCTION_J_AB(); }
                     else if (_currentInstruction.Opcode == Opcode.B)     { INSTRUCTION_J_B(); }
+                    else if (_currentInstruction.Opcode == Opcode.ACALL) { INSTRUCTION_J_ACALL(); }
                     else if (_currentInstruction.Opcode == Opcode.CALL)  { INSTRUCTION_J_CALL(); }
                     else if (_currentInstruction.Opcode == Opcode.RET)   { INSTRUCTION_J_RET(); }
                     else if (_currentInstruction.Opcode == Opcode.INT)   { INSTRUCTION_J_INT(); }

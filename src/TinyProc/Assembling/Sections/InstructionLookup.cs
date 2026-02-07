@@ -14,11 +14,11 @@ public sealed class InstructionLookup
 	{
 		{ ("NOP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.NOP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("MOV",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.TransferB) },
-		{ ("MOV",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.TransferA) },
+		{ ("MOV",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.TransferB) },
 		{ ("ADD",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.Addition) },
 		{ ("ADD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.Addition) },
 		{ ("SUB",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
-		{ ("SUB",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.BA_SubtractionSigned) },
+		{ ("SUB",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
 		{ ("INC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Increment) },
 		{ ("DEC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Decrement) },
 		{ ("AND",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalAND) },
@@ -31,12 +31,21 @@ public sealed class InstructionLookup
 		{ ("STORE", Instructions.InstructionType.Immediate), (Instructions.Opcode.STORE, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("PUSH",  Instructions.InstructionType.Register),  (Instructions.Opcode.PUSH,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("AJMP",  Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("AB",    Instructions.InstructionType.Jump),      (Instructions.Opcode.AB,    DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.B,     DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ACALL", Instructions.InstructionType.Jump),      (Instructions.Opcode.ACALL, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("CALL",  Instructions.InstructionType.Jump),      (Instructions.Opcode.CALL,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("RET",   Instructions.InstructionType.Jump),      (Instructions.Opcode.RET,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("INT",   Instructions.InstructionType.Jump),      (Instructions.Opcode.INT,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("IRET",  Instructions.InstructionType.Jump),      (Instructions.Opcode.IRET,  DEFAULT_EMPTY_ALU_OPCODE) }
+		{ ("IRET",  Instructions.InstructionType.Jump),      (Instructions.Opcode.IRET,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("TST",   Instructions.InstructionType.Register),  (Instructions.Opcode.TST,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CLC",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLC,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CLZ",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLZ,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CLOF",  Instructions.InstructionType.Register),  (Instructions.Opcode.CLOF,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CLNG",  Instructions.InstructionType.Register),  (Instructions.Opcode.CLNG,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CLA",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLA,   DEFAULT_EMPTY_ALU_OPCODE) }
     };
 
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words)
@@ -62,7 +71,13 @@ public sealed class InstructionLookup
 		Instructions.InstructionType type;
 		bool isWord2ParseableAsUInt = true;
 		try { ConvertStringToUInt(words[2]); } catch (Exception) { isWord2ParseableAsUInt = false; }
-		if (mnemonic == "MOV" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
+		if (mnemonic == "TST") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CLC") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CLZ") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CLOF") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CLNG") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CLA") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "MOV" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "MOV" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "ADD" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "ADD" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
@@ -81,8 +96,11 @@ public sealed class InstructionLookup
 		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "AJMP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "AB") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "B") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "ACALL") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "CALL") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "RET") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "INT") { type = Instructions.InstructionType.Jump; }
@@ -114,14 +132,15 @@ public sealed class InstructionLookup
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
 					(Instructions.AddressableRegisterCode)words[2],
-					aluOpcode),
+					aluOpcode
+				),
 			
 			"PUSH"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
-					default,
+					DEFAULT_UNUSED_REGISTER,
 					aluOpcode
 				),
 
@@ -129,8 +148,17 @@ public sealed class InstructionLookup
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
-					default,
+					DEFAULT_UNUSED_REGISTER,
 					(Instructions.AddressableRegisterCode)words[1],
+					aluOpcode
+				),
+			
+			"TST" or "CLC" or "CLZ" or "CLOF" or "CLNG" or "CLA"
+				=> new Instructions.RegRegInstruction(
+					opcode,
+					conditional,
+					DEFAULT_UNUSED_REGISTER,
+					DEFAULT_UNUSED_REGISTER,
 					aluOpcode
 				),
 
@@ -146,6 +174,7 @@ public sealed class InstructionLookup
     // When an instruction changes the ALU Opcode multiple times during execution, setting this has no effect.
     // This specifies the default value for such cases.
     public static readonly ALU.ALUOpcode DEFAULT_EMPTY_ALU_OPCODE = new((false, false, false, false, false, false));
+	public static readonly Instructions.AddressableRegisterCode DEFAULT_UNUSED_REGISTER = (Instructions.AddressableRegisterCode)0x0u;
 
     private static Instructions.RegImmInstruction RegImmInstructionLookup(
         string[] words, Instructions.Condition conditional)
@@ -193,7 +222,7 @@ public sealed class InstructionLookup
 					conditional,
 					IMMEDIATE_DEFAULT_VALUE),
 
-			"JMP" or "B" or "CALL" or "INT"
+			"AJMP" or "JMP" or "AB" or "B" or "ACALL" or "CALL" or "INT"
 				=> new Instructions.JumpInstruction(
 					opcode,
 					conditional,

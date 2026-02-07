@@ -78,7 +78,6 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_SPECIAL_MAR, _mmu.MAR},
                 {InternalRegisterCode.RCODE_SPECIAL_SP, _mmu.SP},
                 {InternalRegisterCode.RCODE_SPECIAL_IRA, IRA},
-                {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
             };
             B2_REGISTERS = new Dictionary<InternalRegisterCode, Register>
@@ -91,6 +90,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_GP6, _cpu.GP6},
                 {InternalRegisterCode.RCODE_GP7, _cpu.GP7},
                 {InternalRegisterCode.RCODE_GP8, _cpu.GP8},
+                {InternalRegisterCode.RCODE_SPECIAL_IRB, IRB},
                 {InternalRegisterCode.RCODE_SPECIAL_MDR, _mmu.MDR},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},

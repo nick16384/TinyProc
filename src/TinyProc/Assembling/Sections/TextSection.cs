@@ -2,7 +2,6 @@ using static TinyProc.Processor.Instructions;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
 using System.Data;
-using System.Reflection.Emit;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -64,6 +63,7 @@ public readonly struct TextSection : IAssemblySection
             }
             currentAddress += 2;
         }
+        currentAddress = 0;
 
         foreach (string lineUnparsed in lines)
         {
@@ -110,16 +110,26 @@ public readonly struct TextSection : IAssemblySection
                     line = line.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
             }
             // Replace occurrences of labels with their corresponding addresses
+            // First, determine whether the jump instruction is relative or absolute
+            bool isRelative =
+                words[0].Equals("JMP", StringComparison.OrdinalIgnoreCase) ||
+                words[0].Equals("B", StringComparison.OrdinalIgnoreCase) ||
+                words[0].Equals("CALL", StringComparison.OrdinalIgnoreCase);
             foreach (string word in words)
             {
                 foreach ((string label, uint address) in labelAddressMap)
                 {
                     if (word == label)
-                        line = line.Replace(word, address.ToString());
+                    {
+                        if (isRelative)
+                            line = line.Replace(word, (address - currentAddress).ToString());
+                        else
+                            line = line.Replace(word, address.ToString());
+                    }
                 }
             }
 
-            Logging.LogDebug($"\"{lineUnparsed}\" -> \"{line}\"");
+            Logging.LogDebug($"[{currentAddress:x8}{(isRelative ? "R" : "")}] \"{lineUnparsed}\" -> \"{line}\"");
             words = SplitLineIntoWords(line);
 
             // Parse assembly line as instruction object
@@ -130,6 +140,7 @@ public readonly struct TextSection : IAssemblySection
             // or relative to PC-2.
             
             instructions.Add(instruction);
+            currentAddress += 2;
         }
 
         Logging.LogDebug($".text section successfully parsed into a total of {instructions.Count * 2} word(s).");
@@ -188,7 +199,7 @@ public readonly struct TextSection : IAssemblySection
                 }
 
                 // Identify possibly illegal attribute combinations
-                // None
+                // Currently none
             }
         }
         Logging.LogDebug("Successfully verified and parsed .text section header.");

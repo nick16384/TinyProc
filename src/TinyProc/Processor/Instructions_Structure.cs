@@ -42,8 +42,11 @@ public sealed partial class Instructions
     {
         Opcode opcode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_OPCODE);
         if      (opcode == Opcode.NOP)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.AJMP)  { return InstructionType.Jump; }
         else if (opcode == Opcode.JMP)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.AB)    { return InstructionType.Jump; }
         else if (opcode == Opcode.B)     { return InstructionType.Jump; }
+        else if (opcode == Opcode.ACALL) { return InstructionType.Jump; }
         else if (opcode == Opcode.CALL)  { return InstructionType.Jump; }
         else if (opcode == Opcode.RET)   { return InstructionType.Jump; }
         else if (opcode == Opcode.INT)   { return InstructionType.Jump; }
@@ -59,6 +62,13 @@ public sealed partial class Instructions
         else if (opcode == Opcode.STORR) { return InstructionType.Register; }
         else if (opcode == Opcode.PUSH)  { return InstructionType.Jump; }
         else if (opcode == Opcode.POP)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.STORR) { return InstructionType.Register; }
+        else if (opcode == Opcode.TST)   { return InstructionType.Register; }
+        else if (opcode == Opcode.CLC)   { return InstructionType.Register; }
+        else if (opcode == Opcode.CLZ)   { return InstructionType.Register; }
+        else if (opcode == Opcode.CLOF)  { return InstructionType.Register; }
+        else if (opcode == Opcode.CLNG)  { return InstructionType.Register; }
+        else if (opcode == Opcode.CLA)   { return InstructionType.Register; }
         throw new NotImplementedException($"Instruction opcode {opcode:x8} not linked to instruction type (R/I/J).");
     }
     public static InstructionType DetermineInstructionType(Opcode opcode)

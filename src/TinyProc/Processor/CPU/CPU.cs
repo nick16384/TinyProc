@@ -18,7 +18,7 @@ public partial class CPU
     private static readonly Register CONST_NEG1_SPECIAL_REG = new(SignedIntToUInt(-1), true, false, false, true, true);
     private static readonly Register CONST_POS2_SPECIAL_REG = new(2u, true, false, false, true, true);
     private static readonly Register CONST_ZERO_SPECIAL_REG = new(0u, true, false, false, true, true);
-    private static readonly Register CONST_SHIT_OFFSET_ADDRESS_REG = new(0x00010100u, true, false, false, true, true);
+    private static readonly Register CONST_SHIT_OFFSET_ADDRESS_REG = new(0x00010000u, true, false, false, true, true);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
     internal enum InternalRegisterCode : uint

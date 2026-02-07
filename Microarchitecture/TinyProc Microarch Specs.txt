@@ -36,6 +36,7 @@ Flags:
 0C - CLZ : Clear zero flag
 0D - CLOF : Clear overflow flag
 0E - CLNG : Clear negative flag
+0F - CLA : Clear all flags
 
 Arithmetic operations:
 10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers

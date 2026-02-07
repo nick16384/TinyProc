@@ -137,7 +137,7 @@ public readonly struct DataSection(uint? fixedLoadAddress,
         inlineAll = headerAttributes.Item2;
 
         lines.RemoveAt(0);
-        if (!lines.Any(line => string.IsNullOrEmpty(line)))
+        if (!lines.Any(line => !string.IsNullOrEmpty(line)))
         {
             // If no further lines exist or they're all empty, the .data section is empty.
             Logging.LogDebug(".data section is empty.");

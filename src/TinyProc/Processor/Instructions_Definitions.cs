@@ -13,19 +13,25 @@ public sealed partial class Instructions
 
         public static readonly Opcode NOP   = new(0x00, "NOP");
 
-        public static readonly Opcode JMP   = new(0x01, "JMP");
-        public static readonly Opcode B     = new(0x02, "B");
-        public static readonly Opcode CALL  = new(0x03, "CALL");
-        public static readonly Opcode RET   = new(0x04, "RET");
-        public static readonly Opcode INT   = new(0x05, "INT");
-        public static readonly Opcode IRET  = new(0x06, "IRET");
+        public static readonly Opcode AJMP  = new(0x01, "AJMP");
+        public static readonly Opcode JMP   = new(0x02, "JMP");
+        public static readonly Opcode AB    = new(0x03, "AB");
+        public static readonly Opcode B     = new(0x04, "B");
+        public static readonly Opcode ACALL = new(0x05, "ACALL");
+        public static readonly Opcode CALL  = new(0x06, "CALL");
+        public static readonly Opcode RET   = new(0x07, "RET");
+        public static readonly Opcode INT   = new(0x08, "INT");
+        public static readonly Opcode IRET  = new(0x09, "IRET");
+
+        public static readonly Opcode TST   = new(0x0A, "TST");
+        public static readonly Opcode CLC   = new(0x0B, "CLC");
+        public static readonly Opcode CLZ   = new(0x0C, "CLZ");
+        public static readonly Opcode CLOF  = new(0x0D, "CLOF");
+        public static readonly Opcode CLNG  = new(0x0E, "CLNG");
+        public static readonly Opcode CLA   = new(0x0F, "CLA");
 
         public static readonly Opcode AOPR  = new(0x10, "AOPR");
         public static readonly Opcode AOPI  = new(0x11, "AOPI");
-
-        public static readonly Opcode CLZ   = new(0x07, "CLZ");
-        public static readonly Opcode CLOF  = new(0x08, "CLOF");
-        public static readonly Opcode CLNG  = new(0x09, "CLNG");
 
         public static readonly Opcode LOAD  = new(0x30, "LOAD");
         public static readonly Opcode LOADR = new(0x31, "LOADR");

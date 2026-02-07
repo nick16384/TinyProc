@@ -49,6 +49,9 @@ Upcoming / In progress ToDo's:
 -> Find out why the heck random instructions add 0x100 to their operands (e.g. jmp [textsection] in loader)
 -> Add ajmp/rjmp/acall/rcall instructions (absolute / relative jump; Removes necessity to readjust memory locations;
    Assembler only needs to determine relative positions of labels and calls/jumps are always relative e.g. jmpr _label)
+-> For AOPI, swap operands! (e.g. AB_SubtractionSigned => BA_SubtractionSigned)
+- Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
+- Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
 
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
 - Implement stack and call, ret, int, and iret [done]
@@ -58,5 +61,10 @@ Upcoming / In progress ToDo's:
 -> Trigger double fault when NMI is triggered when Interrupted flag is already set
 
 - Add interrupt queue?
+
+Changes for CPU 0.3-indev:
+- Moved IRB to Bus 2 (makes PC+IRB possible)
+- Added relative / absolute jumps / calls
+
 
 Useless neglibly simple processor (UNSC)
