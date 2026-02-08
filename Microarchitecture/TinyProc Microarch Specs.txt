@@ -56,13 +56,17 @@ MUL, XOR, LS, RS, SRS, ROL, ROR
 Add documentation for which flags get set by instructions
 
 Memory:
-30 - LOAD [Destination register] [Memory address] : Load memory at address to register
-31 - LOADR [Destination register] [Memory address from register]
-32 - STORE [Source register] [Memory address] : Store register at memory address
-33 - STORR [Source register] [Memory address from register]
+30 - ALD [Destination register] [Memory address] : Load memory at address to register
+31 - LD [Destination register] [Memory offset] : Load memory at PC-2+offset to register
+32 - ALDR [Destination register] [Memory offset from register]
+33 - LDR [Destination register] [Memory address from register]
+34 - ASTR [Source register] [Memory address] : Store register at memory address
+35 - STR [Source register] [Memory offset] : Store register at PC-2+offset
+36 - ASTRR [Source register] [Memory address from register]
+37 - STRR [Source register] [Memory offset from register]
 (Does it make sense, that store instructions have destination / source syntax swapped? Revise!)
-34 - PUSH [Source register]
-35 - POP  [Destination register]
+38 - PUSH [Source register]
+39 - POP  [Destination register]
 
 3F - <Highest possible value for opcode>
 

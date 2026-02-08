@@ -77,7 +77,7 @@ public partial class CPU
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
                 $"ZR[{(_alu.Status_Zero ? 1 : 0)}] " +
                 $"NG[{(_alu.Status_Negative ? 1 : 0)}] " +
-                $"CR[{(_alu.Status_Carry ? 1 : 0)}]" +
+                $"CR[{(_alu.Status_Carry ? 1 : 0)}] " +
                 $"INTD[{(_alu.Status_Interrupted ? 1 : 0)}] " +
                 $"EINT[{(_alu.Status_InterruptsEnabled ? 1 : 0)}]");
 
@@ -191,16 +191,20 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
                     else if (_currentInstruction.Opcode == Opcode.CLA)   { INSTRUCTION_R_CLA(); }
                     else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
-                    else if (_currentInstruction.Opcode == Opcode.LOADR) { INSTRUCTION_R_LOADR(); }
-                    else if (_currentInstruction.Opcode == Opcode.STORR) { INSTRUCTION_R_STORR(); }
+                    else if (_currentInstruction.Opcode == Opcode.ALDR)  { INSTRUCTION_R_ALDR(); }
+                    else if (_currentInstruction.Opcode == Opcode.LDR)   { INSTRUCTION_R_LDR(); }
+                    else if (_currentInstruction.Opcode == Opcode.ASTRR) { INSTRUCTION_R_ASTRR(); }
+                    else if (_currentInstruction.Opcode == Opcode.STRR)  { INSTRUCTION_R_STRR(); }
                     else if (_currentInstruction.Opcode == Opcode.PUSH)  { INSTRUCTION_R_PUSH(); }
                     else if (_currentInstruction.Opcode == Opcode.POP)   { INSTRUCTION_R_POP(); }
                     break;
 
                 case InstructionType.Immediate:
                     if      (_currentInstruction.Opcode == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
-                    else if (_currentInstruction.Opcode == Opcode.LOAD)  { INSTRUCTION_I_LOAD(); }
-                    else if (_currentInstruction.Opcode == Opcode.STORE) { INSTRUCTION_I_STORE(); }
+                    else if (_currentInstruction.Opcode == Opcode.ALD)   { INSTRUCTION_I_ALD(); }
+                    else if (_currentInstruction.Opcode == Opcode.LD)    { INSTRUCTION_I_LD(); }
+                    else if (_currentInstruction.Opcode == Opcode.ASTR)  { INSTRUCTION_I_ASTR(); }
+                    else if (_currentInstruction.Opcode == Opcode.STR)   { INSTRUCTION_I_STR(); }
                     break;
 
                 case InstructionType.Jump:

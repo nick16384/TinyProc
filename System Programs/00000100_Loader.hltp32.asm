@@ -26,7 +26,7 @@ immediate int_vector_reset = 0x0
 
     _start:
         ; Check whether .data section load address is 0 or not
-        load gp1, (unloaded_program_source + progheader_offset_data_addr)
+        ald  gp1, (unloaded_program_source + progheader_offset_data_addr)
         sub  gp1, 0
         bzr  dataLoadAddressIsZero
         jmp  dataLoadAddressIsNotZero
@@ -35,7 +35,7 @@ immediate int_vector_reset = 0x0
     ; For simplicity, copy it to the default address 0x10000000
     dataLoadAddressIsZero:
         mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
-        load gp7, (unloaded_program_source + progheader_offset_data_size)
+        ald  gp7, (unloaded_program_source + progheader_offset_data_size)
         mov  gp8, data_fixed_load_address
         call copySection
         jmp  dataSectionCopyFinished
@@ -44,14 +44,14 @@ immediate int_vector_reset = 0x0
     ; Since the load address is specified, load it it that address.
     dataLoadAddressIsNotZero:
         mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
-        load gp7, (unloaded_program_source + progheader_offset_data_size)
-        load gp8, (unloaded_program_source + progheader_offset_data_addr)
+        ald  gp7, (unloaded_program_source + progheader_offset_data_size)
+        ald  gp8, (unloaded_program_source + progheader_offset_data_addr)
         call copySection
         jmp  dataSectionCopyFinished
     
     dataSectionCopyFinished:
         ; Check whether .text section load address is 0 or not
-        load gp1, (unloaded_program_source + progheader_offset_text_addr)
+        ald  gp1, (unloaded_program_source + progheader_offset_text_addr)
         sub  gp1, 0
         bzr  textLoadAddressIsZero
         jmp  textLoadAddressIsNotZero
@@ -62,7 +62,7 @@ immediate int_vector_reset = 0x0
         ; No need for relocating memory addresses, since they have been set by the assembler,
         ; because they are fixed.
         mov   gp6, (unloaded_program_source + progheader_offset_text_addr)
-        load  gp7, (unloaded_program_source + progheader_offset_text_size)
+        ald   gp7, (unloaded_program_source + progheader_offset_text_size)
         mov   gp8, text_fixed_load_address
         call  copySection
         call  clearRegisters
@@ -73,8 +73,8 @@ immediate int_vector_reset = 0x0
     ; Since the load address is specified, load it it that address.
     textLoadAddressIsNotZero:
         mov   gp6, (unloaded_program_source + progheader_offset_text_addr)
-        load  gp7, (unloaded_program_source + progheader_offset_text_size)
-        load  gp8, (unloaded_program_source + progheader_offset_text_addr)
+        ald   gp7, (unloaded_program_source + progheader_offset_text_size)
+        ald   gp8, (unloaded_program_source + progheader_offset_text_addr)
         call  copySection
         call  clearRegisters
         acall (unloaded_program_source + progheader_offset_text_addr) ; Start the actual program
@@ -88,8 +88,8 @@ immediate int_vector_reset = 0x0
     ; Registers modified:
     ; GP1, GP6, GP7, GP8
     copySection:
-        loadr gp1, gp6
-        storr gp1, gp8
+        aldr  gp1, gp6
+        astrr gp1, gp8
         inc   gp6
         inc   gp8
         dec   gp7

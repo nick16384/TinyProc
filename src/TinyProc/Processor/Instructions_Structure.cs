@@ -53,22 +53,23 @@ public sealed partial class Instructions
         else if (opcode == Opcode.IRET)  { return InstructionType.Jump; }
         else if (opcode == Opcode.AOPI)  { return InstructionType.Immediate; }
         else if (opcode == Opcode.AOPR)  { return InstructionType.Register; }
-        else if (opcode == Opcode.CLZ)   { return InstructionType.Register; }
-        else if (opcode == Opcode.CLOF)  { return InstructionType.Register; }
-        else if (opcode == Opcode.CLNG)  { return InstructionType.Register; }
-        else if (opcode == Opcode.LOAD)  { return InstructionType.Immediate; }
-        else if (opcode == Opcode.LOADR) { return InstructionType.Register; }
-        else if (opcode == Opcode.STORE) { return InstructionType.Immediate; }
-        else if (opcode == Opcode.STORR) { return InstructionType.Register; }
-        else if (opcode == Opcode.PUSH)  { return InstructionType.Jump; }
-        else if (opcode == Opcode.POP)   { return InstructionType.Jump; }
-        else if (opcode == Opcode.STORR) { return InstructionType.Register; }
         else if (opcode == Opcode.TST)   { return InstructionType.Register; }
         else if (opcode == Opcode.CLC)   { return InstructionType.Register; }
         else if (opcode == Opcode.CLZ)   { return InstructionType.Register; }
         else if (opcode == Opcode.CLOF)  { return InstructionType.Register; }
         else if (opcode == Opcode.CLNG)  { return InstructionType.Register; }
         else if (opcode == Opcode.CLA)   { return InstructionType.Register; }
+        else if (opcode == Opcode.ALD)   { return InstructionType.Immediate; }
+        else if (opcode == Opcode.LD)    { return InstructionType.Immediate; }
+        else if (opcode == Opcode.ALDR)  { return InstructionType.Register; }
+        else if (opcode == Opcode.LDR)   { return InstructionType.Register; }
+        else if (opcode == Opcode.ASTR)  { return InstructionType.Immediate; }
+        else if (opcode == Opcode.STR)   { return InstructionType.Immediate; }
+        else if (opcode == Opcode.ASTRR) { return InstructionType.Register; }
+        else if (opcode == Opcode.STRR)  { return InstructionType.Register; }
+        else if (opcode == Opcode.PUSH)  { return InstructionType.Register; }
+        else if (opcode == Opcode.POP)   { return InstructionType.Register; }
+        
         throw new NotImplementedException($"Instruction opcode {opcode:x8} not linked to instruction type (R/I/J).");
     }
     public static InstructionType DetermineInstructionType(Opcode opcode)

@@ -20,22 +20,22 @@ immediate VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     ; Assuming the hardware has reset up until this point (all registers at 0x0, loader in memory)
 
     ; Initialize service handler interrupt table (SHIT, similar to the x86 IVT)
-    ; An interrupt, which is stored in the SHIT
-    ; contains 1 absolute address for where the handler is stored.
+    ; An interrupt, which is ASTR d in the SHIT
+    ; contains 1 absolute address for where the handler is ASTR d.
     ; One interrupt occupies 1 vector, of which there are 256 (starting at address 0x00010000).
     ; By default, every handler points to the address 0, where the reset code is located, causing a reset loop.
     MOV   gp1, 0x00000000
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_RESET)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_DOUBLE_FAULT)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_UNKNOWN_INSTRUCTION)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_INVALID_ADDRESS)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_STACK_OVERFLOW)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_ILLEGAL_SECURE_MEMORY_WRITE)
-    STORE gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_RESET)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_DOUBLE_FAULT)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_UNKNOWN_INSTRUCTION)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_INVALID_ADDRESS)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_STACK_OVERFLOW)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_ILLEGAL_SECURE_MEMORY_WRITE)
+    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
 
     ; Save the SHIT base offset at address 0xFF
     MOV   gp1, SHIT_BASE_OFFSET
-    STORE gp1, 0x00010100
+    ASTR  gp1, 0x00010100
 
     ; Set, then clear all flags
     TST

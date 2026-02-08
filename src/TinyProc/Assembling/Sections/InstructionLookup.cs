@@ -19,16 +19,22 @@ public sealed class InstructionLookup
 		{ ("ADD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.Addition) },
 		{ ("SUB",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
 		{ ("SUB",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
-		{ ("INC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Increment) },
-		{ ("DEC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.B_Decrement) },
+		{ ("INC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.A_Increment) },
+		{ ("DEC",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.A_Decrement) },
 		{ ("AND",   Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalAND) },
 		{ ("AND",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalAND) },
 		{ ("OR",    Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalOR) },
 		{ ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
-		{ ("LOADR", Instructions.InstructionType.Register),  (Instructions.Opcode.LOADR, DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("LOAD",  Instructions.InstructionType.Immediate), (Instructions.Opcode.LOAD,  DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("STORR", Instructions.InstructionType.Register),  (Instructions.Opcode.STORR, DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("STORE", Instructions.InstructionType.Immediate), (Instructions.Opcode.STORE, DEFAULT_EMPTY_ALU_OPCODE) },
+
+		{ ("ALD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.ALD,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("LD",    Instructions.InstructionType.Immediate), (Instructions.Opcode.LD,    DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ALDR",  Instructions.InstructionType.Register),  (Instructions.Opcode.ALDR,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("LDR",   Instructions.InstructionType.Register),  (Instructions.Opcode.LDR,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ASTR",  Instructions.InstructionType.Immediate), (Instructions.Opcode.ASTR,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("STR",   Instructions.InstructionType.Immediate), (Instructions.Opcode.STR,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ASTRR", Instructions.InstructionType.Register),  (Instructions.Opcode.ASTRR, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("STRR",  Instructions.InstructionType.Register),  (Instructions.Opcode.STRR,  DEFAULT_EMPTY_ALU_OPCODE) },
+
 		{ ("PUSH",  Instructions.InstructionType.Register),  (Instructions.Opcode.PUSH,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("AJMP",  Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
@@ -89,10 +95,14 @@ public sealed class InstructionLookup
 		else if (mnemonic == "AND" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "OR" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "OR" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "LOAD") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "LOADR") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "STORE") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "STORR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ALD") { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "LD") { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ALDR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "LDR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ASTR") { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "STR") { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ASTRR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "STRR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
@@ -126,7 +136,7 @@ public sealed class InstructionLookup
 
 		return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LOADR" or "STORR"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALD" or "LD" or "ALDR" or "LDR" or "ASTR" or "STR" or "ASTRR" or "STRR"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,

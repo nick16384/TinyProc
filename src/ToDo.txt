@@ -55,6 +55,7 @@ Upcoming / In progress ToDo's:
 
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
 - Implement stack and call, ret, int, and iret [done]
+- Implement +[reserve: XYZ] for ASMv3 pointers
 
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set
@@ -65,6 +66,11 @@ Upcoming / In progress ToDo's:
 Changes for CPU 0.3-indev:
 - Moved IRB to Bus 2 (makes PC+IRB possible)
 - Added relative / absolute jumps / calls
-
+- CSOA went from B2 to B1
+- Added relative load/store
+- Memory layout changes:
+  1. Move ROM to high addresses (Specify!)
+  2. .data and .text sections loaded after another
+- 
 
 Useless neglibly simple processor (UNSC)

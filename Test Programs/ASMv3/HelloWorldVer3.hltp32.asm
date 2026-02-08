@@ -7,7 +7,7 @@ immediate int_syscall = 1
 immediate int_syscall_conwrite = 10
 ; Hello world message must be stored as a pointer to the message, since the
 ; message itself is too large to be stored in a 32 bit value
-pointer hello_world_msg, "Hello, World!" + 0xA ; Store string + newline
+pointer hello_world_msg, "Hello, World!" + 0xA + [reserve: 50]; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
 immediate hello_world_msg_words len: hello_world_msg
@@ -23,15 +23,21 @@ immediate hello_world_msg_words len: hello_world_msg
 #SECTION .text
 _start:
     ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
-    load  gp1, (hello_world_msg + 0)
-    store gp1, 70
-    load  gp1, (hello_world_msg + 1)
-    store gp1, 71
-    load  gp1, (hello_world_msg + 2)
-    store gp1, 72
-    load  gp1, (hello_world_msg + 3)
-    store gp1, 73
+    nop
+    nop
+    clz
+    bzr   dostuff
+    nop
 
+dostuff:
+    ld    gp1, (hello_world_msg + 0)
+    astr  gp1, 0x30000000
+    ld    gp1, (hello_world_msg + 1)
+    astr  gp1, 0x30000001
+    ld    gp1, (hello_world_msg + 2)
+    astr  gp1, 0x30000002
+    ld    gp1, (hello_world_msg + 3)
+    astr  gp1, 0x30000003
     ; Alternative variant using software interrupts:
 
     ; r6: function

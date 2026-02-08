@@ -112,9 +112,9 @@ public readonly struct TextSection : IAssemblySection
             // Replace occurrences of labels with their corresponding addresses
             // First, determine whether the jump instruction is relative or absolute
             bool isRelative =
-                words[0].Equals("JMP", StringComparison.OrdinalIgnoreCase) ||
-                words[0].Equals("B", StringComparison.OrdinalIgnoreCase) ||
-                words[0].Equals("CALL", StringComparison.OrdinalIgnoreCase);
+                words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
             foreach (string word in words)
             {
                 foreach ((string label, uint address) in labelAddressMap)

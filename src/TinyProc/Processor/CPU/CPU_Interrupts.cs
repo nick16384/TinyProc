@@ -20,6 +20,7 @@ public partial class CPU
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_IRB);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_MAR);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SR);
+        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_SP);
         _CU.Reset_Hardware();
     }
 
@@ -33,6 +34,21 @@ public partial class CPU
         STACK_OVERFLOW = 0x04,
         ILLEGAL_SECURE_MEMORY_WRITE = 0x05,
         DIVISION_BY_ZERO = 0x06
+    }
+
+    private static string GetFaultName(Fault fault)
+    {
+        return fault switch
+        {
+            Fault.RESET => "Reset",
+            Fault.DOUBLE_FAULT => "Double fault",
+            Fault.UNKNOWN_INSTRUCTION => "Unknown instruction",
+            Fault.INVALID_ADDRESS => "Invalid address",
+            Fault.STACK_OVERFLOW => "Stack overflow",
+            Fault.ILLEGAL_SECURE_MEMORY_WRITE => "Illegal secure memory write",
+            Fault.DIVISION_BY_ZERO => "Division by zero",
+            _ => "//Not a hardware fault//"
+        };
     }
 
     private void TriggerHardwareFault(Fault fault)

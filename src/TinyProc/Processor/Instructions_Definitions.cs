@@ -33,12 +33,16 @@ public sealed partial class Instructions
         public static readonly Opcode AOPR  = new(0x10, "AOPR");
         public static readonly Opcode AOPI  = new(0x11, "AOPI");
 
-        public static readonly Opcode LOAD  = new(0x30, "LOAD");
-        public static readonly Opcode LOADR = new(0x31, "LOADR");
-        public static readonly Opcode STORE = new(0x32, "STORE");
-        public static readonly Opcode STORR = new(0x33, "STORR");
-        public static readonly Opcode PUSH  = new(0x34, "PUSH");
-        public static readonly Opcode POP   = new(0x35, "POP");
+        public static readonly Opcode ALD   = new(0x30, "ALD");
+        public static readonly Opcode LD    = new(0x31, "LD");
+        public static readonly Opcode ALDR  = new(0x32, "ALDR");
+        public static readonly Opcode LDR   = new(0x33, "ALDR");
+        public static readonly Opcode ASTR  = new(0x34, "ASTR");
+        public static readonly Opcode STR   = new(0x35, "STR");
+        public static readonly Opcode ASTRR = new(0x36, "ASTRR");
+        public static readonly Opcode STRR  = new(0x37, "STRR");
+        public static readonly Opcode PUSH  = new(0x38, "PUSH");
+        public static readonly Opcode POP   = new(0x39, "POP");
 
         private readonly uint _value;
         private readonly string _name;
