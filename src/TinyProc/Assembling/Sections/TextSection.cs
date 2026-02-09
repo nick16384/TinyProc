@@ -131,6 +131,7 @@ public readonly struct TextSection : IAssemblySection
                         // Relative mem ops need references to .data section, which assumes it should
                         // be loaded right before the .text section.
                         // FIXME: The loader also needs to be rewritten for this.
+                        Logging.LogWarn("Warning: Relative load/store adjustment not implemented!");
                         if (isRelativeJump)
                             line = line.Replace(word, (address - currentAddress).ToString());
                         else
