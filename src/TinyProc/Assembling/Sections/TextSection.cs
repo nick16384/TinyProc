@@ -125,6 +125,10 @@ public readonly struct TextSection : IAssemblySection
                 {
                     if (word == label)
                     {
+                        // FIXME: Relative loads/stores need different handling than relative jumps
+                        // Relative mem ops need references to .data section, which assumes it should
+                        // be loaded right before the .text section.
+                        // FIXME: The loader also needs to be rewritten for this.
                         if (isRelative)
                             line = line.Replace(word, (address - currentAddress).ToString());
                         else
@@ -133,7 +137,7 @@ public readonly struct TextSection : IAssemblySection
                 }
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}{(isRelative ? "R" : "")}] \"{lineUnparsed}\" -> \"{line}\"");
+            Logging.LogDebug($"[{currentAddress:x8}{(isRelative ? "-R" : "")}] \"{lineUnparsed}\" -> \"{line}\"");
             words = SplitLineIntoWords(line);
 
             // Parse assembly line as instruction object

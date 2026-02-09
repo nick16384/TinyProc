@@ -136,7 +136,7 @@ public sealed class InstructionLookup
 
 		return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALD" or "LD" or "ALDR" or "LDR" or "ASTR" or "STR" or "ASTRR" or "STRR"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALDR" or "LDR" or "ASTRR" or "STRR"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
@@ -195,7 +195,7 @@ public sealed class InstructionLookup
 
         return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LOAD" or "STORE"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALD" or "LD" or "ASTR" or "STR"
 				=> new Instructions.RegImmInstruction(
 					opcode,
 					conditional,
