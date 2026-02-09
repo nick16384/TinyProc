@@ -64,6 +64,7 @@ public sealed class InstructionLookup
 			string possibleConditionCode = mnemonic[^2..];
 			try
 			{
+				Logging.LogDebug($"Mnemonic: {mnemonic}, searching condition code: {possibleConditionCode}");
 				conditional = (Instructions.Condition)possibleConditionCode;
 				// Mnemonic has conditional at this point
 				Logging.LogDebug($"Mnemonic {mnemonic} has condition code {conditional}");
@@ -72,6 +73,8 @@ public sealed class InstructionLookup
 			}
 			catch (KeyNotFoundException) { Logging.LogDebug($"Mnemonic {mnemonic} has no condition code."); }
 		}
+		else
+			Logging.LogDebug($"Mnemonic {mnemonic} has no condition code.");
 
 		// Determine instruction type (R/I/J)
 		Instructions.InstructionType type;

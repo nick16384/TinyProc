@@ -67,6 +67,7 @@ public readonly struct TextSection : IAssemblySection
 
         foreach (string lineUnparsed in lines)
         {
+            Logging.NewlineDebug();
             string line = lineUnparsed;
             // Replace occurrences of immediate value / pointer identifiers of the .data section
             // with their corresponding numeric value.
@@ -111,10 +112,11 @@ public readonly struct TextSection : IAssemblySection
             }
             // Replace occurrences of labels with their corresponding addresses
             // First, determine whether the jump instruction is relative or absolute
-            bool isRelative =
+            bool isRelativeJump =
                 words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
+            bool isRelativeMemOp =
                 words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase) ||
@@ -129,7 +131,7 @@ public readonly struct TextSection : IAssemblySection
                         // Relative mem ops need references to .data section, which assumes it should
                         // be loaded right before the .text section.
                         // FIXME: The loader also needs to be rewritten for this.
-                        if (isRelative)
+                        if (isRelativeJump)
                             line = line.Replace(word, (address - currentAddress).ToString());
                         else
                             line = line.Replace(word, address.ToString());
@@ -137,7 +139,8 @@ public readonly struct TextSection : IAssemblySection
                 }
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}{(isRelative ? "-R" : "")}] \"{lineUnparsed}\" -> \"{line}\"");
+            Logging.LogDebug($"[{currentAddress:x8}{(isRelativeJump ? "-RJ" : "")}{(isRelativeMemOp ? "-RM" : "")}] " +
+                $"\"{lineUnparsed}\" -> \"{line}\"");
             words = SplitLineIntoWords(line);
 
             // Parse assembly line as instruction object
@@ -151,6 +154,7 @@ public readonly struct TextSection : IAssemblySection
             currentAddress += 2;
         }
 
+        Logging.NewlineDebug();
         Logging.LogDebug($".text section successfully parsed into a total of {instructions.Count * 2} word(s).");
         return new TextSection(fixedLoadAddress, instructions, labelAddressMap);
     }
