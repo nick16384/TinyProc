@@ -88,7 +88,31 @@ public partial class CPU
         }
         private void INSTRUCTION_R_LDR()
         {
-            throw new NotImplementedException();
+            Logging.LogDebug(
+                "Load from memory to register " +
+                $"Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}] " +
+                "at relative offset contained in register " +
+                $"Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}] " +
+                $"+ PC-2[{PC.ValueDirect:x8}] ==> {PC.ValueDirect - 2 + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}");
+            
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_SrcRegCode;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_DestRegCode;
+            ResetBus3();
         }
         private void INSTRUCTION_R_ASTRR()
         {
@@ -110,7 +134,29 @@ public partial class CPU
         }
         private void INSTRUCTION_R_STRR()
         {
-            throw new NotImplementedException();
+            Logging.LogDebug(
+                "Store to memory from register " +
+                $"Dst:{_currentInstruction.R_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}] " +
+                "at relative offset contained in register " +
+                $"Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}] " +
+                $"+ PC-2[{PC.ValueDirect:x8}] ==> {PC.ValueDirect - 2 + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}");
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.R_SrcRegCode;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
         }
         private void INSTRUCTION_R_PUSH()
         {
@@ -167,8 +213,11 @@ public partial class CPU
                 "Load from memory to register " +
                 $"Dst:{_currentInstruction.I_DestRegCode} " +
                 "at immediate relative offset " +
-                $"#{_currentInstruction.I_ImmediateValue:x8} + PC-2[{PC.ValueDirect:x8}] ==> {PC.ValueDirect - 2 + _currentInstruction.I_ImmediateValue:x8}");
-            throw new NotImplementedException();
+                $"#{_currentInstruction.I_ImmediateValue:x8} + PC-2[{PC.ValueDirect:x8}] " +
+                $"==> {PC.ValueDirect - 2 + _currentInstruction.I_ImmediateValue:x8}");
+            
+            // Workaround: Because we cannot decrement IRB by 2 directly (both on Bus 2)
+            // we decrement the PC, add that to IRB and then increment the PC again
             _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
@@ -178,7 +227,24 @@ public partial class CPU
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
+
+            // Actual load happens here:
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            _IntBus3.BusTargetRegisterCode = _currentInstruction.I_DestRegCode;
             ResetBus3();
         }
         private void INSTRUCTION_I_ASTR()
@@ -201,7 +267,43 @@ public partial class CPU
         }
         private void INSTRUCTION_I_STR()
         {
-            throw new NotImplementedException();
+            Logging.LogDebug(
+                "Store to memory from register " +
+                $"Dst:{_currentInstruction.I_DestRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.I_DestRegCode].ValueDirect:x8}] " +
+                "at immediate relative offset " +
+                $"#{_currentInstruction.I_ImmediateValue:x8} + PC-2[{PC.ValueDirect:x8}] " +
+                $"==> {PC.ValueDirect - 2 + _currentInstruction.I_ImmediateValue:x8}");
+            // Workaround: Because we cannot decrement IRB by 2 directly (both on Bus 2)
+            // we decrement the PC, add that to IRB and then increment the PC again
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS2;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
+
+            // Actual store happens here:
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferB;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MAR;
+            ResetBus3();
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.I_DestRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_MDR;
+            ResetBus3();
         }
 
         private void INSTRUCTION_J_NOP()

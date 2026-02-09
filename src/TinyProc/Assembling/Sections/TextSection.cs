@@ -114,7 +114,11 @@ public readonly struct TextSection : IAssemblySection
             bool isRelative =
                 words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
+                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("STRR", StringComparison.OrdinalIgnoreCase);
             foreach (string word in words)
             {
                 foreach ((string label, uint address) in labelAddressMap)

@@ -56,6 +56,7 @@ Upcoming / In progress ToDo's:
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
 - Implement stack and call, ret, int, and iret [done]
 - Implement +[reserve: XYZ] for ASMv3 pointers
+- Verify relative load/store working
 
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set
