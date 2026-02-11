@@ -71,47 +71,9 @@ public readonly struct TextSection : IAssemblySection
             string line = lineUnparsed;
             // Replace occurrences of immediate value / pointer identifiers of the .data section
             // with their corresponding numeric value.
-            List<string> constantExpressions = [.. lineUnparsed.Split(["(", ")"], StringSplitOptions.None)];
-            // Remove parts not lying between opening and closing brackets (in that order)
-            constantExpressions = [.. constantExpressions.Where((str, index) => index % 2 != 0)];
-            foreach (string expression in constantExpressions)
-            {
-                string expressionPreParsed = expression;
-                List<string> expressionWords = [.. SplitLineIntoWords(expression)];
 
-                // Replace immediate values / pointers from the .data sections with their value.
-                foreach (string word in expressionWords)
-                {
-                    bool canParseWordAsUInt = true;
-                    try { ConvertStringToUInt(word); } catch (Exception) { canParseWordAsUInt = false; }
-                    if (canParseWordAsUInt || new List<string> { "+", "-", "*", "/" }.Contains(word))
-                        continue;
-
-                    if (dataSection.ImmediateValues.ContainsKey(word))
-                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.ImmediateValues[word].Value.ToString());
-                    else if (dataSection.Pointers.ContainsKey(word))
-                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.Pointers[word].Offset.ToString());
-                    else if (dataSection.BlockPointers.ContainsKey(word))
-                        expressionPreParsed = expressionPreParsed.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
-                }
-
-                // Evaluate constant expression
-                uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expressionPreParsed, null));
-                line = line.Replace("(" + expression + ")", expressionValue.ToString());
-            }
-            // Evaluate constant expressions consisting of a single immediate / pointer
+            // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses
             string[] words = SplitLineIntoWords(line);
-            foreach (string word in words)
-            {
-                if (dataSection.ImmediateValues.ContainsKey(word))
-                    line = line.Replace(word, dataSection.ImmediateValues[word].Value.ToString());
-                else if (dataSection.Pointers.ContainsKey(word))
-                    line = line.Replace(word, dataSection.Pointers[word].Offset.ToString());
-                else if (dataSection.BlockPointers.ContainsKey(word))
-                    line = line.Replace(word, dataSection.BlockPointers[word].Offset.ToString());
-            }
-            // Replace occurrences of labels with their corresponding addresses
-            // First, determine whether the jump instruction is relative or absolute
             bool isRelativeJump =
                 words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
@@ -121,23 +83,65 @@ public readonly struct TextSection : IAssemblySection
                 words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("STRR", StringComparison.OrdinalIgnoreCase);
-            foreach (string word in words)
+            foreach (string wordWithClutter in words)
             {
-                foreach ((string label, uint address) in labelAddressMap)
+                // Remove possible brackets from constant expressions (which always require brackets to be identifiable as such)
+                string word = wordWithClutter.Trim().Replace("(", "").Replace(")", "");
+                if ((dataSection.ImmediateValues.ContainsKey(word) ? 1 : 0) +
+                    (dataSection.Pointers.ContainsKey(word) ? 1 : 0) +
+                    (dataSection.BlockPointers.ContainsKey(word) ? 1 : 0) +
+                    (labelAddressMap.ContainsKey(word) ? 1 : 0) >= 2)
+                    // If at least two of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
+                    throw new Exception($"Address label / .data section reference is ambiguous for \"{word}\".");
+
+                if (labelAddressMap.TryGetValue(word, out uint labelAddress))
                 {
-                    if (word == label)
+                    if (!isRelativeJump)
+                        throw new Exception("Cannot jump to absolute address via label, since labels do not represent an absolute address.");
+                    uint labelRelAddress = labelAddress - currentAddress;
+                    line = line.Replace(word, labelRelAddress.ToString());
+                    Logging.LogDebug($".text replace label \"{word}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                }
+                else
+                {
+                    bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
+                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
+                    bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
+                    if (!isRelativeMemOp && (isImmediate || isPointer || isBlockPointer))
+                        throw new Exception("Cannot load/store from/to .data section reference, since they are relative and do not possess an absolute address.");
+                    if (isImmediate)
                     {
-                        // FIXME: Relative loads/stores need different handling than relative jumps
-                        // Relative mem ops need references to .data section, which assumes it should
-                        // be loaded right before the .text section.
-                        // FIXME: The loader also needs to be rewritten for this.
-                        Logging.LogWarn("Warning: Relative load/store adjustment not implemented!");
-                        if (isRelativeJump)
-                            line = line.Replace(word, (address - currentAddress).ToString());
-                        else
-                            line = line.Replace(word, address.ToString());
+                        uint immediateValue = immediate.Value;
+                        line = line.Replace(word, immediateValue.ToString());
+                        Logging.LogDebug($".text replace immediate \"{word}\" --> {immediateValue:x8}h / {immediateValue}");
+                    }
+                    else if (isPointer)
+                    {
+                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size;
+                        line = line.Replace(word, pointerRelAddress.ToString());
+                        Logging.LogDebug($".text replace pointer \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
+                    }
+                    else if (isBlockPointer)
+                    {
+                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size;
+                        line = line.Replace(word, blockPointerRelAddress.ToString());
+                        Logging.LogDebug($".text replace block pointer \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
                     }
                 }
+            }
+
+            // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
+            List<string> constantExpressions = [.. line.Split(["(", ")"], StringSplitOptions.None)];
+            // Remove parts not lying between opening and closing brackets (in that order)
+            constantExpressions = [.. constantExpressions.Where((str, index) => index % 2 != 0)];
+            foreach (string expression in constantExpressions)
+            {
+                string expressionPreParsed = expression;
+                List<string> expressionWords = [.. SplitLineIntoWords(expression)];
+
+                // Evaluate constant expression
+                uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expressionPreParsed, null));
+                line = line.Replace("(" + expression + ")", expressionValue.ToString());
             }
 
             Logging.LogDebug($"[{currentAddress:x8}{(isRelativeJump ? "-RJ" : "")}{(isRelativeMemOp ? "-RM" : "")}] " +

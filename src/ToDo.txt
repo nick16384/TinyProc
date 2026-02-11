@@ -57,6 +57,8 @@ Upcoming / In progress ToDo's:
 - Implement stack and call, ret, int, and iret [done]
 - Implement +[reserve: XYZ] for ASMv3 pointers
 - Verify relative load/store working
+-> Assembler should still respect absolute load addresses (when requested explicitly via __attribute__)
+-> The loader needs to be rewritten
 
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set

@@ -19,10 +19,10 @@ immediate int_vector_reset = 0x0
     ; It is also assumed that a valid program (including header) has been loaded at address 0x00030000
 
     ; After _start, these things will happen in order:
-    ; 1. The .data section is loaded from memory address 0x00030000 into a location it specifies or 0x10000000
-    ; 2. The .text section is loaded from memory address 0x00030000 into a location it specifies or 0x20000000
-    ; 3. The program's entry point will be calculated and called (NOT jumped to!)
-    ; (4. Once the program returns (via the "ret" instruction), this forces a hardware reset)
+    ; 1. The .data and .text sections of the unloaded program (starting from 0x00030000) will be copied directly
+    ;    after another to 0x10000000.
+    ; 2. The program's entry point will be calculated and called (NOT jumped to!)
+    ; (3. Once the program returns (via the "ret" instruction), this enters an indefinite halt state / endless jmp loop)
 
     _start:
         ; Check whether .data section load address is 0 or not
@@ -113,4 +113,7 @@ immediate int_vector_reset = 0x0
     
     ; Call this when the main program has used the "ret" instruction and gave back control to the loader.
     programReturned:
-        int   0 ; Reset
+        jmp   _halt
+    
+    _halt:
+        jmp   _halt
