@@ -334,16 +334,6 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
         }
-        private void INSTRUCTION_J_AB()
-        {
-            // Conditionals have already been handled at this point
-            INSTRUCTION_J_AJMP();
-        }
-        private void INSTRUCTION_J_B()
-        {
-            // Conditionals have already been handled at this point
-            INSTRUCTION_J_JMP();
-        }
         private void INSTRUCTION_J_ACALL()
         {
             Logging.LogDebug($"Absolute call subroutine at {_currentInstruction.J_JumpTargetAddress:x8}");
@@ -369,6 +359,14 @@ public partial class CPU
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
+        }
+        private void INSTRUCTION_R_ACALR()
+        {
+            throw new NotImplementedException();
+        }
+        private void INSTRUCTION_R_CALLR()
+        {
+            throw new NotImplementedException();
         }
         private void INSTRUCTION_J_RET()
         {

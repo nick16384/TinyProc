@@ -107,7 +107,7 @@ public readonly struct TextSection : IAssemblySection
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
                     bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
-                    if (!isRelativeMemOp && (isImmediate || isPointer || isBlockPointer))
+                    if (!isRelativeMemOp && (isPointer || isBlockPointer))
                         throw new Exception("Cannot load/store from/to .data section reference, since they are relative and do not possess an absolute address.");
                     if (isImmediate)
                     {

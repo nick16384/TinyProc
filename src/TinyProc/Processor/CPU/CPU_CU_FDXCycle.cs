@@ -197,6 +197,8 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.STRR)  { INSTRUCTION_R_STRR(); }
                     else if (_currentInstruction.Opcode == Opcode.PUSH)  { INSTRUCTION_R_PUSH(); }
                     else if (_currentInstruction.Opcode == Opcode.POP)   { INSTRUCTION_R_POP(); }
+                    else if (_currentInstruction.Opcode == Opcode.ACALR) { INSTRUCTION_R_ACALR(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALLR) { INSTRUCTION_R_CALLR(); }
                     break;
 
                 case InstructionType.Immediate:
@@ -211,8 +213,6 @@ public partial class CPU
                     if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
                     else if (_currentInstruction.Opcode == Opcode.AJMP)  { INSTRUCTION_J_AJMP(); }
                     else if (_currentInstruction.Opcode == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
-                    else if (_currentInstruction.Opcode == Opcode.AB)    { INSTRUCTION_J_AB(); }
-                    else if (_currentInstruction.Opcode == Opcode.B)     { INSTRUCTION_J_B(); }
                     else if (_currentInstruction.Opcode == Opcode.ACALL) { INSTRUCTION_J_ACALL(); }
                     else if (_currentInstruction.Opcode == Opcode.CALL)  { INSTRUCTION_J_CALL(); }
                     else if (_currentInstruction.Opcode == Opcode.RET)   { INSTRUCTION_J_RET(); }

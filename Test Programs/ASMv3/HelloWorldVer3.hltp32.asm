@@ -23,6 +23,7 @@ immediate hello_world_msg_words len: hello_world_msg
 #SECTION .text
 _start:
     ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
+    tst
     nop
     nop
     clz
@@ -38,6 +39,7 @@ dostuff:
     astr  gp1, 0x30000002
     ld    gp1, (hello_world_msg + 3)
     astr  gp1, 0x30000003
+    jmp   _halt
     ; Alternative variant using software interrupts:
 
     ; r6: function
@@ -49,3 +51,6 @@ dostuff:
     ;load  gp7, hello_world_msg       ; Load pointer to the data to be printed
     ;load  gp8, hello_world_msg_words ; Load the number of words to be printed
     ;int   int_syscall                ; Trigger the interrupt -> syscall
+
+_halt:
+    jmp   _halt

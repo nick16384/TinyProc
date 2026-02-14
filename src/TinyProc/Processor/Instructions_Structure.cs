@@ -44,10 +44,10 @@ public sealed partial class Instructions
         if      (opcode == Opcode.NOP)   { return InstructionType.Jump; }
         else if (opcode == Opcode.AJMP)  { return InstructionType.Jump; }
         else if (opcode == Opcode.JMP)   { return InstructionType.Jump; }
-        else if (opcode == Opcode.AB)    { return InstructionType.Jump; }
-        else if (opcode == Opcode.B)     { return InstructionType.Jump; }
         else if (opcode == Opcode.ACALL) { return InstructionType.Jump; }
         else if (opcode == Opcode.CALL)  { return InstructionType.Jump; }
+        else if (opcode == Opcode.ACALR) { return InstructionType.Register; }
+        else if (opcode == Opcode.CALLR) { return InstructionType.Register; }
         else if (opcode == Opcode.RET)   { return InstructionType.Jump; }
         else if (opcode == Opcode.INT)   { return InstructionType.Jump; }
         else if (opcode == Opcode.IRET)  { return InstructionType.Jump; }

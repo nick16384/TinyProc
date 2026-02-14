@@ -15,10 +15,10 @@ public sealed partial class Instructions
 
         public static readonly Opcode AJMP  = new(0x01, "AJMP");
         public static readonly Opcode JMP   = new(0x02, "JMP");
-        public static readonly Opcode AB    = new(0x03, "AB");
-        public static readonly Opcode B     = new(0x04, "B");
-        public static readonly Opcode ACALL = new(0x05, "ACALL");
-        public static readonly Opcode CALL  = new(0x06, "CALL");
+        public static readonly Opcode ACALL = new(0x03, "ACALL");
+        public static readonly Opcode CALL  = new(0x04, "CALL");
+        public static readonly Opcode ACALR = new(0x05, "ACALR");
+        public static readonly Opcode CALLR = new(0x06, "CALLR");
         public static readonly Opcode RET   = new(0x07, "RET");
         public static readonly Opcode INT   = new(0x08, "INT");
         public static readonly Opcode IRET  = new(0x09, "IRET");

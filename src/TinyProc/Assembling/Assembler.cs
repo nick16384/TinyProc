@@ -176,7 +176,16 @@ public partial class Assembler()
         // 6. .text segment size in words
         // 7. 0x0
         // 8. 0x0
-        Logging.LogDebug($"Actual entry point: {entryPoint:x8}");
+        Logging.LogDebug(
+            "Assembly header:\n" +
+            $"Version:.................{ASSEMBLER_VERSION_ENCODED:x8}\n" +
+            $"Entry point:.............{entryPoint:x8}\n" +
+            $".data load address:......{(dataSection.FixedLoadAddress.HasValue ? dataSection.FixedLoadAddress.Value : "RELOC"):x8}\n" +
+            $".data size (dec, words):.{dataSection.Size}\n" +
+            $".text load address:......{(textSection.FixedLoadAddress.HasValue ? textSection.FixedLoadAddress.Value : "RELOC"):x8}\n" +
+            $".text size (dec, words):.{textSection.Size}\n" +
+            $"Padding (1):.............{0:x8}\n" +
+            $"Padding (2):.............{0:x8}");
         List<uint> assembledBinary =
         [
             ASSEMBLER_VERSION_ENCODED,

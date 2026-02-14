@@ -19,10 +19,10 @@ Instruction set:
 Branching:
 01 - AJMP [Target address] : Jump to absolute address
 02 - JMP [Target offset] : Jump to address relative to PC-2
-03 - AB? [Target address] : Branch(=jump) on condition
-04 - B? [Target offset] : Branch relative to PC-2
-05 - ACALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
-06 - CALL [Target offset] : Call a subroutine relative to PC-2
+03 - ACALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+04 - CALL [Target offset] : Call a subroutine relative to PC-2
+05 - ACALR [Register with target address]
+06 - CALLR [Register with target offset]
 07 - RET : Returns from subroutine (restores previous state by popping data on the stack)
 08 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
 09 - IRET : Special instruction to return from interrupt subroutine

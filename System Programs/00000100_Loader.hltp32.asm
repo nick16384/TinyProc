@@ -3,15 +3,15 @@
 
 #SECTION (__attribute__ inline = all) .data
 immediate unloaded_program_source = 0x00030000
-immediate progheader_offset_version = 0 ; The version attribute is technically unnecessary, but is kept for simplicity.
-immediate progheader_offset_entrypoint = 1
-immediate progheader_offset_data_addr = 2
-immediate progheader_offset_data_size = 3
-immediate progheader_offset_text_addr = 4
-immediate progheader_offset_text_size = 5
-immediate data_fixed_load_address = 0x10000000
-immediate text_fixed_load_address = 0x20000000
+immediate asmheader_offset_version = 0 ; The version attribute is technically unnecessary, but is kept for clarity.
+immediate asmheader_offset_entrypoint = 1
+immediate asmheader_offset_data_addr = 2
+immediate asmheader_offset_data_size = 3
+immediate asmheader_offset_text_addr = 4
+immediate asmheader_offset_text_size = 5
+immediate reloc_default_load_address = 0x10000000
 immediate int_vector_reset = 0x0
+immediate sp_base_address = 0x00020000
 
 #SECTION (__attribute__ loadaddress = 0x00000100) .text
     ; The program loader assumes that up until this point, the Reset vector has been called and
@@ -26,58 +26,62 @@ immediate int_vector_reset = 0x0
 
     _start:
         ; Check whether .data section load address is 0 or not
-        ald  gp1, (unloaded_program_source + progheader_offset_data_addr)
+        ald  gp1, (unloaded_program_source + asmheader_offset_data_addr)
         sub  gp1, 0
         bzr  dataLoadAddressIsZero
         jmp  dataLoadAddressIsNotZero
     
     ; The data section load address is zero. This means it is relocatable.
-    ; For simplicity, copy it to the default address 0x10000000
     dataLoadAddressIsZero:
-        mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
-        ald  gp7, (unloaded_program_source + progheader_offset_data_size)
-        mov  gp8, data_fixed_load_address
+        mov  gp6, (unloaded_program_source + asmheader_offset_data_addr)
+        ald  gp7, (unloaded_program_source + asmheader_offset_data_size)
+        mov  gp8, reloc_default_load_address
         call copySection
         jmp  dataSectionCopyFinished
 
     ; The data section load address is NOT zero. This means it has to be loaded at a specified address.
     ; Since the load address is specified, load it it that address.
     dataLoadAddressIsNotZero:
-        mov  gp6, (unloaded_program_source + progheader_offset_data_addr)
-        ald  gp7, (unloaded_program_source + progheader_offset_data_size)
-        ald  gp8, (unloaded_program_source + progheader_offset_data_addr)
+        mov  gp6, (unloaded_program_source + asmheader_offset_data_addr)
+        ald  gp7, (unloaded_program_source + asmheader_offset_data_size)
+        ald  gp8, (unloaded_program_source + asmheader_offset_data_addr)
         call copySection
         jmp  dataSectionCopyFinished
     
     dataSectionCopyFinished:
         ; Check whether .text section load address is 0 or not
-        ald  gp1, (unloaded_program_source + progheader_offset_text_addr)
+        ald  gp1, (unloaded_program_source + asmheader_offset_text_addr)
         sub  gp1, 0
         bzr  textLoadAddressIsZero
         jmp  textLoadAddressIsNotZero
         
     ; The text section load address is zero. This means it is relocatable.
-    ; For simplicity, copy it to the default address 0x20000000
     textLoadAddressIsZero:
         ; No need for relocating memory addresses, since they have been set by the assembler,
         ; because they are fixed.
-        mov   gp6, (unloaded_program_source + progheader_offset_text_addr)
-        ald   gp7, (unloaded_program_source + progheader_offset_text_size)
-        mov   gp8, text_fixed_load_address
+        mov   gp6, (unloaded_program_source + asmheader_offset_text_addr)
+        ald   gp7, (unloaded_program_source + asmheader_offset_text_size)
+        mov   gp8, reloc_default_load_address
         call  copySection
         call  clearRegisters
-        acall text_fixed_load_address ; Start the actual program
+        ald   gp1, (unloaded_program_source + asmheader_offset_data_size)
+        ald   gp2, (unloaded_program_source + asmheader_offset_text_size)
+        add   gp1, gp2
+        add   gp1, reloc_default_load_address
+        acalr gp1 ; Start the actual program
         jmp   programReturned
 
     ; The text section load address is NOT zero. This means it has to be loaded at a specified address.
     ; Since the load address is specified, load it it that address.
     textLoadAddressIsNotZero:
-        mov   gp6, (unloaded_program_source + progheader_offset_text_addr)
-        ald   gp7, (unloaded_program_source + progheader_offset_text_size)
-        ald   gp8, (unloaded_program_source + progheader_offset_text_addr)
+        mov   gp6, (unloaded_program_source + asmheader_offset_text_addr)
+        ald   gp7, (unloaded_program_source + asmheader_offset_text_size)
+        ald   gp8, (unloaded_program_source + asmheader_offset_text_addr)
         call  copySection
         call  clearRegisters
-        acall (unloaded_program_source + progheader_offset_text_addr) ; Start the actual program
+        ; TODO: Determine offset for .text section (base + .data size + 1)
+        int 07h
+        acall (unloaded_program_source + asmheader_offset_text_addr) ; Start the actual program
         jmp   programReturned
 
     ; Copies a section of memory to another section.
@@ -99,6 +103,9 @@ immediate int_vector_reset = 0x0
         ret
     
     ; Self-explanatory function
+    ; Parameters: None
+    ; Registers modified:
+    ; GP1 - GP8, SR
     clearRegisters:
         mov   gp1, 0
         mov   gp2, 0
@@ -112,7 +119,15 @@ immediate int_vector_reset = 0x0
         ret
     
     ; Call this when the main program has used the "ret" instruction and gave back control to the loader.
+    ; Clears the stack, all registers, and resumes indefinitely in a halt loop.
     programReturned:
+        ; Clear the stack
+        mov   sp, gp1
+        sub   gp1, sp_base_address
+        pop   gp2
+        bnz   -6
+        ; Clear registers
+        call  clearRegisters
         jmp   _halt
     
     _halt:

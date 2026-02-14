@@ -39,10 +39,12 @@ public sealed class InstructionLookup
 		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("AJMP",  Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("AB",    Instructions.InstructionType.Jump),      (Instructions.Opcode.AB,    DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.B,     DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("AB",    Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("ACALL", Instructions.InstructionType.Jump),      (Instructions.Opcode.ACALL, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("CALL",  Instructions.InstructionType.Jump),      (Instructions.Opcode.CALL,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ACALR", Instructions.InstructionType.Register),  (Instructions.Opcode.ACALR, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CALLR", Instructions.InstructionType.Register),  (Instructions.Opcode.CALLR, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("RET",   Instructions.InstructionType.Jump),      (Instructions.Opcode.RET,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("INT",   Instructions.InstructionType.Jump),      (Instructions.Opcode.INT,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("IRET",  Instructions.InstructionType.Jump),      (Instructions.Opcode.IRET,  DEFAULT_EMPTY_ALU_OPCODE) },
@@ -110,11 +112,13 @@ public sealed class InstructionLookup
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "AJMP") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "AB") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "B") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "ACALL") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "CALL") { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "ACALR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CALLR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "RET") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "INT") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "IRET") { type = Instructions.InstructionType.Jump; }
@@ -148,7 +152,7 @@ public sealed class InstructionLookup
 					aluOpcode
 				),
 			
-			"PUSH"
+			"PUSH" or "ACALR" or "CALLR"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,

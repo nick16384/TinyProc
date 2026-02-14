@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace TinyProc.Application;
 
 public class Logging
@@ -23,7 +25,15 @@ public class Logging
         }
     }
 
-    private static long MILLIS_SINCE_APPLICATION_START { get => Environment.TickCount; }
+    /// <summary>
+    /// Counts the time that has elapsed since the process has started.
+    /// </summary>
+    private static readonly Stopwatch processTimer = Stopwatch.StartNew();
+
+    private static double MILLIS_SINCE_APPLICATION_START
+    {
+        get => processTimer.Elapsed.Milliseconds + (0.001 * processTimer.Elapsed.Microseconds);
+    }
     public static bool SuppressDebugMessages { get; set; } = false;
     public static bool SuppressInfoMessages { get; set; } = false;
     public static bool SuppressWarningMessages { get; set; } = false;
@@ -41,7 +51,7 @@ public class Logging
     public static void LogDebugWithoutNewline(string message)
     {
         if (!SuppressDebugMessages)
-            PrintMessageToPipe($"[Debug, {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDOUT);
+            PrintMessageToPipe($"[Debug, {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDOUT);
     }
     public static void LogDebug(string message) => LogDebugWithoutNewline(message + "\n");
 
@@ -53,7 +63,7 @@ public class Logging
     public static void LogInfoWithoutNewline(string message)
     {
         if (!SuppressInfoMessages)
-            PrintMessageToPipe($"[Info,  {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDOUT);
+            PrintMessageToPipe($"[Info,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDOUT);
     }
     public static void LogInfo(string message) => LogInfoWithoutNewline(message + "\n");
 
@@ -65,7 +75,7 @@ public class Logging
     public static void LogWarnWithoutNewline(string message)
     {
         if (!SuppressWarningMessages)
-            PrintMessageToPipe($"[Warn,  {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDERR);
+            PrintMessageToPipe($"[Warn,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDERR);
     }
     public static void LogWarn(string message) => LogWarnWithoutNewline(message + "\n");
 
@@ -77,7 +87,7 @@ public class Logging
     public static void LogErrorWithoutNewline(string message)
     {
         if (!SuppressErrorMessages)
-            PrintMessageToPipe($"[Error, {MILLIS_SINCE_APPLICATION_START:D10}] {message}", Pipe.STDERR);
+            PrintMessageToPipe($"[Error, {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDERR);
     }
     public static void LogError(string message) => LogErrorWithoutNewline(message + "\n");
 
