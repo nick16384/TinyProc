@@ -77,4 +77,4 @@ Changes for CPU 0.3-indev:
   2. .data and .text sections loaded after another
 - Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added ACALR and CALLR
 
-Useless neglibly simple processor (UNSC)
+Useless neglibly simple computer emulator (UNSC-E)
