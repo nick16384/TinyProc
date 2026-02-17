@@ -13,15 +13,12 @@ public sealed partial class Instructions
 
         public static readonly Opcode NOP   = new(0x00, "NOP");
 
-        public static readonly Opcode AJMP  = new(0x01, "AJMP");
-        public static readonly Opcode JMP   = new(0x02, "JMP");
-        public static readonly Opcode ACALL = new(0x03, "ACALL");
-        public static readonly Opcode CALL  = new(0x04, "CALL");
-        public static readonly Opcode ACALR = new(0x05, "ACALR");
-        public static readonly Opcode CALLR = new(0x06, "CALLR");
-        public static readonly Opcode RET   = new(0x07, "RET");
-        public static readonly Opcode INT   = new(0x08, "INT");
-        public static readonly Opcode IRET  = new(0x09, "IRET");
+        public static readonly Opcode JMP   = new(0x01, "JMP");
+        public static readonly Opcode CALL  = new(0x02, "CALL");
+        public static readonly Opcode CALLR = new(0x03, "CALLR");
+        public static readonly Opcode RET   = new(0x04, "RET");
+        public static readonly Opcode INT   = new(0x05, "INT");
+        public static readonly Opcode IRET  = new(0x06, "IRET");
 
         public static readonly Opcode TST   = new(0x0A, "TST");
         public static readonly Opcode CLC   = new(0x0B, "CLC");
@@ -33,16 +30,12 @@ public sealed partial class Instructions
         public static readonly Opcode AOPR  = new(0x10, "AOPR");
         public static readonly Opcode AOPI  = new(0x11, "AOPI");
 
-        public static readonly Opcode ALD   = new(0x30, "ALD");
-        public static readonly Opcode LD    = new(0x31, "LD");
-        public static readonly Opcode ALDR  = new(0x32, "ALDR");
-        public static readonly Opcode LDR   = new(0x33, "ALDR");
-        public static readonly Opcode ASTR  = new(0x34, "ASTR");
-        public static readonly Opcode STR   = new(0x35, "STR");
-        public static readonly Opcode ASTRR = new(0x36, "ASTRR");
-        public static readonly Opcode STRR  = new(0x37, "STRR");
-        public static readonly Opcode PUSH  = new(0x38, "PUSH");
-        public static readonly Opcode POP   = new(0x39, "POP");
+        public static readonly Opcode LD    = new(0x30, "LD");
+        public static readonly Opcode LDR   = new(0x31, "LDR");
+        public static readonly Opcode ST    = new(0x32, "ST");
+        public static readonly Opcode STR   = new(0x33, "STR");
+        public static readonly Opcode PUSH  = new(0x34, "PUSH");
+        public static readonly Opcode POP   = new(0x35, "POP");
 
         private readonly uint _value;
         private readonly string _name;

@@ -29,7 +29,7 @@ public readonly struct TextSection : IAssemblySection
     }
 
     /// <summary>
-    /// Parses the data section of assembly code into a TextSection object.
+    /// Parses the text section of assembly code into a TextSection object.
     /// </summary>
     /// <param name="assemblyCodeTextSection"></param>
     /// <returns></returns>
@@ -57,8 +57,7 @@ public readonly struct TextSection : IAssemblySection
                 string labelName = new([.. line.SkipLast(1)]);
                 labelAddressMap.Add(labelName, currentAddress);
                 Logging.LogDebug($"Found label declaration \"{labelName}\" at address {currentAddress:x8}");
-                lines.RemoveAt(i);
-                i--;
+                lines.RemoveAt(i--);
                 continue;
             }
             currentAddress += 2;
@@ -74,15 +73,17 @@ public readonly struct TextSection : IAssemblySection
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses
             string[] words = SplitLineIntoWords(line);
-            bool isRelativeJump =
+            bool isJump =
                 words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
-            bool isRelativeMemOp =
+            bool isLoadStore =
                 words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
                 words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("STRR", StringComparison.OrdinalIgnoreCase);
+                words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase) ||
+                words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase);
+            bool isAbsolute = words[0].EndsWith(".A", StringComparison.OrdinalIgnoreCase);
+
             foreach (string wordWithClutter in words)
             {
                 // Remove possible brackets from constant expressions (which always require brackets to be identifiable as such)
@@ -93,22 +94,71 @@ public readonly struct TextSection : IAssemblySection
                     (labelAddressMap.ContainsKey(word) ? 1 : 0) >= 2)
                     // If at least two of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
                     throw new Exception($"Address label / .data section reference is ambiguous for \"{word}\".");
-
+                
                 if (labelAddressMap.TryGetValue(word, out uint labelAddress))
                 {
-                    if (!isRelativeJump)
+                    if (isJump && isAbsolute)
                         throw new Exception("Cannot jump to absolute address via label, since labels do not represent an absolute address.");
-                    uint labelRelAddress = labelAddress - currentAddress;
+                    // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                    uint labelRelAddress = labelAddress - currentAddress - 2;
                     line = line.Replace(word, labelRelAddress.ToString());
                     Logging.LogDebug($".text replace label \"{word}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
                 }
-                else
+
+                if (!isLoadStore)
+                    continue;
+
+                // The instruction is a load / store instruction possibly using relative addressing modes
+                if (dataSection.FixedLoadAddress.HasValue && fixedLoadAddress.HasValue)
                 {
+                    // Location in memory is static for both .data and .text section
+                    Logging.LogDebug("Both .data and .text section are static in memory.");
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
                     bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
-                    if (!isRelativeMemOp && (isPointer || isBlockPointer))
-                        throw new Exception("Cannot load/store from/to .data section reference, since they are relative and do not possess an absolute address.");
+                    if (isImmediate)
+                    {
+                        uint immediateValue = immediate.Value;
+                        line = line.Replace(word, immediateValue.ToString());
+                        Logging.LogDebug($".text replace immediate \"{word}\" --> {immediateValue:x8}h / {immediateValue}");
+                    }
+                    else if (isPointer && isAbsolute)
+                    {
+                        uint pointerAbsAddress = dataSection.FixedLoadAddress.Value + pointer.Offset;
+                        line = line.Replace(word, pointerAbsAddress.ToString());
+                        Logging.LogDebug($".text replace pointer (A) \"{word}\" --> {pointerAbsAddress:x8}h / {pointerAbsAddress}");
+                    }
+                    else if (isPointer && !isAbsolute)
+                    {
+                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 2;
+                        line = line.Replace(word, pointerRelAddress.ToString());
+                        Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
+                    }
+                    else if (isBlockPointer && isAbsolute)
+                    {
+                        uint blockPointerAbsAddress = dataSection.FixedLoadAddress.Value + blockPointer.Offset;
+                        line = line.Replace(word, blockPointerAbsAddress.ToString());
+                        Logging.LogDebug($".text replace block pointer (A) \"{word}\" --> {blockPointerAbsAddress:x8}h / {blockPointerAbsAddress}");
+                    }
+                    else if (isBlockPointer && !isAbsolute)
+                    {
+                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 2;
+                        line = line.Replace(word, blockPointerRelAddress.ToString());
+                        Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
+                    }
+                }
+                else
+                {
+                    // Location in memory is dynamic for either the .data or the .text section.
+                    // This means that absolute load / stores won't work.
+                    Logging.LogDebug("Either .text or .data section are dynamic.");
+                    bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
+                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
+                    bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
+                    if (isAbsolute && (isPointer || isBlockPointer))
+                        throw new Exception("Cannot infer absolute address of .data section reference, since either or both sections are relocatable.");
                     if (isImmediate)
                     {
                         uint immediateValue = immediate.Value;
@@ -117,15 +167,17 @@ public readonly struct TextSection : IAssemblySection
                     }
                     else if (isPointer)
                     {
-                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size;
+                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 2;
                         line = line.Replace(word, pointerRelAddress.ToString());
-                        Logging.LogDebug($".text replace pointer \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
+                        Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
                     }
                     else if (isBlockPointer)
                     {
-                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size;
+                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 2;
                         line = line.Replace(word, blockPointerRelAddress.ToString());
-                        Logging.LogDebug($".text replace block pointer \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
+                        Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
                     }
                 }
             }
@@ -144,7 +196,7 @@ public readonly struct TextSection : IAssemblySection
                 line = line.Replace("(" + expression + ")", expressionValue.ToString());
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}{(isRelativeJump ? "-RJ" : "")}{(isRelativeMemOp ? "-RM" : "")}] " +
+            Logging.LogDebug($"[{currentAddress:x8}{(isAbsolute ? ".A" : ".R")}] " +
                 $"\"{lineUnparsed}\" -> \"{line}\"");
             words = SplitLineIntoWords(line);
 

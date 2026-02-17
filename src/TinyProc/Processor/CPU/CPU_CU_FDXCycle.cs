@@ -161,7 +161,13 @@ public partial class CPU
                 return;
             }
 
-            // TODO: Handle conditionals here
+            if (_currentInstruction.AddressingMode == AddressingMode.Absolute)
+                Logging.LogDebug("Addressing mode (AM): Absolute");
+            else
+                Logging.LogDebug("Addressing mode (AM): PC-relative");
+
+            Logging.LogDebug($"Extension bit set: {(_currentInstruction.Extension ? "Yes" : "No")}");
+
             ExecuteCurrentInstruction();
 
             // Disable flag setting by ALU
@@ -191,30 +197,44 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.CLNG)  { INSTRUCTION_R_CLNG(); }
                     else if (_currentInstruction.Opcode == Opcode.CLA)   { INSTRUCTION_R_CLA(); }
                     else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
-                    else if (_currentInstruction.Opcode == Opcode.ALDR)  { INSTRUCTION_R_ALDR(); }
-                    else if (_currentInstruction.Opcode == Opcode.LDR)   { INSTRUCTION_R_LDR(); }
-                    else if (_currentInstruction.Opcode == Opcode.ASTRR) { INSTRUCTION_R_ASTRR(); }
-                    else if (_currentInstruction.Opcode == Opcode.STRR)  { INSTRUCTION_R_STRR(); }
                     else if (_currentInstruction.Opcode == Opcode.PUSH)  { INSTRUCTION_R_PUSH(); }
                     else if (_currentInstruction.Opcode == Opcode.POP)   { INSTRUCTION_R_POP(); }
-                    else if (_currentInstruction.Opcode == Opcode.ACALR) { INSTRUCTION_R_ACALR(); }
-                    else if (_currentInstruction.Opcode == Opcode.CALLR) { INSTRUCTION_R_CALLR(); }
+                    else if (_currentInstruction.Opcode == Opcode.LDR &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_LDR_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.LDR &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_LDR_R(); }
+                    else if (_currentInstruction.Opcode == Opcode.STR &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_STR_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.STR &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_STR_R(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALLR &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_CALLR_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALLR &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_CALLR_R(); }
                     break;
 
                 case InstructionType.Immediate:
                     if      (_currentInstruction.Opcode == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
-                    else if (_currentInstruction.Opcode == Opcode.ALD)   { INSTRUCTION_I_ALD(); }
-                    else if (_currentInstruction.Opcode == Opcode.LD)    { INSTRUCTION_I_LD(); }
-                    else if (_currentInstruction.Opcode == Opcode.ASTR)  { INSTRUCTION_I_ASTR(); }
-                    else if (_currentInstruction.Opcode == Opcode.STR)   { INSTRUCTION_I_STR(); }
+                    else if (_currentInstruction.Opcode == Opcode.LD &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_I_LD_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.LD &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_I_LD_R(); }
+                    else if (_currentInstruction.Opcode == Opcode.ST &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_I_ST_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.ST &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_I_ST_R(); }
                     break;
 
                 case InstructionType.Jump:
                     if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
-                    else if (_currentInstruction.Opcode == Opcode.AJMP)  { INSTRUCTION_J_AJMP(); }
-                    else if (_currentInstruction.Opcode == Opcode.JMP)   { INSTRUCTION_J_JMP(); }
-                    else if (_currentInstruction.Opcode == Opcode.ACALL) { INSTRUCTION_J_ACALL(); }
-                    else if (_currentInstruction.Opcode == Opcode.CALL)  { INSTRUCTION_J_CALL(); }
+                    else if (_currentInstruction.Opcode == Opcode.JMP &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_J_JMP_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.JMP &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_J_JMP_R(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALL &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_J_CALL_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.CALL &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_J_CALL_R(); }
                     else if (_currentInstruction.Opcode == Opcode.RET)   { INSTRUCTION_J_RET(); }
                     else if (_currentInstruction.Opcode == Opcode.INT)   { INSTRUCTION_J_INT(); }
                     else if (_currentInstruction.Opcode == Opcode.IRET)  { INSTRUCTION_J_IRET(); }

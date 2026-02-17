@@ -32,13 +32,13 @@ _start:
 
 dostuff:
     ld    gp1, (hello_world_msg + 0)
-    astr  gp1, 0x30000000
+    st.a  gp1, 0x30000000
     ld    gp1, (hello_world_msg + 1)
-    astr  gp1, 0x30000001
+    st.a  gp1, 0x30000001
     ld    gp1, (hello_world_msg + 2)
-    astr  gp1, 0x30000002
+    st.a  gp1, 0x30000002
     ld    gp1, (hello_world_msg + 3)
-    astr  gp1, 0x30000003
+    st.a  gp1, 0x30000003
     jmp   _halt
     ; Alternative variant using software interrupts:
 

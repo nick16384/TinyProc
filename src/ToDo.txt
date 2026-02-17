@@ -29,42 +29,38 @@ Future (unplanned) ToDo's:
    Potential fix: Enable write on setting EnableWrite only and not during bus updates.
 - Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
 - Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
+- Add interrupt queue?
 
-Upcoming / In progress ToDo's:
+Upcoming ToDo's:
+Fix GUI for new CPU arch:
 - Fix occasional TaskCanceledException on app exit
 - Fix GUI errors popping up behind the main window
-
-- Implement new assembly syntax (v3.0) [done]
-
-- ASMv3: Fixes [in progress]
--> Make empty .data section possible (still requires definition, but does not need lines afterwards) [done]
--> Check no attributes work too [done]
--> TS: Every time a memory op needs to be done, shift target address if fixed
--> Implement attribute "inline = all" (expects only immediate values, does not create a .data section in memory, but instead
-   writes immediate values directly into the operands of instructions)
--> When writing assembly in the GUI, use "direct" mode (instructions only, no .data section and header)
+- When writing assembly in the GUI, use "direct" mode (instructions only, no .data section and header)
 --> Optionally make header usable; When header detected, switch to full assembly mode (requires header, .data and .text)
--> Add constant value registers in assembly (for whatever reason?)
--> Revise "STORE" instruction: It requires an immediate and an address, however, only one of them fits in the 32 bit operand 2
--> Find out why the heck random instructions add 0x100 to their operands (e.g. jmp [textsection] in loader)
--> Add ajmp/rjmp/acall/rcall instructions (absolute / relative jump; Removes necessity to readjust memory locations;
-   Assembler only needs to determine relative positions of labels and calls/jumps are always relative e.g. jmpr _label)
--> For AOPI, swap operands! (e.g. AB_SubtractionSigned => BA_SubtractionSigned)
-- Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
-- Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
+- Fix disassembler
 
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
-- Implement stack and call, ret, int, and iret [done]
 - Implement +[reserve: XYZ] for ASMv3 pointers
-- Verify relative load/store working
--> Assembler should still respect absolute load addresses (when requested explicitly via __attribute__)
--> The loader needs to be rewritten
 
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set
 -> Trigger double fault when NMI is triggered when Interrupted flag is already set
 
-- Add interrupt queue?
+In-progress ToDo's:
+- Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
+- Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
+- Revise absolute/relative instruction mnemonics (append memory addressing mode)
+- Addressing modes:
+-> Don't subtract 2, makes execution faster and seems to be convention (adjust assembler for this)
+-> For PC-relative instructions (J/R), add a "PC-relative" bit in the instruction encoding
+-> Addressing modes:
+->> .A (direct, absolute)
+->> .R (PC-relative)
+->> .RA (register absolute)
+->> .RR (registe relative)
+->> Append addressing mode to opcode (Assembler: First, separate instruction at possible dot, then do conditional checking!)
+-> Assembler should still respect absolute load addresses (when requested explicitly via __attribute__)
+-> The loader needs to be rewritten
 
 Changes for CPU 0.3-indev:
 - Added stack and SP
@@ -77,4 +73,5 @@ Changes for CPU 0.3-indev:
   2. .data and .text sections loaded after another
 - Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added ACALR and CALLR
 
+Naming ideas:
 Useless neglibly simple computer emulator (UNSC-E)

@@ -17,16 +17,12 @@ Instruction set:
 00 - NOP : Do nothing
 
 Branching:
-01 - AJMP [Target address] : Jump to absolute address
-02 - JMP [Target offset] : Jump to address relative to PC-2
-03 - ACALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
-04 - CALL [Target offset] : Call a subroutine relative to PC-2
-05 - ACALR [Register with target address]
-06 - CALLR [Register with target offset]
-07 - RET : Returns from subroutine (restores previous state by popping data on the stack)
-08 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
-09 - IRET : Special instruction to return from interrupt subroutine
-
+01 - JMP [Target address] : Jump to address
+02 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+03 - CALLR [Register with target offset] : Call subroutine at address in register
+04 - RET : Returns from subroutine (restores previous state by popping data on the stack)
+05 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
+06 - IRET : Special instruction to return from interrupt subroutine
 
 Inter-register non-arithmetic operations:
 0A - TST : Test command; Sets all flags
@@ -56,17 +52,13 @@ MUL, XOR, LS, RS, SRS, ROL, ROR
 Add documentation for which flags get set by instructions
 
 Memory:
-30 - ALD [Destination register] [Memory address] : Load memory at address to register
-31 - LD [Destination register] [Memory offset] : Load memory at PC-2+offset to register
-32 - ALDR [Destination register] [Memory offset from register]
-33 - LDR [Destination register] [Memory address from register]
-34 - ASTR [Source register] [Memory address] : Store register at memory address
-35 - STR [Source register] [Memory offset] : Store register at PC-2+offset
-36 - ASTRR [Source register] [Memory address from register]
-37 - STRR [Source register] [Memory offset from register]
+30 - LD [Destination register] [Memory address] : Load memory at address to register
+31 - LDR [Destination register] [Memory address from register] : Load memory from address in register
+32 - ST [Source register] [Memory address] : Store register at memory address
+33 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
 (Does it make sense, that store instructions have destination / source syntax swapped? Revise!)
-38 - PUSH [Source register]
-39 - POP  [Destination register]
+34 - PUSH [Source register]
+35 - POP  [Destination register]
 
 3F - <Highest possible value for opcode>
 
@@ -90,18 +82,21 @@ F - <Highest possible value for conditional>
 
 Instruction bit structure:
 R-Type (Register type)
-[ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 5 Reserved* | 1 Word Extension** ] [ 32 Zero* ]
+[ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 4 Reserved* | 1 Addressing mode (AM) | 1 Word Extension** ] [ 32 Zero* ]
 RD: Destination register
 RS: Source register
 ALU: A(RD) [Op] B(RS) --> R(RD)
+AM: 0: Absolute // 1: PC-relative (Only relevant for load / store)
 
 I-Type (Immediate type):
-[ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 10 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+[ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 9 Reserved* | 1 Addressing mode (AM) | 1 Word Extension** ] [ 32 Immediate value ]
 ALU: A(I) [Op] B(RD) --> R(RD)
+AM: 0: Absolute // 1: PC-relative (Only relevant for load / store)
 
 J-Type (Jump type):
-[ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]
+[ 6 OpCode | 4 Conditional | 20 Reserved* | 1 Addressing mode (AM) | 1 Word extension** ] [ 32 Address ]
 Address: Absolute memory address to jump to
+AM: 0: Absolute // 1: PC-relative (Relevant for branching instructions)
 
 * Reserved & Zero region: Zeroed out / Filled with 0x0 bytes
 ** Word Extension: Extend to 64 bit instruction (To be implemented later, currently always in use -> Always set to 1)

@@ -25,21 +25,21 @@ immediate VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     ; One interrupt occupies 1 vector, of which there are 256 (starting at address 0x00010000).
     ; By default, every handler points to the address 0, where the reset code is located, causing a reset loop.
     MOV   gp1, 0x00000000
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_RESET)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_DOUBLE_FAULT)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_UNKNOWN_INSTRUCTION)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_INVALID_ADDRESS)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_STACK_OVERFLOW)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_ILLEGAL_SECURE_MEMORY_WRITE)
-    ASTR  gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_RESET)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_DOUBLE_FAULT)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_UNKNOWN_INSTRUCTION)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_INVALID_ADDRESS)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_STACK_OVERFLOW)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_ILLEGAL_SECURE_MEMORY_WRITE)
+    ST.A  gp1, (SHIT_BASE_OFFSET + VECTOR_DIVISION_BY_ZERO)
 
     ; Save the SHIT base offset at address 0xFF
     MOV   gp1, SHIT_BASE_OFFSET
-    ASTR  gp1, 0x00010100
+    ST.A  gp1, 0x00010100
 
     ; Set, then clear all flags
     TST
     CLA
 
     ; Jump to the loader
-    AJMP  0x00000100
+    JMP.A 0x00000100

@@ -9,6 +9,8 @@ public sealed partial class Instructions
 
     private const uint BITMASK_OPCODE      = 0b11111100_00000000_00000000_00000000;
     private const uint BITMASK_CONDITIONAL = 0b00000011_11000000_00000000_00000000;
+    private const uint BITMASK_ADRMODE     = 0b00000000_00000000_00000000_00000010;
+    private const uint BITMASK_EXTENSION   = 0b00000000_00000000_00000000_00000001;
 
     // R-Type specific
     private const uint BITMASK_R_RDEST     = 0b00000000_00111110_00000000_00000000;
@@ -20,13 +22,18 @@ public sealed partial class Instructions
     private const uint BITMASK_I_ALUOP     = 0b00000000_00000001_11111000_00000000;
         
     // J-Type specific
-    // Doesn't need bitmasks for low bytes (Only paremeter is address in high byte)
+    // None
 
     public enum InstructionType
     {
-        Register,
-        Immediate,
-        Jump
+        Register = 0,
+        Immediate = 1,
+        Jump = 2
+    }
+    public enum AddressingMode
+    {
+        Absolute = 0,
+        PCRelative = 1
     }
 
     private static uint ExtractWithBitmaskAndShiftRight(uint original, uint bitmask)
@@ -38,15 +45,12 @@ public sealed partial class Instructions
         return (original & bitmask) >> shiftRightAmount;
     }
 
-    public static InstructionType DetermineInstructionType(uint lowBytes)
+    public static InstructionType DetermineInstructionType(uint lowWord)
     {
-        Opcode opcode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_OPCODE);
+        Opcode opcode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_OPCODE);
         if      (opcode == Opcode.NOP)   { return InstructionType.Jump; }
-        else if (opcode == Opcode.AJMP)  { return InstructionType.Jump; }
         else if (opcode == Opcode.JMP)   { return InstructionType.Jump; }
-        else if (opcode == Opcode.ACALL) { return InstructionType.Jump; }
         else if (opcode == Opcode.CALL)  { return InstructionType.Jump; }
-        else if (opcode == Opcode.ACALR) { return InstructionType.Register; }
         else if (opcode == Opcode.CALLR) { return InstructionType.Register; }
         else if (opcode == Opcode.RET)   { return InstructionType.Jump; }
         else if (opcode == Opcode.INT)   { return InstructionType.Jump; }
@@ -59,14 +63,9 @@ public sealed partial class Instructions
         else if (opcode == Opcode.CLOF)  { return InstructionType.Register; }
         else if (opcode == Opcode.CLNG)  { return InstructionType.Register; }
         else if (opcode == Opcode.CLA)   { return InstructionType.Register; }
-        else if (opcode == Opcode.ALD)   { return InstructionType.Immediate; }
         else if (opcode == Opcode.LD)    { return InstructionType.Immediate; }
-        else if (opcode == Opcode.ALDR)  { return InstructionType.Register; }
         else if (opcode == Opcode.LDR)   { return InstructionType.Register; }
-        else if (opcode == Opcode.ASTR)  { return InstructionType.Immediate; }
         else if (opcode == Opcode.STR)   { return InstructionType.Immediate; }
-        else if (opcode == Opcode.ASTRR) { return InstructionType.Register; }
-        else if (opcode == Opcode.STRR)  { return InstructionType.Register; }
         else if (opcode == Opcode.PUSH)  { return InstructionType.Register; }
         else if (opcode == Opcode.POP)   { return InstructionType.Register; }
         
@@ -109,7 +108,9 @@ public sealed partial class Instructions
     {
         public Opcode Opcode { get; }
         public Condition Conditional { get; }
+        public AddressingMode AddressingMode { get; }
         public InstructionType InstructionType { get; }
+        public bool Extension { get; }
         public (uint, uint) BinaryRepresentation
         {
             get
@@ -124,6 +125,10 @@ public sealed partial class Instructions
             }
         }
         
+        // Specify access interface to different instruction types via one interface.
+        // This is done via access methods, whose default behavior is to throw an exception and only the appropriate
+        // instruction types override these functions to return their respective values.
+
         // Register-Type only
         public AddressableRegisterCode R_AddressableDestRegCode
         { get => throw new Exception("This instruction is not a Reg-Reg-Type instruction; It has no R-Type destination register code."); }
@@ -151,48 +156,56 @@ public sealed partial class Instructions
     // Register type instruction
     public readonly struct RegRegInstruction(Opcode opcode, Condition conditional,
         AddressableRegisterCode destRegCode, AddressableRegisterCode srcRegCode,
-        ALU.ALUOpcode aluOpcode) : IInstruction
+        ALU.ALUOpcode aluOpcode, AddressingMode adrMode) : IInstruction
     {
         public readonly Opcode Opcode { get; } = opcode;
         public readonly Condition Conditional { get; } = conditional;
+        public readonly AddressingMode AddressingMode { get; } = adrMode;
+        public readonly bool Extension { get; } = true;
 
         public readonly InstructionType InstructionType { get; } = InstructionType.Register;
         public readonly AddressableRegisterCode R_AddressableDestRegCode { get; } = destRegCode;
         public readonly AddressableRegisterCode R_AddressableSrcRegCode { get; } = srcRegCode;
         public readonly ALU.ALUOpcode R_ALUOpcode { get; } = aluOpcode;
+        public readonly AddressingMode R_AddressingMode { get; } = adrMode;
 
         // Explicit cast from binary instruction tuple to RegRegInstruction
         public static explicit operator RegRegInstruction((uint, uint) instructionTuple)
         {
-            uint lowBytes = instructionTuple.Item1;
-            uint highBytes = instructionTuple.Item2;
-            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_OPCODE);
-            Condition conditional = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_CONDITIONAL);
-            AddressableRegisterCode destRegCode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_R_RDEST);
-            AddressableRegisterCode srcRegCode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_R_RSOURCE);
-            ALU.ALUOpcode aluOpcode = GetALUOpcodeFromUInt(ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_R_ALUOP));
-            return new RegRegInstruction(opcode, conditional, destRegCode, srcRegCode, aluOpcode);
+            uint lowWord = instructionTuple.Item1;
+            uint highWord = instructionTuple.Item2;
+            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_OPCODE);
+            Condition conditional = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_CONDITIONAL);
+            AddressableRegisterCode destRegCode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_R_RDEST);
+            AddressableRegisterCode srcRegCode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_R_RSOURCE);
+            ALU.ALUOpcode aluOpcode = GetALUOpcodeFromUInt(ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_R_ALUOP));
+            AddressingMode adrMode = (AddressingMode)ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_ADRMODE);
+            return new RegRegInstruction(opcode, conditional, destRegCode, srcRegCode, aluOpcode, adrMode);
         }
         // Explicit cast from RegRegInstruction to binary instruction tuple
         public static explicit operator (uint, uint)(RegRegInstruction instruction)
         {
-            uint lowBytes = 0x0u;
-            uint highBytes = 0x0u;
-            lowBytes |= instruction.Opcode <<      (32 - 6);
-            lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            lowBytes |= instruction.R_AddressableDestRegCode << (32 - 6 - 4 - 5);
-            lowBytes |= instruction.R_AddressableSrcRegCode <<  (32 - 6 - 4 - 5 - 5);
-            lowBytes |= GetUIntFromALUOpcode(instruction.R_ALUOpcode) << (32 - 6 - 4 - 5 - 5 - 6);
-            return (lowBytes, highBytes);
+            uint lowWord = 0x0u;
+            uint highWord = 0x0u;
+            lowWord |= instruction.Opcode <<      (32 - 6);
+            lowWord |= instruction.Conditional << (32 - 6 - 4);
+            lowWord |= instruction.R_AddressableDestRegCode << (32 - 6 - 4 - 5);
+            lowWord |= instruction.R_AddressableSrcRegCode <<  (32 - 6 - 4 - 5 - 5);
+            lowWord |= GetUIntFromALUOpcode(instruction.R_ALUOpcode) << (32 - 6 - 4 - 5 - 5 - 6);
+            lowWord |= (uint)instruction.R_AddressingMode << (32 - 6 - 4 - 5 - 5 - 6 - 4 - 1);
+            lowWord |= 0x1u << (32 - 6 - 4 - 5 - 5 - 6 - 4 - 1 - 1);
+            return (lowWord, highWord);
         }
     }
 
     // Immediate type instruction
     public readonly struct RegImmInstruction(Opcode opcode, Condition conditional,
-        AddressableRegisterCode destRegCode, ALU.ALUOpcode aluOpcode, uint immediate) : IInstruction
+        AddressableRegisterCode destRegCode, ALU.ALUOpcode aluOpcode, AddressingMode adrMode, uint immediate) : IInstruction
     {
         public readonly Opcode Opcode { get; } = opcode;
         public readonly Condition Conditional { get; } = conditional;
+        public readonly AddressingMode AddressingMode { get; } = adrMode;
+        public readonly bool Extension { get; } = true;
 
         public readonly InstructionType InstructionType { get; } = InstructionType.Immediate;
         public readonly AddressableRegisterCode I_AddressableDestRegCode { get; } = destRegCode;
@@ -202,57 +215,66 @@ public sealed partial class Instructions
         // Explicit cast from binary instruction tuple to RegImmInstruction
         public static explicit operator RegImmInstruction((uint, uint) instructionTuple)
         {
-            uint lowBytes = instructionTuple.Item1;
-            uint highBytes = instructionTuple.Item2;
-            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_OPCODE);
-            Condition conditional = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_CONDITIONAL);
-            AddressableRegisterCode destRegCode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_I_RDEST);
-            ALU.ALUOpcode aluOpcode = GetALUOpcodeFromUInt(ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_I_ALUOP));
-            uint immediateValue = highBytes;
-            return new RegImmInstruction(opcode, conditional, destRegCode, aluOpcode, immediateValue);
+            uint lowWord = instructionTuple.Item1;
+            uint highWord = instructionTuple.Item2;
+            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_OPCODE);
+            Condition conditional = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_CONDITIONAL);
+            AddressableRegisterCode destRegCode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_I_RDEST);
+            ALU.ALUOpcode aluOpcode = GetALUOpcodeFromUInt(ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_I_ALUOP));
+            AddressingMode adrMode = (AddressingMode)ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_ADRMODE);
+            uint immediateValue = highWord;
+            return new RegImmInstruction(opcode, conditional, destRegCode, aluOpcode, adrMode, immediateValue);
         }
         // Explicit cast from RegImmInstruction to binary instruction tuple
         public static explicit operator (uint, uint)(RegImmInstruction instruction)
         {
-            uint lowBytes = 0x0u;
-            uint highBytes = 0x0u;
-            lowBytes |= instruction.Opcode <<      (32 - 6);
-            lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            lowBytes |= instruction.I_AddressableDestRegCode << (32 - 6 - 4 - 5);
-            lowBytes |= GetUIntFromALUOpcode(instruction.I_ALUOpcode) << (32 - 6 - 4 - 5 - 6);
-            highBytes = instruction.I_ImmediateValue;
-            return (lowBytes, highBytes);
+            uint lowWord = 0x0u;
+            uint highWord = 0x0u;
+            lowWord |= instruction.Opcode <<      (32 - 6);
+            lowWord |= instruction.Conditional << (32 - 6 - 4);
+            lowWord |= instruction.I_AddressableDestRegCode << (32 - 6 - 4 - 5);
+            lowWord |= GetUIntFromALUOpcode(instruction.I_ALUOpcode) << (32 - 6 - 4 - 5 - 6);
+            lowWord |= (uint)instruction.AddressingMode << (32 - 6 - 4 - 5 - 6 - 9 - 1);
+            lowWord |= 0x1u << (32 - 6 - 4 - 5 - 6 - 9 - 1 - 1);
+            highWord = instruction.I_ImmediateValue;
+            return (lowWord, highWord);
         }
     }
 
     // Jump type instruction
-    public readonly struct JumpInstruction(Opcode opcode, Condition conditional, uint jumpTargetAddress) : IInstruction
+    public readonly struct JumpInstruction(Opcode opcode, Condition conditional, AddressingMode adrMode, uint jumpTargetAddress) : IInstruction
     {
         public readonly Opcode Opcode { get; } = opcode;
         public readonly Condition Conditional { get; } = conditional;
+        public readonly AddressingMode AddressingMode { get; } = adrMode;
+        public readonly bool Extension { get; } = true;
 
         public readonly InstructionType InstructionType { get; } = InstructionType.Jump;
         public readonly uint J_JumpTargetAddress { get; } = jumpTargetAddress;
+        public readonly AddressingMode J_AddressingMode { get; } = adrMode;
 
         // Explicit cast from binary instruction tuple to JumpInstruction
         public static explicit operator JumpInstruction((uint, uint) instructionTuple)
         {
-            uint lowBytes = instructionTuple.Item1;
-            uint highBytes = instructionTuple.Item2;
-            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_OPCODE);
-            Condition conditional = ExtractWithBitmaskAndShiftRight(lowBytes, BITMASK_CONDITIONAL);
-            uint jumpTargetAddress = highBytes;
-            return new JumpInstruction(opcode, conditional, jumpTargetAddress);
+            uint lowWord = instructionTuple.Item1;
+            uint highWord = instructionTuple.Item2;
+            Opcode opcode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_OPCODE);
+            Condition conditional = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_CONDITIONAL);
+            AddressingMode adrMode = (AddressingMode)ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_ADRMODE);
+            uint jumpTargetAddress = highWord;
+            return new JumpInstruction(opcode, conditional, adrMode, jumpTargetAddress);
         }
         // Explicit cast from JumpInstruction to binary instruction tuple
         public static explicit operator (uint, uint)(JumpInstruction instruction)
         {
-            uint lowBytes = 0x0u;
-            uint highBytes = 0x0u;
-            lowBytes |= instruction.Opcode <<      (32 - 6);
-            lowBytes |= instruction.Conditional << (32 - 6 - 4);
-            highBytes = instruction.J_JumpTargetAddress;
-            return (lowBytes, highBytes);
+            uint lowWord = 0x0u;
+            uint highWord = 0x0u;
+            lowWord |= instruction.Opcode <<      (32 - 6);
+            lowWord |= instruction.Conditional << (32 - 6 - 4);
+            lowWord |= (uint)instruction.J_AddressingMode << (32 - 6 - 4 - 20 - 1);
+            lowWord |= 0x1u << (32 - 6 - 4 - 20 - 1 - 1);
+            highWord = instruction.J_JumpTargetAddress;
+            return (lowWord, highWord);
         }
     }
 }

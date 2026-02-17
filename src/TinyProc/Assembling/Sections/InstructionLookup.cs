@@ -26,24 +26,16 @@ public sealed class InstructionLookup
 		{ ("OR",    Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalOR) },
 		{ ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
 
-		{ ("ALD",   Instructions.InstructionType.Immediate), (Instructions.Opcode.ALD,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("LD",    Instructions.InstructionType.Immediate), (Instructions.Opcode.LD,    DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ALDR",  Instructions.InstructionType.Register),  (Instructions.Opcode.ALDR,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("LDR",   Instructions.InstructionType.Register),  (Instructions.Opcode.LDR,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ASTR",  Instructions.InstructionType.Immediate), (Instructions.Opcode.ASTR,  DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("STR",   Instructions.InstructionType.Immediate), (Instructions.Opcode.STR,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ASTRR", Instructions.InstructionType.Register),  (Instructions.Opcode.ASTRR, DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("STRR",  Instructions.InstructionType.Register),  (Instructions.Opcode.STRR,  DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ST",   Instructions.InstructionType.Immediate),  (Instructions.Opcode.ST,    DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("STR",  Instructions.InstructionType.Register),   (Instructions.Opcode.STR,   DEFAULT_EMPTY_ALU_OPCODE) },
 
 		{ ("PUSH",  Instructions.InstructionType.Register),  (Instructions.Opcode.PUSH,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("AJMP",  Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("AB",    Instructions.InstructionType.Jump),      (Instructions.Opcode.AJMP,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ACALL", Instructions.InstructionType.Jump),      (Instructions.Opcode.ACALL, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("CALL",  Instructions.InstructionType.Jump),      (Instructions.Opcode.CALL,  DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ACALR", Instructions.InstructionType.Register),  (Instructions.Opcode.ACALR, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("CALLR", Instructions.InstructionType.Register),  (Instructions.Opcode.CALLR, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("RET",   Instructions.InstructionType.Jump),      (Instructions.Opcode.RET,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("INT",   Instructions.InstructionType.Jump),      (Instructions.Opcode.INT,   DEFAULT_EMPTY_ALU_OPCODE) },
@@ -58,6 +50,28 @@ public sealed class InstructionLookup
 
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words)
 	{
+		// Parse addressing mode suffix (.A for absolute, .R for relative)
+		string addressingModeSuffix = words[0].Split(".").Length > 1 ? words[0].Split(".")[1].ToUpper() : "";
+		Instructions.AddressingMode adrMode = Instructions.AddressingMode.PCRelative;
+		if (string.IsNullOrEmpty(addressingModeSuffix))
+		{
+			Logging.LogDebug("No addressing mode suffix found. Assuming PC-relative or ignoring depending on context.");
+		}
+		else if (addressingModeSuffix == "R")
+		{
+			Logging.LogDebug("Addressing mode is PC-relative");
+			adrMode = Instructions.AddressingMode.PCRelative;
+			words[0] = words[0][..^2];
+		}
+		else if (addressingModeSuffix == "A")
+		{
+			Logging.LogDebug("Addressing mode is absolute");
+			adrMode = Instructions.AddressingMode.Absolute;
+			words[0] = words[0][..^2];
+		}
+		else
+			throw new Exception($"Unknown addressing mode suffix \".{addressingModeSuffix}\"");
+		
 		string mnemonic = words[0].ToUpper();
 
 		Instructions.Condition conditional = Instructions.Condition.ALWAYS;
@@ -100,24 +114,16 @@ public sealed class InstructionLookup
 		else if (mnemonic == "AND" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "OR" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "OR" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ALD") { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "LD") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "ALDR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "LDR") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ASTR") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "STR") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "ASTRR") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "STRR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ST") { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "STR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "AJMP") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "AB") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "B") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "ACALL") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "CALL") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "ACALR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CALLR") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "RET") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "INT") { type = Instructions.InstructionType.Jump; }
@@ -127,15 +133,15 @@ public sealed class InstructionLookup
 		Logging.LogDebug($"Type: {type}");
 		return type switch
 		{
-			Instructions.InstructionType.Register => RegRegInstructionLookup(words, conditional),
-			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, conditional),
-			Instructions.InstructionType.Jump => JumpInstructionLookup(words, conditional),
+			Instructions.InstructionType.Register => RegRegInstructionLookup(words, adrMode, conditional),
+			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, adrMode, conditional),
+			Instructions.InstructionType.Jump => JumpInstructionLookup(words, adrMode, conditional),
 			_ => throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.")
 		};
 	}
 
     private static Instructions.RegRegInstruction RegRegInstructionLookup(
-		string[] words, Instructions.Condition conditional)
+		string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
 	{
 		string mnemonic = words[0].ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Register)].Item1;
@@ -143,22 +149,24 @@ public sealed class InstructionLookup
 
 		return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALDR" or "LDR" or "ASTRR" or "STRR"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LDR" or "STR"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
 					(Instructions.AddressableRegisterCode)words[2],
-					aluOpcode
+					aluOpcode,
+					adrMode
 				),
 			
-			"PUSH" or "ACALR" or "CALLR"
+			"PUSH" or "CALLR"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
 					DEFAULT_UNUSED_REGISTER,
-					aluOpcode
+					aluOpcode,
+					adrMode
 				),
 
 			"POP"
@@ -167,7 +175,8 @@ public sealed class InstructionLookup
 					conditional,
 					DEFAULT_UNUSED_REGISTER,
 					(Instructions.AddressableRegisterCode)words[1],
-					aluOpcode
+					aluOpcode,
+					adrMode
 				),
 			
 			"TST" or "CLC" or "CLZ" or "CLOF" or "CLNG" or "CLA"
@@ -176,7 +185,8 @@ public sealed class InstructionLookup
 					conditional,
 					DEFAULT_UNUSED_REGISTER,
 					DEFAULT_UNUSED_REGISTER,
-					aluOpcode
+					aluOpcode,
+					adrMode
 				),
 
 			// No INC / DEC; They are exclusively immediate type instructions
@@ -194,7 +204,7 @@ public sealed class InstructionLookup
 	public static readonly Instructions.AddressableRegisterCode DEFAULT_UNUSED_REGISTER = (Instructions.AddressableRegisterCode)0x0u;
 
     private static Instructions.RegImmInstruction RegImmInstructionLookup(
-        string[] words, Instructions.Condition conditional)
+        string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
     {
         string mnemonic = words[0].ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Immediate)].Item1;
@@ -202,12 +212,13 @@ public sealed class InstructionLookup
 
         return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "ALD" or "LD" or "ASTR" or "STR"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST"
 				=> new Instructions.RegImmInstruction(
 					opcode,
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
 					aluOpcode,
+					adrMode,
 					ConvertStringToUInt(words[2])),
 			
 			// For LOAD and STORE instructions:
@@ -219,6 +230,7 @@ public sealed class InstructionLookup
 					conditional,
 					(Instructions.AddressableRegisterCode)words[1],
 					aluOpcode,
+					adrMode,
 					IMMEDIATE_DEFAULT_VALUE),
 
 			_ => throw new ArgumentException($"Lookup for instruction mnemonic {mnemonic} failed. No associated I-Type instruction.")
@@ -226,7 +238,7 @@ public sealed class InstructionLookup
     }
 
     private static Instructions.JumpInstruction JumpInstructionLookup(
-        string[] words, Instructions.Condition conditional)
+        string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
     {
         string mnemonic = words[0].ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Jump)].Item1;
@@ -237,18 +249,21 @@ public sealed class InstructionLookup
 			"NOP" => new Instructions.JumpInstruction(
 					opcode,
 					conditional,
+					adrMode,
 					IMMEDIATE_DEFAULT_VALUE),
 
-			"AJMP" or "JMP" or "AB" or "B" or "ACALL" or "CALL" or "INT"
+			"JMP" or "B" or "CALL" or "INT"
 				=> new Instructions.JumpInstruction(
 					opcode,
 					conditional,
+					adrMode,
 					ConvertStringToUInt(words[1])),
 			
 			"RET" or "IRET"
 				=> new Instructions.JumpInstruction(
 					opcode,
 					conditional,
+					adrMode,
 					IMMEDIATE_DEFAULT_VALUE
 				),
 
