@@ -18,7 +18,7 @@ public readonly struct DataSection(uint? fixedLoadAddress,
             uint immediateValuesTotalSize = 0, pointersTotalSize = 0, blocksTotalSize = 0;
             immediateValuesTotalSize = (uint)immediateValues.Count;
             if (pointers.Count > 0)
-                pointersTotalSize = (uint)pointers.Select(ptr => ptr.Value.Data.Length).Sum();
+                pointersTotalSize = (uint)pointers.Sum(ptr => ptr.Value.Data.Length);
             if (blockPointers.Count > 0)
                 blocksTotalSize = blockPointers.Select(blk => blk.Value.Size).Aggregate((x, y) => x + y);
             return immediateValuesTotalSize + pointersTotalSize + blocksTotalSize;
@@ -195,7 +195,7 @@ public readonly struct DataSection(uint? fixedLoadAddress,
         Logging.LogDebug(
             $"Successfully parsed {immediateValues.Count} immediate value(s) and " +
             $"{pointers.Count} pointer(s) with a total size of " +
-            $"{immediateValues.Count + pointers.Select(ptr => ptr.Value.Data.Length).Sum()} " +
+            $"{immediateValues.Count + pointers.Sum(ptr => ptr.Value.Data.Length)} " +
             "words.");
 
         uint currentOffset = 0;

@@ -315,11 +315,29 @@ public partial class CPU
         }
         private void INSTRUCTION_R_CALLR_A()
         {
-            throw new NotImplementedException();
+            Logging.LogDebug(
+                $"Absolute call subroutine at address in register Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}]");
+            PushOntoStack(InternalRegisterCode.RCODE_SR);
+            PushOntoStack(InternalRegisterCode.RCODE_PC);
+
+            _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
         }
         private void INSTRUCTION_R_CALLR_R()
         {
-            throw new NotImplementedException();
+            Logging.LogDebug(
+                $"Relative call subroutine at offset in register Src:{_currentInstruction.R_SrcRegCode}" +
+                $"[{CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}] " +
+                $"from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}");
+            
+            _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
+            ResetBus3();
         }
         private void INSTRUCTION_J_RET()
         {

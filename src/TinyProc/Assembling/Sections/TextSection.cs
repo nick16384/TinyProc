@@ -2,6 +2,7 @@ using static TinyProc.Processor.Instructions;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
 using System.Data;
+using System.Text.RegularExpressions;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -67,27 +68,23 @@ public readonly struct TextSection : IAssemblySection
         foreach (string lineUnparsed in lines)
         {
             Logging.NewlineDebug();
+            Logging.LogDebug($"Parsing line: {lineUnparsed}");
             string line = lineUnparsed;
             // Replace occurrences of immediate value / pointer identifiers of the .data section
             // with their corresponding numeric value.
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses
             string[] words = SplitLineIntoWords(line);
-            bool isJump =
-                words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
-            bool isLoadStore =
-                words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase) ||
-                words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase);
-            bool isAbsolute = words[0].EndsWith(".A", StringComparison.OrdinalIgnoreCase);
+            AddressingMode? adrMode = null;
+            if (InstructionLookup.IsJumpInstruction(words) || InstructionLookup.IsLoadStoreInstruction(words))
+                adrMode = AddressingMode.Absolute;
 
-            foreach (string wordWithClutter in words)
+            foreach (string wordWithClutter in words.SelectMany(word => word.Split(" ")))
             {
                 // Remove possible brackets from constant expressions (which always require brackets to be identifiable as such)
-                string word = wordWithClutter.Trim().Replace("(", "").Replace(")", "");
+                string word = wordWithClutter;
+                foreach (string symbolStrip in (IEnumerable<string>)["(", ")", "[", "]"])
+                    word = word.Replace(symbolStrip, "");
                 if ((dataSection.ImmediateValues.ContainsKey(word) ? 1 : 0) +
                     (dataSection.Pointers.ContainsKey(word) ? 1 : 0) +
                     (dataSection.BlockPointers.ContainsKey(word) ? 1 : 0) +
@@ -97,22 +94,19 @@ public readonly struct TextSection : IAssemblySection
                 
                 if (labelAddressMap.TryGetValue(word, out uint labelAddress))
                 {
-                    if (isJump && isAbsolute)
-                        throw new Exception("Cannot jump to absolute address via label, since labels do not represent an absolute address.");
                     // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                     uint labelRelAddress = labelAddress - currentAddress - 2;
                     line = line.Replace(word, labelRelAddress.ToString());
+                    adrMode = AddressingMode.PCRelative;
                     Logging.LogDebug($".text replace label \"{word}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
                 }
 
-                if (!isLoadStore)
-                    continue;
-
                 // The instruction is a load / store instruction possibly using relative addressing modes
-                if (dataSection.FixedLoadAddress.HasValue && fixedLoadAddress.HasValue)
+                if (dataSection.FixedLoadAddress.HasValue)
                 {
                     // Location in memory is static for both .data and .text section
-                    Logging.LogDebug("Both .data and .text section are static in memory.");
+                    // (since .text is loaded immediately after .data, only check for .data is necessary)
+                    // ==> Use absolute addressing
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
                     bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
@@ -122,43 +116,31 @@ public readonly struct TextSection : IAssemblySection
                         line = line.Replace(word, immediateValue.ToString());
                         Logging.LogDebug($".text replace immediate \"{word}\" --> {immediateValue:x8}h / {immediateValue}");
                     }
-                    else if (isPointer && isAbsolute)
+                    else if (isPointer)
                     {
+                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                         uint pointerAbsAddress = dataSection.FixedLoadAddress.Value + pointer.Offset;
                         line = line.Replace(word, pointerAbsAddress.ToString());
+                        adrMode = AddressingMode.Absolute;
                         Logging.LogDebug($".text replace pointer (A) \"{word}\" --> {pointerAbsAddress:x8}h / {pointerAbsAddress}");
                     }
-                    else if (isPointer && !isAbsolute)
+                    else if (isBlockPointer)
                     {
                         // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 2;
-                        line = line.Replace(word, pointerRelAddress.ToString());
-                        Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
-                    }
-                    else if (isBlockPointer && isAbsolute)
-                    {
-                        uint blockPointerAbsAddress = dataSection.FixedLoadAddress.Value + blockPointer.Offset;
-                        line = line.Replace(word, blockPointerAbsAddress.ToString());
-                        Logging.LogDebug($".text replace block pointer (A) \"{word}\" --> {blockPointerAbsAddress:x8}h / {blockPointerAbsAddress}");
-                    }
-                    else if (isBlockPointer && !isAbsolute)
-                    {
-                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 2;
+                        uint blockPointerRelAddress = dataSection.FixedLoadAddress.Value + blockPointer.Offset;
                         line = line.Replace(word, blockPointerRelAddress.ToString());
-                        Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
+                        adrMode = AddressingMode.Absolute;
+                        Logging.LogDebug($".text replace block pointer (A) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
                     }
                 }
                 else
                 {
                     // Location in memory is dynamic for either the .data or the .text section.
                     // This means that absolute load / stores won't work.
-                    Logging.LogDebug("Either .text or .data section are dynamic.");
+                    // ==> Use relative addressing
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
                     bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
-                    if (isAbsolute && (isPointer || isBlockPointer))
-                        throw new Exception("Cannot infer absolute address of .data section reference, since either or both sections are relocatable.");
                     if (isImmediate)
                     {
                         uint immediateValue = immediate.Value;
@@ -170,6 +152,7 @@ public readonly struct TextSection : IAssemblySection
                         // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                         uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 2;
                         line = line.Replace(word, pointerRelAddress.ToString());
+                        adrMode = AddressingMode.PCRelative;
                         Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
                     }
                     else if (isBlockPointer)
@@ -177,6 +160,7 @@ public readonly struct TextSection : IAssemblySection
                         // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                         uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 2;
                         line = line.Replace(word, blockPointerRelAddress.ToString());
+                        adrMode = AddressingMode.PCRelative;
                         Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
                     }
                 }
@@ -196,12 +180,11 @@ public readonly struct TextSection : IAssemblySection
                 line = line.Replace("(" + expression + ")", expressionValue.ToString());
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}{(isAbsolute ? ".A" : ".R")}] " +
-                $"\"{lineUnparsed}\" -> \"{line}\"");
+            Logging.LogDebug($"[{currentAddress:x8}] \"{lineUnparsed}\" -> \"{line}\"");
             words = SplitLineIntoWords(line);
 
             // Parse assembly line as instruction object
-            IInstruction instruction = InstructionLookup.ParseAsInstruction(words);
+            IInstruction instruction = InstructionLookup.ParseAsInstruction(words, adrMode);
 
             // Note: Since the introduction of relative / absolute jumps, it is no longer necessary
             // to adjust any instructions pointing to memory, since they're either absolute in memory

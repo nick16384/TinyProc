@@ -3,16 +3,16 @@
 
 #SECTION .data
 ; immediate is basically the same as #define in C
-immediate int_syscall = 1
-immediate int_syscall_conwrite = 10
+imm int_syscall = 1
+imm int_syscall_conwrite = 10
 ; Hello world message must be stored as a pointer to the message, since the
 ; message itself is too large to be stored in a 32 bit value
-pointer hello_world_msg, "Hello, World!" + 0xA ; + [reserve: 50] ; Store string + newline
+ptr hello_world_msg, "Hello, World!" + 0xA ; + [reserve: 50] ; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
-immediate hello_world_msg_words len: hello_world_msg
+imm hello_world_msg_words len: hello_world_msg
 ; TODO: Do we really need this block structure? If yes, implement it properly!
-;block params_helloworld_call
+;blk params_helloworld_call
 ;{
 ;    ; Data in a block does not have individual names
 ;    pointer hello_world_msg
@@ -24,22 +24,23 @@ immediate hello_world_msg_words len: hello_world_msg
 _start:
     ; Note: Constant values that are evaluated by the assembler must be put in parenthesis.
     tst
+    cla
     nop
     nop
     clz
-    bzr   dostuff
+    bzr [dostuff]
     nop
 
 dostuff:
-    ld    gp1, (hello_world_msg + 0)
-    st.a  gp1, 0x30000000
-    ld    gp1, (hello_world_msg + 1)
-    st.a  gp1, 0x30000001
-    ld    gp1, (hello_world_msg + 2)
-    st.a  gp1, 0x30000002
-    ld    gp1, (hello_world_msg + 3)
-    st.a  gp1, 0x30000003
-    jmp   _halt
+    ld gp1, [(hello_world_msg + 0)]
+    st gp1, [0x30000000]
+    ld gp1, [(hello_world_msg + 1)]
+    st gp1, [0x30000001]
+    ld gp1, [(hello_world_msg + 2)]
+    st gp1, [0x30000002]
+    ld gp1, [(hello_world_msg + 3)]
+    st gp1, [0x30000003]
+    jmp [_halt]
     ; Alternative variant using software interrupts:
 
     ; r6: function
@@ -53,4 +54,4 @@ dostuff:
     ;int   int_syscall                ; Trigger the interrupt -> syscall
 
 _halt:
-    jmp   _halt
+    jmp [_halt]

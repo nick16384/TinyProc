@@ -38,8 +38,8 @@ public partial class Assembler
     internal const string ASM_ATTRIBUTE_INLINE_ALL = "all";
 
     // Keywords
-    internal const string KEYWORD_IMMEDIATE = "immediate";
-    internal const string KEYWORD_POINTER = "pointer";
-    internal const string KEYWORD_BLOCK = "block";
+    internal const string KEYWORD_IMMEDIATE = "imm";
+    internal const string KEYWORD_POINTER = "ptr";
+    internal const string KEYWORD_BLOCK = "blk";
     internal const string KEYWORD_SPECIAL_LENGTH = "len:";
 }

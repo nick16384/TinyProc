@@ -32,7 +32,7 @@ public class Logging
 
     private static double MILLIS_SINCE_APPLICATION_START
     {
-        get => processTimer.Elapsed.Milliseconds + (0.001 * processTimer.Elapsed.Microseconds);
+        get => processTimer.Elapsed.TotalSeconds * 1000.0;
     }
     public static bool SuppressDebugMessages { get; set; } = false;
     public static bool SuppressInfoMessages { get; set; } = false;

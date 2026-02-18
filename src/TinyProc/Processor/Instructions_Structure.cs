@@ -65,7 +65,8 @@ public sealed partial class Instructions
         else if (opcode == Opcode.CLA)   { return InstructionType.Register; }
         else if (opcode == Opcode.LD)    { return InstructionType.Immediate; }
         else if (opcode == Opcode.LDR)   { return InstructionType.Register; }
-        else if (opcode == Opcode.STR)   { return InstructionType.Immediate; }
+        else if (opcode == Opcode.STR)   { return InstructionType.Register; }
+        else if (opcode == Opcode.ST)    { return InstructionType.Immediate; }
         else if (opcode == Opcode.PUSH)  { return InstructionType.Register; }
         else if (opcode == Opcode.POP)   { return InstructionType.Register; }
         

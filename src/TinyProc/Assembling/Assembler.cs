@@ -28,9 +28,6 @@ public partial class Assembler()
         assemblyLines.ForEach(Logging.LogInfo);
         Logging.LogInfo("=====  Assembly end  =====");
 
-        // Maps labels found in the code to their corresponding addresses
-        Dictionary<string, uint> labelAddressMap = [];
-
         try
         {
             // ========== Parse assembly header (version & entry point) ==========
@@ -230,15 +227,26 @@ public partial class Assembler()
             .ConvertAll(line => line.Split(";")[0].Trim())
             .Where(line => !string.IsNullOrEmpty(line))];
 
+    /// <summary>
+    /// Splits a line (expecting zero line breaks) into an array of words, but
+    /// words enclosed in quotation marks (") and brackets ([]) remain as one word.
+    /// </summary>
+    /// <param name="line"></param>
+    /// <returns></returns>
     internal static string[] SplitLineIntoWords(string line)
     {
-        // Split line at spaces and commas, except when enclosed in double quotes
-        // https://stackoverflow.com/questions/14655023/split-a-string-that-has-white-spaces-unless-they-are-enclosed-within-quotes
-        return [.. line.Split('"')
-            .Select((element, index) => index % 2 == 0  // If even index
-                                ? element.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries)  // Split the item
-                                : ["\"" + element + "\""])  // Keep the entire item
-            .SelectMany(element => element).ToList()];
+        const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
+        var matches = Regex.Matches(line, pattern);
+        string[] words = [.. matches.Select(m => m.Value)];
+        foreach (string excludeSymbol in (IEnumerable<string>)[","])
+            words = [.. words.Select(word =>
+            {
+                // Don't remove characters in enquoted strings
+                if (!word.StartsWith('\"') && !word.EndsWith('\"'))
+                    return word.Replace(excludeSymbol, "");
+                return word;
+            })];
+        return words;
     }
 
     /// <summary>

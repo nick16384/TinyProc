@@ -3,6 +3,7 @@ using TinyProc.Processor;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
 using static TinyProc.Assembling.Assembler;
+using System.Text.RegularExpressions;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -48,29 +49,39 @@ public sealed class InstructionLookup
 		{ ("CLA",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLA,   DEFAULT_EMPTY_ALU_OPCODE) }
     };
 
-	internal static Instructions.IInstruction ParseAsInstruction(string[] words)
+	internal static bool IsJumpInstruction(string[] words)
 	{
-		// Parse addressing mode suffix (.A for absolute, .R for relative)
-		string addressingModeSuffix = words[0].Split(".").Length > 1 ? words[0].Split(".")[1].ToUpper() : "";
-		Instructions.AddressingMode adrMode = Instructions.AddressingMode.PCRelative;
-		if (string.IsNullOrEmpty(addressingModeSuffix))
-		{
-			Logging.LogDebug("No addressing mode suffix found. Assuming PC-relative or ignoring depending on context.");
-		}
-		else if (addressingModeSuffix == "R")
-		{
-			Logging.LogDebug("Addressing mode is PC-relative");
-			adrMode = Instructions.AddressingMode.PCRelative;
-			words[0] = words[0][..^2];
-		}
-		else if (addressingModeSuffix == "A")
-		{
-			Logging.LogDebug("Addressing mode is absolute");
-			adrMode = Instructions.AddressingMode.Absolute;
-			words[0] = words[0][..^2];
-		}
-		else
-			throw new Exception($"Unknown addressing mode suffix \".{addressingModeSuffix}\"");
+		return
+			words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
+			words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
+			words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
+	}
+	internal static bool IsLoadStoreInstruction(string[] words)
+	{
+		return
+			words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
+			words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
+			words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase) ||
+			words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase);
+	}
+	internal static Instructions.AddressingMode? GetAddressingMode(string[] words)
+	{
+		bool isJump = IsJumpInstruction(words);
+		bool isLoadStore = IsLoadStoreInstruction(words);
+		if((isJump || isLoadStore) && Regex.IsMatch(words.Last(), @"\[pc \+ .*?\]"))
+			return Instructions.AddressingMode.PCRelative;
+		else if ((isJump || isLoadStore) && Regex.IsMatch(words.Last(), @"\[.*?\]"))
+			return Instructions.AddressingMode.Absolute;
+		return null;
+	}
+
+	internal static Instructions.IInstruction ParseAsInstruction(string[] words, Instructions.AddressingMode? adrMode)
+	{
+		// Strip addressing brackets (e.g. in "ld gp1, [0x00000000]")
+		if (adrMode.HasValue)
+			words[^1] = words[^1][1..^1];
+		// Set default addressing mode, even if the instruction doesn't need it
+		adrMode ??= Instructions.AddressingMode.Absolute;
 		
 		string mnemonic = words[0].ToUpper();
 
@@ -133,9 +144,9 @@ public sealed class InstructionLookup
 		Logging.LogDebug($"Type: {type}");
 		return type switch
 		{
-			Instructions.InstructionType.Register => RegRegInstructionLookup(words, adrMode, conditional),
-			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, adrMode, conditional),
-			Instructions.InstructionType.Jump => JumpInstructionLookup(words, adrMode, conditional),
+			Instructions.InstructionType.Register => RegRegInstructionLookup(words, adrMode.Value, conditional),
+			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, adrMode.Value, conditional),
+			Instructions.InstructionType.Jump => JumpInstructionLookup(words, adrMode.Value, conditional),
 			_ => throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.")
 		};
 	}
@@ -163,8 +174,8 @@ public sealed class InstructionLookup
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
-					(Instructions.AddressableRegisterCode)words[1],
 					DEFAULT_UNUSED_REGISTER,
+					(Instructions.AddressableRegisterCode)words[1],
 					aluOpcode,
 					adrMode
 				),
@@ -173,8 +184,8 @@ public sealed class InstructionLookup
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
-					DEFAULT_UNUSED_REGISTER,
 					(Instructions.AddressableRegisterCode)words[1],
+					DEFAULT_UNUSED_REGISTER,
 					aluOpcode,
 					adrMode
 				),

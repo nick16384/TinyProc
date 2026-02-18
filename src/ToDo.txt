@@ -49,18 +49,7 @@ Fix GUI for new CPU arch:
 In-progress ToDo's:
 - Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
-- Revise absolute/relative instruction mnemonics (append memory addressing mode)
-- Addressing modes:
--> Don't subtract 2, makes execution faster and seems to be convention (adjust assembler for this)
--> For PC-relative instructions (J/R), add a "PC-relative" bit in the instruction encoding
--> Addressing modes:
-->> .A (direct, absolute)
-->> .R (PC-relative)
-->> .RA (register absolute)
-->> .RR (registe relative)
-->> Append addressing mode to opcode (Assembler: First, separate instruction at possible dot, then do conditional checking!)
--> Assembler should still respect absolute load addresses (when requested explicitly via __attribute__)
--> The loader needs to be rewritten
+- Fix assembler not correctly putting pointer data in binary (.data section parser, e.g. "Hello, World" becomes almost all zeroes)
 
 Changes for CPU 0.3-indev:
 - Added stack and SP
@@ -71,7 +60,8 @@ Changes for CPU 0.3-indev:
 - Memory layout changes:
   1. Move ROM to high addresses (Specify!)
   2. .data and .text sections loaded after another
-- Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added ACALR and CALLR
+- Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added CALLR
+- Added addressing mode bit in instruction encoding
 
 Naming ideas:
 Useless neglibly simple computer emulator (UNSC-E)
