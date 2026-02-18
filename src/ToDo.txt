@@ -50,6 +50,7 @@ In-progress ToDo's:
 - Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
 - Fix assembler not correctly putting pointer data in binary (.data section parser, e.g. "Hello, World" becomes almost all zeroes)
+- Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
 
 Changes for CPU 0.3-indev:
 - Added stack and SP
