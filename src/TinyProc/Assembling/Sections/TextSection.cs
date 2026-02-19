@@ -75,6 +75,12 @@ public readonly struct TextSection : IAssemblySection
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses
             string[] words = SplitLineIntoWords(line);
+            // The addressing mode specifies how an address is interpreted by the CPU.
+            // There are (currently) two addressing modes:
+            // 1. A (Absolute): An absolute address in the entire memory space
+            // 2. R (PC-relative): The address is treated as an offset relative to the address of the next instruction (PC)
+            // The instruction is relative, if if it references a label, pointer or block pointer.
+            // Otherwise, it is implicitly absolute.
             AddressingMode? adrMode = null;
             if (InstructionLookup.IsJumpInstruction(words) || InstructionLookup.IsLoadStoreInstruction(words))
                 adrMode = AddressingMode.Absolute;

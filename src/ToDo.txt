@@ -51,6 +51,7 @@ In-progress ToDo's:
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
 - Fix assembler not correctly putting pointer data in binary (.data section parser, e.g. "Hello, World" becomes almost all zeroes)
 - Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
+- Fix string print in HelloWorld accessing wrong offset for string (-2 off)
 
 Changes for CPU 0.3-indev:
 - Added stack and SP

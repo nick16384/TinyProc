@@ -43,6 +43,7 @@ public partial class CPU
 
                 if      (_opcodeBits == TransferA._opcodeBits)            name = "TraA";
                 else if (_opcodeBits == TransferB._opcodeBits)            name = "TraB";
+                else if (_opcodeBits == Addition._opcodeBits)             name = "Addition";
                 else if (_opcodeBits == AB_SubtractionSigned._opcodeBits) name = "AB_SubSigned";
                 else if (_opcodeBits == BA_SubtractionSigned._opcodeBits) name = "BA_SubSigned";
                 else if (_opcodeBits == A_Negative._opcodeBits)           name = "A_Neg";

@@ -74,7 +74,7 @@ imm sp_base_address = 0x00020000
         ; Source and destination address (GP6 / GP8 set already)
         ld    gp7, [(unloaded_program_source + asmheader_offset_text_size)]
         call  [copySection]
-        ; Calculate entry point (base + .data size + 1 + asm entry point)
+        ; Calculate entry point (base + .data size + asm entry point)
         mov   gp1, reloc_default_load_address
         ld    gp2, [(unloaded_program_source + asmheader_offset_data_size)]
         ld    gp3, [(unloaded_program_source + asmheader_offset_entrypoint)]

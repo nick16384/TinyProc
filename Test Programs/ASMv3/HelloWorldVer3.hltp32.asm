@@ -28,7 +28,7 @@ _start:
     nop
     nop
     clz
-    bzr [dostuff]
+    bnz [dostuff]
     nop
 
 dostuff:

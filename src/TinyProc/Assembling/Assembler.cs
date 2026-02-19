@@ -212,14 +212,15 @@ public partial class Assembler()
         if (numStr.StartsWith("0b"))
             return Convert.ToUInt32(numStr[2..], 2);
         else if (numStr.EndsWith('b'))
-            return Convert.ToUInt32(numStr[..1], 2);
+            return Convert.ToUInt32(numStr[..^1], 2);
         // Base-16 (hexadecimal)
         else if (numStr.StartsWith("0x"))
             return Convert.ToUInt32(numStr[2..], 16);
         else if (numStr.EndsWith('h'))
-            return Convert.ToUInt32(numStr[..1], 16);
+            return Convert.ToUInt32(numStr[..^1], 16);
         // Base-10 (decimal) or unknown
-        return Convert.ToUInt32(numStr);
+        try { return Convert.ToUInt32(numStr); }
+        catch (Exception) { throw new Exception($"Unable to parse \"{numStr}\" as uint."); }
     }
 
     internal static List<string> FilterCommentsAndRemoveExcessWhitespace(List<string> textLines)

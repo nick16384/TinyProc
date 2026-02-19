@@ -38,15 +38,15 @@ public readonly struct DataSection(uint? fixedLoadAddress,
             else
                 return [
                     .. immediateValues.Select(identifierAndImmediate => identifierAndImmediate.Value.Value),
-                    .. pointers.Select(identifierAndPointerValue => identifierAndPointerValue.Value.Data).SelectMany(x => x),
+                    .. pointers.Select(identifierAndPointer => identifierAndPointer.Value.Data).SelectMany(x => x),
                     .. blockPointers.Select(identifierAndBlock => identifierAndBlock.Value.BinaryRepresentation).SelectMany(x => x)
                     ];
         }
     }
 
-    public Dictionary<string, ImmediateValue> ImmediateValues { get; } = immediateValues;
-    public Dictionary<string, Pointer> Pointers { get; } = pointers;
-    public Dictionary<string, ContinuousBlock> BlockPointers { get; } = blockPointers;
+    public Dictionary<string, ImmediateValue> ImmediateValues { get => immediateValues; }
+    public Dictionary<string, Pointer> Pointers { get => pointers; }
+    public Dictionary<string, ContinuousBlock> BlockPointers { get => blockPointers; }
 
     public readonly struct ImmediateValue(uint offset, uint value)
     {
