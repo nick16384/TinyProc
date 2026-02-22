@@ -234,12 +234,16 @@ public partial class Assembler()
     /// </summary>
     /// <param name="line"></param>
     /// <returns></returns>
+    private const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
+    private static readonly string[] prefilterSymbols = [","];
     internal static string[] SplitLineIntoWords(string line)
     {
-        const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
+        
+        // Split into words
         var matches = Regex.Matches(line, pattern);
         string[] words = [.. matches.Select(m => m.Value)];
-        foreach (string excludeSymbol in (IEnumerable<string>)[","])
+        // Remove separator strings (",") but not if they are enquoted
+        foreach (string excludeSymbol in prefilterSymbols)
             words = [.. words.Select(word =>
             {
                 // Don't remove characters in enquoted strings
