@@ -40,6 +40,8 @@ dostuff:
     st gp1, [0x30000002]
     ld gp1, [(hello_world_msg + 3)]
     st gp1, [0x30000003]
+    ld gp1, [(hello_world_msg + 4)]
+    st gp1, [0x30000004]
     jmp [_halt]
     ; Alternative variant using software interrupts:
 

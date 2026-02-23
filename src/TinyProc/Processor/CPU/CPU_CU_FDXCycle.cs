@@ -71,7 +71,6 @@ public partial class CPU
         // Load first instruction word
         private void InstructionFetch1()
         {
-            Logging.LogDebug("F");
             Logging.LogDebug(
                 $"PC at {PC.ValueDirect:x8}; " +
                 $"Status: OF[{(_alu.Status_Overflow ? 1 : 0)}] " +
@@ -116,8 +115,6 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
 
-            Logging.LogDebug("D");
-
             InstructionType instructionType = DetermineInstructionType(IRA.ValueDirect);
             if (instructionType == InstructionType.Register)
                 _currentInstruction = (RegRegInstruction)(IRA.ValueDirect, IRB.ValueDirect);
@@ -136,7 +133,6 @@ public partial class CPU
         // Equivalent to the execute stage in a real CPU's Fetch-Decode-Execute cycle.
         private void InstructionExecute()
         {
-            Logging.LogDebug("X");
             bool execute;
             if (_currentInstruction.Conditional == Condition.ALWAYS)
                 execute = true;
@@ -211,7 +207,9 @@ public partial class CPU
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_CALLR_A(); }
                     else if (_currentInstruction.Opcode == Opcode.CALLR &&
                         _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_CALLR_R(); }
-                    break;
+                    else
+                        _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
+                    return;
 
                 case InstructionType.Immediate:
                     if      (_currentInstruction.Opcode == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
@@ -223,7 +221,9 @@ public partial class CPU
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_I_ST_A(); }
                     else if (_currentInstruction.Opcode == Opcode.ST &&
                         _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_I_ST_R(); }
-                    break;
+                    else
+                        _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
+                    return;
 
                 case InstructionType.Jump:
                     if      (_currentInstruction.Opcode == Opcode.NOP)   { INSTRUCTION_J_NOP(); }
@@ -238,8 +238,11 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.RET)   { INSTRUCTION_J_RET(); }
                     else if (_currentInstruction.Opcode == Opcode.INT)   { INSTRUCTION_J_INT(); }
                     else if (_currentInstruction.Opcode == Opcode.IRET)  { INSTRUCTION_J_IRET(); }
-                    break;
+                    else
+                        _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
+                    return;
             }
+            _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
         }
     }
 }

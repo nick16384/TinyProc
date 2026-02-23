@@ -156,7 +156,7 @@ public readonly struct TextSection : IAssemblySection
                     else if (isPointer)
                     {
                         // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 2;
+                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 1;
                         line = line.Replace(word, pointerRelAddress.ToString());
                         adrMode = AddressingMode.PCRelative;
                         Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
@@ -164,7 +164,7 @@ public readonly struct TextSection : IAssemblySection
                     else if (isBlockPointer)
                     {
                         // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 2;
+                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 1;
                         line = line.Replace(word, blockPointerRelAddress.ToString());
                         adrMode = AddressingMode.PCRelative;
                         Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
