@@ -20,7 +20,7 @@ public partial class CPU
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_IRB);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_MAR);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SR);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_SP);
+        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_STACK_BASE, InternalRegisterCode.RCODE_SPECIAL_SP);
         _CU.Reset_Hardware();
     }
 

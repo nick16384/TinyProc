@@ -41,5 +41,8 @@ imm VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     TST
     CLA
 
+    ; TODO: Make stack pointer accessible and zero it out
+    ; MOV   SP, 0x0
+
     ; Jump to the loader
     JMP   [0x00000100]

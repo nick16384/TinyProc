@@ -71,10 +71,7 @@ public partial class MainWindow : Window
         // TODO: Launch updater thread as daemon
         InitCPUGUIDataSyncThread();
         CPUGUIDataSyncThread.Start();
-
-        // Reinitialize the hex editor RAM document, since the size changed (because the CPU was initialized)
-        HexEditorDocumentRAM = new(() => TinyProc.Application.ExecutionContainer.INSTANCE0.LiveVirtualMemoryBytes, UPDATE_INTERVAL_DOC_RAM);
-        HexEditorDocumentRAM.Changed += (sender, eventArgs) => HexEditorDocumentRAM.AddLockedRange(eventArgs.AffectedRange);
+        
         ReloadHexEditorDocuments();
     }
 
