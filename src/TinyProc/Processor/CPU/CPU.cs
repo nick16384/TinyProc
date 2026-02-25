@@ -19,7 +19,6 @@ public partial class CPU
     private static readonly Register CONST_POS2_SPECIAL_REG = new(2u, true, false, false, true, true);
     private static readonly Register CONST_ZERO_SPECIAL_REG = new(0u, true, false, false, true, true);
     private static readonly Register CONST_SHIT_OFFSET_ADDRESS_REG = new(0x00010000u, true, false, false, true, true);
-    private static readonly Register CONST_STACK_BASE = new(0x00020000u, true, false, false, true, true);
     private static uint SignedIntToUInt(int intIn) { unchecked { return (uint)intIn; } }
 
     internal enum InternalRegisterCode : uint
@@ -55,7 +54,6 @@ public partial class CPU
         RCODE_SPECIAL_CONST_POS2 = 0x70000007u,
         RCODE_SPECIAL_CONST_ZERO = 0x70000008u,
         RCODE_SPECIAL_CONST_SHIT_OFFSET_ADDRESS = 0x70000009u,
-        RCODE_STACK_BASE = 0x7000000Au,
 
         // Void register: Since writes to CONST_ZERO are discarded, this refers to it in another context.
         RCODE_SPECIAL_VOID = RCODE_SPECIAL_CONST_ZERO

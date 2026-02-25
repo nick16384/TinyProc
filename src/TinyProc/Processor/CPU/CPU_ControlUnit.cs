@@ -59,8 +59,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},
-                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS2, CONST_POS2_SPECIAL_REG},
-                {InternalRegisterCode.RCODE_STACK_BASE, CONST_STACK_BASE},
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_POS2, CONST_POS2_SPECIAL_REG}
             };
 
             // Internal bus 1 - 3 initialization
@@ -97,8 +96,7 @@ public partial class CPU
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_POS1, CONST_POS1_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_NEG1, CONST_NEG1_SPECIAL_REG},
                 {InternalRegisterCode.RCODE_SPECIAL_CONST_POS2, CONST_POS2_SPECIAL_REG},
-                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG},
-                {InternalRegisterCode.RCODE_STACK_BASE, CONST_STACK_BASE}
+                {InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, CONST_ZERO_SPECIAL_REG}
             };
             B3_REGISTERS = new Dictionary<InternalRegisterCode, Register>
             {

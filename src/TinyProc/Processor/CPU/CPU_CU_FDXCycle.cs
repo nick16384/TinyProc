@@ -122,6 +122,8 @@ public partial class CPU
                 _currentInstruction = (RegImmInstruction)(IRA.ValueDirect, IRB.ValueDirect);
             else if (instructionType == InstructionType.Jump)
                 _currentInstruction = (JumpInstruction)(IRA.ValueDirect, IRB.ValueDirect);
+            else
+                _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
 
             Logging.LogInfo(
                 $"Type: {_currentInstruction.InstructionType}; " +
@@ -208,6 +210,8 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.CALLR &&
                         _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_CALLR_R(); }
                     else
+                        // Note: Usually, opcode decoding happens in the decode stage, so the unknown instruction fault would be generated there and not
+                        // during the execute stage.
                         _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
                     return;
 

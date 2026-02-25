@@ -38,6 +38,7 @@ Fix GUI for new CPU arch:
 - When writing assembly in the GUI, use "direct" mode (instructions only, no .data section and header)
 --> Optionally make header usable; When header detected, switch to full assembly mode (requires header, .data and .text)
 - Fix disassembler
+- In hex editor: Do not display entire virtual memory, but instead address sections (user inputs start - end)
 
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
 - Implement +[reserve: XYZ] for ASMv3 pointers

@@ -7,20 +7,12 @@ public partial class CPU
     // Calls the reset interrupt vector
     public void Reset()
     {
-        // Clear all internal registers to 0
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP1);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP2);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP3);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP4);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP5);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP6);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP7);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_GP8);
+        // Clear some special internal registers not available to assembled code
+        // General-purpose registers and the stack pointer are reset in assembly
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_IRA);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_IRB);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SPECIAL_MAR);
         _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_CONST_ZERO, InternalRegisterCode.RCODE_SR);
-        _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_STACK_BASE, InternalRegisterCode.RCODE_SPECIAL_SP);
         _CU.Reset_Hardware();
     }
 
@@ -65,9 +57,9 @@ public partial class CPU
             or Fault.STACK_OVERFLOW
             or Fault.ILLEGAL_SECURE_MEMORY_WRITE
             or Fault.DIVISION_BY_ZERO:
-                Logging.LogError($"Hardware fault {fault:x2} triggered!");
-                _MMU.MAR.ValueDirect = SHIT_BASE_OFFSET + (uint)fault;
-                _CU.CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_PC);
+                Logging.LogError($"Hardware fault {(byte)fault:x2} / {GetFaultName(fault)} triggered!");
+                // TODO: SHIT_BASE_OFFSET + fault vector => MAR; MDR => PC
+                throw new NotImplementedException("Hardware fault generated (see log). However, hardware fault handling hasn't been implemented yet.");
                 break;
 
             default:
