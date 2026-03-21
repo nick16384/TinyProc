@@ -18,11 +18,12 @@ Instruction set:
 
 Branching:
 01 - JMP [Target address] : Jump to address
-02 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
-03 - CALLR [Register with target offset] : Call subroutine at address in register
-04 - RET : Returns from subroutine (restores previous state by popping data on the stack)
-05 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
-06 - IRET : Special instruction to return from interrupt subroutine
+02 - JMP [Register] : Jump to address in register
+03 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+04 - CALLR [Register] : Call subroutine at address in register
+05 - RET : Returns from subroutine (restores previous state by popping data on the stack)
+06 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
+07 - IRET : Special instruction to return from interrupt subroutine
 
 Inter-register non-arithmetic operations:
 0A - TST : Test command; Sets all flags

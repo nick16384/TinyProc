@@ -8,19 +8,30 @@ public partial class CPU
 {
     private partial class ControlUnit
     {
-        // Resets internal bus 3 so its destination is the void register.
-        // Otherwise, previously addressed registers could be overridden by new operations.
+        /// <summary>
+        /// Resets internal bus 3 so its destination is the void register.
+        /// Otherwise, previously addressed registers could be overridden by new operations.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResetBus3()
         {
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
         }
 
+        /// <summary>
+        /// Helper used to create a string consisting of the name and value of any CU-addressable register.
+        /// </summary>
+        /// <param name="regCode"></param>
+        /// <returns></returns>
+        private string RegisterNameAndValueFormatted(InternalRegisterCode regCode)
+            => $"{regCode}[{CU_ADDRESSABLE_REGISTERS[regCode]:x8}]";
+
         // Useful methods for CPU data flow
         internal void CopyFromRegisterToRegister(InternalRegisterCode source, InternalRegisterCode destination)
         {
             lock (_alu)
             {
+                _alu.Status_EnableFlags = true;
                 if (B1_REGISTERS.ContainsKey(source) && B3_REGISTERS.ContainsKey(destination))
                 {
                     _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
@@ -40,12 +51,13 @@ public partial class CPU
                     else if (!B3_REGISTERS.ContainsKey(destination))
                         throw new Exception($"Inter-register copy error: Internal destination register code {destination:x} is invalid.");
                 }
+                _alu.Status_EnableFlags = false;
                 ResetBus3();
             }
         }
         internal void PushOntoStack(InternalRegisterCode sourceRegister)
         {
-            // Add 1 to stack pointer
+            // Increment the stack pointer
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
@@ -53,14 +65,18 @@ public partial class CPU
             ResetBus3();
             // Push the data onto the stack
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            // FIXME: Enable memory write
             CopyFromRegisterToRegister(sourceRegister, InternalRegisterCode.RCODE_SPECIAL_MDR);
+            // FIXME: Disable memory write
         }
         internal void PopFromStack(InternalRegisterCode destinationRegister)
         {
             // Pop element from the stack
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            // FIXME: Enable memory read
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, destinationRegister);
-            // Subtract 1 from the stack pointer
+            // FIXME: Disable memory read
+            // Decrement the stack pointer
             _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;

@@ -30,6 +30,8 @@ Future (unplanned) ToDo's:
 - Add GitHub dependencies: Avalonia, Avalonia Hex Editor (AvaloniaHex), MessageBox.Avalonia
 - Add source assembly syntax highlighting (enable/disable checkbox in Menu via "View > Enable syntax highlighting")
 - Add interrupt queue?
+- MMIO (keyboard key info (+ allow multiple keys), video, audio, (network), etc.)
+- Asm optimizer: DS+TS ==> DS+TS: Strip unused code / data; Auto-inlining?
 
 Upcoming ToDo's:
 Fix GUI for new CPU arch:
@@ -46,12 +48,32 @@ Fix GUI for new CPU arch:
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set
 -> Trigger double fault when NMI is triggered when Interrupted flag is already set
+- Make assembler error messages more user friendly (e.g. "Line 16: Unknown mnemonic XYZ" instead of "KeyNotFoundException")
+- Abstract actual hardware emulation to allow for fast CPU emulation variant that isn't emulating hardware components, but is only optimized for speed (C code with native interface)
+- In reality, the CU would signal memory read/writes during execution, but not the MMU. Implement this.
 
 In-progress ToDo's:
 - Fix up instruction execution definitions (use CopyRegReg() when possible, when logging use _currentInstruction.XYZ whenever possible)
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
 - Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
 - Remove the need to use callr/call, ldr/ld and str/st in assembly, but infer it in assembler
+- Implement hardware faults
+- Fix SP overflow when resetting for long enough -> Make SP accessible to assembly, reset in 000000000_Reset
+- Calling convention: push / pop parameters
+- asm .data: Append ptr data directly, no padding with zeroes between them to realign (e.g. "string" + 0xA)
+- Modify absolute CALL in loader: Inject address into operand -> GP1 can be cleared as well:
+  - clear stuff (GPRs and status)
+  - call [modified address]
+- Add instruction to enable/disable flags (? really?)
+- Remove the need to put brackets around expressions in asm
+- Asm: prepend +/- before address to force relative (or prepend abs/rel)
+- Revise flags: names, replace two-char conditions with one-char, add ability for e.g. JZ and BZ -> standardize to JMPZ in assembly pre-processor
+- new MMU(IMemoryDevice[] mems, uint[] startAddresses, uint[] endAddresses, uint[] offsets)
+  -> allows for smaller & larger address spaces mapped to virtual memory (e.g. useful for writing screen buffer, but video device internally uses more memory for own control, which it doesn't expose)
+- Add cmp instruction: Op1 - Op2 => void (set flags)
+- Revise in-code naming of "operand 2": For RR-instructions this is wrong, since the second operand is not in IRB but another register encoded in IRA
+- Prepend mom ops address with rel/abs (optional) to indicate adr mode
+- Implement register jump (JMPR) lol
 
 Changes for CPU 0.3-indev:
 - Added stack and SP

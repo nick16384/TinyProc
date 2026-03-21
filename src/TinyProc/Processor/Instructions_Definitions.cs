@@ -14,11 +14,12 @@ public sealed partial class Instructions
         public static readonly Opcode NOP   = new(0x00, "NOP");
 
         public static readonly Opcode JMP   = new(0x01, "JMP");
-        public static readonly Opcode CALL  = new(0x02, "CALL");
-        public static readonly Opcode CALLR = new(0x03, "CALLR");
-        public static readonly Opcode RET   = new(0x04, "RET");
-        public static readonly Opcode INT   = new(0x05, "INT");
-        public static readonly Opcode IRET  = new(0x06, "IRET");
+        public static readonly Opcode JMPR  = new(0x02, "JMPR");
+        public static readonly Opcode CALL  = new(0x03, "CALL");
+        public static readonly Opcode CALLR = new(0x04, "CALLR");
+        public static readonly Opcode RET   = new(0x05, "RET");
+        public static readonly Opcode INT   = new(0x06, "INT");
+        public static readonly Opcode IRET  = new(0x07, "IRET");
 
         public static readonly Opcode TST   = new(0x0A, "TST");
         public static readonly Opcode CLC   = new(0x0B, "CLC");

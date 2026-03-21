@@ -5,7 +5,7 @@ namespace TinyProc.Processor.CPU;
 
 public partial class CPU
 {
-    // Memory management unit
+    // Memory management unit (fulfils the role of a component usually referred to as the memory controller)
     // Much simpler than in modern architectures (like x86_64), but essentially controls
     // memory flow in / out of the CPU
     private class MMU : IBusAttachable

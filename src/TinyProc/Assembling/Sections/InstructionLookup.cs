@@ -28,16 +28,17 @@ public sealed class InstructionLookup
 		{ ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
 
 		{ ("LD",    Instructions.InstructionType.Immediate), (Instructions.Opcode.LD,    DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("LDR",   Instructions.InstructionType.Register),  (Instructions.Opcode.LDR,   DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("ST",   Instructions.InstructionType.Immediate),  (Instructions.Opcode.ST,    DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("STR",  Instructions.InstructionType.Register),   (Instructions.Opcode.STR,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("LD",    Instructions.InstructionType.Register),  (Instructions.Opcode.LDR,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ST",    Instructions.InstructionType.Immediate), (Instructions.Opcode.ST,    DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("ST",    Instructions.InstructionType.Register),  (Instructions.Opcode.STR,   DEFAULT_EMPTY_ALU_OPCODE) },
 
 		{ ("PUSH",  Instructions.InstructionType.Register),  (Instructions.Opcode.PUSH,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("POP",   Instructions.InstructionType.Register),  (Instructions.Opcode.POP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("JMP",   Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("JMP",   Instructions.InstructionType.Register),  (Instructions.Opcode.JMPR,  DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("B",     Instructions.InstructionType.Jump),      (Instructions.Opcode.JMP,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("CALL",  Instructions.InstructionType.Jump),      (Instructions.Opcode.CALL,  DEFAULT_EMPTY_ALU_OPCODE) },
-		{ ("CALLR", Instructions.InstructionType.Register),  (Instructions.Opcode.CALLR, DEFAULT_EMPTY_ALU_OPCODE) },
+		{ ("CALL",  Instructions.InstructionType.Register),  (Instructions.Opcode.CALLR, DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("RET",   Instructions.InstructionType.Jump),      (Instructions.Opcode.RET,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("INT",   Instructions.InstructionType.Jump),      (Instructions.Opcode.INT,   DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("IRET",  Instructions.InstructionType.Jump),      (Instructions.Opcode.IRET,  DEFAULT_EMPTY_ALU_OPCODE) },
@@ -60,19 +61,7 @@ public sealed class InstructionLookup
 	{
 		return
 			words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("LDR", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("STR", StringComparison.OrdinalIgnoreCase);
-	}
-	internal static Instructions.AddressingMode? GetAddressingMode(string[] words)
-	{
-		bool isJump = IsJumpInstruction(words);
-		bool isLoadStore = IsLoadStoreInstruction(words);
-		if((isJump || isLoadStore) && Regex.IsMatch(words.Last(), @"\[pc \+ .*?\]"))
-			return Instructions.AddressingMode.PCRelative;
-		else if ((isJump || isLoadStore) && Regex.IsMatch(words.Last(), @"\[.*?\]"))
-			return Instructions.AddressingMode.Absolute;
-		return null;
+			words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase);
 	}
 
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words, Instructions.AddressingMode? adrMode)
@@ -105,37 +94,46 @@ public sealed class InstructionLookup
 
 		// Determine instruction type (R/I/J)
 		Instructions.InstructionType type;
-		bool isWord2ParseableAsUInt = true;
-		try { ConvertStringToUInt(words[2]); } catch (Exception) { isWord2ParseableAsUInt = false; }
+		bool isFirstOperandNumber = true;
+		try {
+			string operand1 = words[2];
+			if (operand1.StartsWith('[') && operand1.EndsWith(']'))
+				operand1 = operand1[1..^1];
+			// This throws an exception if the number is not numeric (hex, binary, or decimal):
+			ConvertStringToUInt(operand1);
+			Console.WriteLine($"Op1: {operand1}");
+		} catch (Exception) { isFirstOperandNumber = false; }
+
 		if (mnemonic == "TST") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLC") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLZ") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLOF") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLNG") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLA") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "MOV" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "MOV" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ADD" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "ADD" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "SUB" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "SUB" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "MOV" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "MOV" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ADD" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ADD" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "SUB" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "SUB" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "INC") { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "DEC") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "AND" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "AND" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "OR" && isWord2ParseableAsUInt) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "OR" && !isWord2ParseableAsUInt) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "LD") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "LDR") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ST") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "STR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "AND" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "AND" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "OR" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "OR" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "LD" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "LD" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ST" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ST" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "B") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "JMP") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "CALL") { type = Instructions.InstructionType.Jump; }
-		else if (mnemonic == "CALLR") { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "JMP" && isFirstOperandNumber) { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "JMP" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CALL" && isFirstOperandNumber) { type = Instructions.InstructionType.Jump; }
+		else if (mnemonic == "CALL" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "RET") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "INT") { type = Instructions.InstructionType.Jump; }
 		else if (mnemonic == "IRET") { type = Instructions.InstructionType.Jump; }
@@ -160,7 +158,7 @@ public sealed class InstructionLookup
 
 		return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LDR" or "STR"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
@@ -170,7 +168,7 @@ public sealed class InstructionLookup
 					adrMode
 				),
 			
-			"PUSH" or "CALLR"
+			"PUSH" or "CALL" or "JMP"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,

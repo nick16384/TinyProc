@@ -57,10 +57,9 @@ public partial class CPU
                 else if (_opcodeBits == A_LogicalNOT._opcodeBits)         name = "A_NOT";
                 else if (_opcodeBits == B_LogicalNOT._opcodeBits)         name = "B_NOT";
 
-                if (name == null)
-                    return "Unknown / " + bitsString;
-                else
-                    return name + " / " + bitsString;
+                if (name != null)
+                    return name;
+                return bitsString;
             }
 
             public static explicit operator ALUOpcode((bool, bool, bool, bool, bool, bool) opcodeBits) => new(opcodeBits);

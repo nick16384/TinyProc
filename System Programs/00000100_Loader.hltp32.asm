@@ -80,7 +80,7 @@ imm sp_base_address = 0x00020000
         ld    gp3, [(unloaded_program_source + asmheader_offset_entrypoint)]
         add   gp1, gp2
         add   gp1, gp3
-        callr [gp1] ; Start the actual program
+        call  [gp1] ; Start the actual program
         jmp   [programReturned]
 
     ; The text section load address is NOT zero. This means it has to be loaded at a specified address.
@@ -102,8 +102,8 @@ imm sp_base_address = 0x00020000
     ; Registers modified:
     ; GP1, GP6, GP7, GP8
     copySection:
-        ldr   gp1, [gp6]
-        str   gp1, [gp8]
+        ld    gp1, [gp6]
+        st    gp1, [gp8]
         inc   gp6
         inc   gp8
         dec   gp7
