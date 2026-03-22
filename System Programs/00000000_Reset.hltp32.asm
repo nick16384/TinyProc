@@ -14,6 +14,7 @@ imm VECTOR_STACK_OVERFLOW = 0x04
 imm VECTOR_ILLEGAL_SECURE_MEMORY_WRITE = 0x05
 imm VECTOR_DIVISION_BY_ZERO = 0x06
 imm VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
+imm STACK_BASE = 0x00020000
 
 #SECTION (__attribute__ loadaddress = 0x00000000) .text
     _start:
@@ -41,8 +42,7 @@ imm VECTOR_MANUAL_USER_FAULT = 0x07 ; TODO: Implement
     TST
     CLA
 
-    ; TODO: Make stack pointer accessible and zero it out
-    ; MOV   SP, 0x0
+    MOV   sp, STACK_BASE
 
     ; Jump to the loader
     JMP   [0x00000100]

@@ -26,6 +26,8 @@ public sealed class InstructionLookup
 		{ ("AND",   Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalAND) },
 		{ ("OR",    Instructions.InstructionType.Register),  (Instructions.Opcode.AOPR,  CPU.ALU.ALUOpcode.LogicalOR) },
 		{ ("OR",    Instructions.InstructionType.Immediate), (Instructions.Opcode.AOPI,  CPU.ALU.ALUOpcode.LogicalOR) },
+		{ ("CMP",   Instructions.InstructionType.Register),  (Instructions.Opcode.CMPR,  CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
+		{ ("CMP",   Instructions.InstructionType.Immediate), (Instructions.Opcode.CMP,   CPU.ALU.ALUOpcode.AB_SubtractionSigned) },
 
 		{ ("LD",    Instructions.InstructionType.Immediate), (Instructions.Opcode.LD,    DEFAULT_EMPTY_ALU_OPCODE) },
 		{ ("LD",    Instructions.InstructionType.Register),  (Instructions.Opcode.LDR,   DEFAULT_EMPTY_ALU_OPCODE) },
@@ -64,6 +66,26 @@ public sealed class InstructionLookup
 			words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase);
 	}
 
+	/// <summary>
+	/// Checks if the nth operand of the assembly instruction is representing a number.
+	/// </summary>
+	/// <param name="words"></param>
+	/// <param name="n"></param>
+	/// <returns>Returns false if there are less operands than n, or the nth operand is not a number.
+	/// Returns true otherwise.</returns>
+	private static bool IsNthOperandNumber(string[] words, int n)
+	{
+		try {
+			string operand = words[n];
+			if (operand.StartsWith('[') && operand.EndsWith(']'))
+				operand = operand[1..^1];
+			Logging.LogDebug($"Operand {n}: {operand}");
+			// This throws an exception if the number is not numeric (hex, binary, or decimal):
+			ConvertStringToUInt(operand);
+		} catch (Exception) { return false; }
+		return true;
+	}
+
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words, Instructions.AddressingMode? adrMode)
 	{
 		// Strip addressing brackets (e.g. in "ld gp1, [0x00000000]")
@@ -94,15 +116,8 @@ public sealed class InstructionLookup
 
 		// Determine instruction type (R/I/J)
 		Instructions.InstructionType type;
-		bool isFirstOperandNumber = true;
-		try {
-			string operand1 = words[2];
-			if (operand1.StartsWith('[') && operand1.EndsWith(']'))
-				operand1 = operand1[1..^1];
-			// This throws an exception if the number is not numeric (hex, binary, or decimal):
-			ConvertStringToUInt(operand1);
-			Console.WriteLine($"Op1: {operand1}");
-		} catch (Exception) { isFirstOperandNumber = false; }
+		bool isFirstOperandNumber = IsNthOperandNumber(words, 1);
+		bool isSecondOperandNumber = IsNthOperandNumber(words, 2);
 
 		if (mnemonic == "TST") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLC") { type = Instructions.InstructionType.Register; }
@@ -110,22 +125,22 @@ public sealed class InstructionLookup
 		else if (mnemonic == "CLOF") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLNG") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLA") { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "MOV" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "MOV" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ADD" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "ADD" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "SUB" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "SUB" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "MOV" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "MOV" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ADD" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ADD" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "SUB" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "SUB" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "INC") { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "DEC") { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "AND" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "AND" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "OR" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "OR" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "LD" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "LD" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
-		else if (mnemonic == "ST" && isFirstOperandNumber) { type = Instructions.InstructionType.Immediate; }
-		else if (mnemonic == "ST" && !isFirstOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "AND" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "AND" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "OR" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "OR" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "LD" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "LD" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "ST" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "ST" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "PUSH") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "POP") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "NOP") { type = Instructions.InstructionType.Jump; }
@@ -158,7 +173,7 @@ public sealed class InstructionLookup
 
 		return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST" or "CMP"
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
@@ -221,7 +236,7 @@ public sealed class InstructionLookup
 
         return mnemonic switch
 		{
-			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST"
+			"MOV" or "ADD" or "SUB" or "AND" or "OR" or "LD" or "ST" or "CMP"
 				=> new Instructions.RegImmInstruction(
 					opcode,
 					conditional,

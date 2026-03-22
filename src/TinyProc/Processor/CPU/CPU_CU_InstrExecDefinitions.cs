@@ -75,13 +75,32 @@ public partial class CPU
                 $" <{_currentInstruction.R_ALUOpcode}> " +
                 $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
             _alu.Status_EnableFlags = true;
+            // FIXME: Src and Dst swapped or not??? Also review InstructionLookup in Assembler...
             _alu.CurrentOpcode = _currentInstruction.R_ALUOpcode;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
             _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = _currentInstruction.R_DestRegCode;
             _alu.Status_EnableFlags = false;
             ResetBus3();
-            Logging.PrintDebug($" --> Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
+            Logging.PrintDebug($" --> Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}\n");
+        }
+        /// <summary>
+        /// Perform a subtraction between the source and destination register, discard the result and set flags.
+        /// </summary>
+        private void INSTRUCTION_R_CMPR()
+        {
+            Logging.LogDebug(
+                "Compare registers: " +
+                $"Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}" +
+                $" and " +
+                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
+            _alu.Status_EnableFlags = true;
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
+            _alu.Status_EnableFlags = false;
+            ResetBus3();
         }
 
         /// <summary>
@@ -194,7 +213,25 @@ public partial class CPU
             _IntBus3.BusTargetRegisterCode = _currentInstruction.I_DestRegCode;
             _alu.Status_EnableFlags = false;
             ResetBus3();
-            Logging.PrintDebug($" --> Dst:{RegisterNameAndValueFormatted(_currentInstruction.I_DestRegCode)}");
+            Logging.PrintDebug($" --> Dst:{RegisterNameAndValueFormatted(_currentInstruction.I_DestRegCode)}\n");
+        }
+        /// <summary>
+        /// Performs subtraction between the register and an immediate value, but discards the result and only sets flags.
+        /// </summary>
+        private void INSTRUCTION_I_CMP()
+        {
+            Logging.LogDebug(
+                "Compare register: " +
+                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.I_DestRegCode)}" +
+                $" with immediate value " +
+                $"#{_currentInstruction.I_ImmediateValue:x8}");
+            _alu.Status_EnableFlags = true;
+            _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.I_DestRegCode;
+            _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_IRB;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
+            _alu.Status_EnableFlags = false;
+            ResetBus3();
         }
 
         /// <summary>
@@ -347,7 +384,7 @@ public partial class CPU
         {
             Logging.LogDebug(
                 $"Relative call subroutine at offset {_currentInstruction.J_JumpTargetAddress:x8} " +
-                $"from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + _currentInstruction.J_JumpTargetAddress}");
+                $"from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + _currentInstruction.J_JumpTargetAddress:x8}");
             PushOntoStack(InternalRegisterCode.RCODE_PC);
 
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;

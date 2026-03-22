@@ -28,7 +28,6 @@ imm sp_base_address = 0x00020000
     _start:
         ; Check whether .data section load address is 0 or not
         ld   gp1, [(unloaded_program_source + asmheader_offset_data_addr)]
-        sub  gp1, 0
         bzr  [dataIsRelocatable]
         jmp  [dataIsFixed]
     
@@ -52,7 +51,6 @@ imm sp_base_address = 0x00020000
     dataSectionCopyFinished:
         ; Check whether .text section load address is 0 or not
         ld   gp1, [(unloaded_program_source + asmheader_offset_text_addr)]
-        sub  gp1, 0
         bzr  [textIsRelocatable]
         jmp  [textIsFixed]
         

@@ -50,6 +50,7 @@ public sealed partial class Instructions
         Opcode opcode = ExtractWithBitmaskAndShiftRight(lowWord, BITMASK_OPCODE);
         if      (opcode == Opcode.NOP)   { return InstructionType.Jump; }
         else if (opcode == Opcode.JMP)   { return InstructionType.Jump; }
+        else if (opcode == Opcode.JMPR)  { return InstructionType.Register; }
         else if (opcode == Opcode.CALL)  { return InstructionType.Jump; }
         else if (opcode == Opcode.CALLR) { return InstructionType.Register; }
         else if (opcode == Opcode.RET)   { return InstructionType.Jump; }

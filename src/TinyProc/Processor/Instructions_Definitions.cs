@@ -30,13 +30,18 @@ public sealed partial class Instructions
 
         public static readonly Opcode AOPR  = new(0x10, "AOPR");
         public static readonly Opcode AOPI  = new(0x11, "AOPI");
+        public static readonly Opcode CMPR  = new(0x12, "CMPR");
+        public static readonly Opcode CMP   = new(0x13, "CMP");
 
         public static readonly Opcode LD    = new(0x30, "LD");
         public static readonly Opcode LDR   = new(0x31, "LDR");
-        public static readonly Opcode ST    = new(0x32, "ST");
-        public static readonly Opcode STR   = new(0x33, "STR");
-        public static readonly Opcode PUSH  = new(0x34, "PUSH");
-        public static readonly Opcode POP   = new(0x35, "POP");
+        public static readonly Opcode LDC   = new(0x32, "LDC");
+        public static readonly Opcode LDCR  = new(0x33, "LDCR");
+        public static readonly Opcode ST    = new(0x34, "ST");
+        public static readonly Opcode STR   = new(0x35, "STR");
+        public static readonly Opcode PUSH  = new(0x36, "PUSH");
+        public static readonly Opcode POP   = new(0x37, "POP");
+        public static readonly Opcode POPC  = new(0x38, "POPC");
 
         private readonly uint _value;
         private readonly string _name;
@@ -113,16 +118,17 @@ public sealed partial class Instructions
     {
         private static readonly Dictionary<uint, AddressableRegisterCode> _values = [];
 
-        public static readonly AddressableRegisterCode PC  = new(0x00, "PC");
-        public static readonly AddressableRegisterCode GP1 = new(0x01, "GP1");
-        public static readonly AddressableRegisterCode GP2 = new(0x02, "GP2");
-        public static readonly AddressableRegisterCode GP3 = new(0x03, "GP3");
-        public static readonly AddressableRegisterCode GP4 = new(0x04, "GP4");
-        public static readonly AddressableRegisterCode GP5 = new(0x05, "GP5");
-        public static readonly AddressableRegisterCode GP6 = new(0x06, "GP6");
-        public static readonly AddressableRegisterCode GP7 = new(0x07, "GP7");
-        public static readonly AddressableRegisterCode GP8 = new(0x08, "GP8");
-        public static readonly AddressableRegisterCode SR  = new(0x10, "SR");
+        public static readonly AddressableRegisterCode PC   = new(0x00, "PC");
+        public static readonly AddressableRegisterCode GP1  = new(0x01, "GP1");
+        public static readonly AddressableRegisterCode GP2  = new(0x02, "GP2");
+        public static readonly AddressableRegisterCode GP3  = new(0x03, "GP3");
+        public static readonly AddressableRegisterCode GP4  = new(0x04, "GP4");
+        public static readonly AddressableRegisterCode GP5  = new(0x05, "GP5");
+        public static readonly AddressableRegisterCode GP6  = new(0x06, "GP6");
+        public static readonly AddressableRegisterCode GP7  = new(0x07, "GP7");
+        public static readonly AddressableRegisterCode GP8  = new(0x08, "GP8");
+        public static readonly AddressableRegisterCode SR   = new(0x0A, "SR");
+        public static readonly AddressableRegisterCode SP   = new(0x0B, "SP");
 
         private readonly uint _value;
         private readonly string _name;

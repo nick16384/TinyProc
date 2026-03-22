@@ -73,7 +73,13 @@ In-progress ToDo's:
 - Add cmp instruction: Op1 - Op2 => void (set flags)
 - Revise in-code naming of "operand 2": For RR-instructions this is wrong, since the second operand is not in IRB but another register encoded in IRA
 - Prepend mom ops address with rel/abs (optional) to indicate adr mode
-- Implement register jump (JMPR) lol
+- Revise condition codes: EQ = ZR = Z
+- Let reset code handle previously encountered error conditions. On CPU exception:
+  1. Set exception flag in SR
+  2. Write int instruction to stack[0], vector to stack[1], and ret to stack[2] + stack[3]
+  3. Jump to reset (0)
+  4. Reset handles executing vector (call stack[0]) -> maybe this is possible more elegantly? reserve another region? INTR?
+  -> Microcode??
 
 Changes for CPU 0.3-indev:
 - Added stack and SP
@@ -86,6 +92,7 @@ Changes for CPU 0.3-indev:
   2. .data and .text sections loaded after another
 - Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added CALLR
 - Added addressing mode bit in instruction encoding
+- Added CMP / LDC / LDRC instruction (SUB / LD / LDR but discards result and only affects registers)
 
 Naming ideas:
 Useless neglibly simple computer emulator (UNSC-E)

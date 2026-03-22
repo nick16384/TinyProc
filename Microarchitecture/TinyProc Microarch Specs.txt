@@ -38,6 +38,8 @@ Flags:
 Arithmetic operations:
 10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
 11 - AOPI [Destination register] [Immediate] : Arithmetic operation between register and immediate
+12 - CMP [Source Register] [Destination register] : "SUB Src, Dst", discard result, set flags
+13 - CMP [Source Register] [Immediate value] : "SUB Src, Imm", discard result, set flags
 
 ALU Opcodes for arithmetic instructions:
 001100 - MOV
@@ -55,18 +57,20 @@ Add documentation for which flags get set by instructions
 Memory:
 30 - LD [Destination register] [Memory address] : Load memory at address to register
 31 - LDR [Destination register] [Memory address from register] : Load memory from address in register
-32 - ST [Source register] [Memory address] : Store register at memory address
-33 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
-(Does it make sense, that store instructions have destination / source syntax swapped? Revise!)
-34 - PUSH [Source register]
-35 - POP  [Destination register]
+32 - LDC [Memory address] : Load memory at address, discard the result, set flags
+33 - LDRC [Memory address from register] : Load memory from address in register, discard result, set flags
+34 - ST [Source register] [Memory address] : Store register at memory address
+35 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
+36 - PUSH [Source register]
+37 - POP  [Destination register]
+38 - POPC : Pop from stack, discard result, set flags
 
 3F - <Highest possible value for opcode>
 
 Pseudo instructions (to be implemented):
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
 - NOT (XOR X 0xffffffff)
-- COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
+- CMP / CMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
 
 Conditional codes:
 [Conditional code] - [Description] - [Instruction suffix]
@@ -124,7 +128,8 @@ Format: [Register name] [Register code in instruction]
 - General purpose 6 0x06
 - General purpose 7 0x07
 - General purpose 8 0x08
-- Status register (SR) 0x10
+- Status register (SR) 0x0A
+- Stack pointer (SP) 0x0B
 - <max. possible value> 0x1F
 
 Internal registers (Not addressable):

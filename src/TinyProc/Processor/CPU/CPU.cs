@@ -36,12 +36,12 @@ public partial class CPU
         // Program counter / Instruction pointer
         RCODE_PC = 0x00u,
         // Status register
-        RCODE_SR = 0x10u,
+        RCODE_SR = 0x0Au,
+        // Stack pointer
+        RCODE_SP = 0x0Bu,
 
         // Memory address register
         RCODE_SPECIAL_MAR = 0x70000000u,
-        // Stack pointer
-        RCODE_SPECIAL_SP = 0x70000001u,
         // Memory data register
         RCODE_SPECIAL_MDR = 0x70000002u,
         // Instruction registers A and B

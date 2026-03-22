@@ -24,14 +24,14 @@ public partial class CPU
         /// <param name="regCode"></param>
         /// <returns></returns>
         private string RegisterNameAndValueFormatted(InternalRegisterCode regCode)
-            => $"{regCode}[{CU_ADDRESSABLE_REGISTERS[regCode]:x8}]";
+            => $"{regCode}[{CU_ADDRESSABLE_REGISTERS[regCode].ValueDirect:x8}]";
 
         // Useful methods for CPU data flow
-        internal void CopyFromRegisterToRegister(InternalRegisterCode source, InternalRegisterCode destination)
+        internal void CopyFromRegisterToRegister(InternalRegisterCode source, InternalRegisterCode destination, bool enableFlags = true)
         {
             lock (_alu)
             {
-                _alu.Status_EnableFlags = true;
+                _alu.Status_EnableFlags = enableFlags;
                 if (B1_REGISTERS.ContainsKey(source) && B3_REGISTERS.ContainsKey(destination))
                 {
                     _alu.CurrentOpcode = ALU.ALUOpcode.TransferA;
@@ -59,12 +59,12 @@ public partial class CPU
         {
             // Increment the stack pointer
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
-            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SP;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
-            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SP;
             ResetBus3();
             // Push the data onto the stack
-            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
             // FIXME: Enable memory write
             CopyFromRegisterToRegister(sourceRegister, InternalRegisterCode.RCODE_SPECIAL_MDR);
             // FIXME: Disable memory write
@@ -72,15 +72,15 @@ public partial class CPU
         internal void PopFromStack(InternalRegisterCode destinationRegister)
         {
             // Pop element from the stack
-            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SP, InternalRegisterCode.RCODE_SPECIAL_MAR);
             // FIXME: Enable memory read
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, destinationRegister);
             // FIXME: Disable memory read
             // Decrement the stack pointer
             _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
-            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_SP;
             _IntBus2.BusSourceRegisterCode = InternalRegisterCode.RCODE_SPECIAL_CONST_POS1;
-            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_SP;
+            _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SP;
             ResetBus3();
         }
 
@@ -97,10 +97,10 @@ public partial class CPU
                 $"EINT[{(_alu.Status_InterruptsEnabled ? 1 : 0)}]");
 
             // PC -> MAR
-            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_PC, InternalRegisterCode.RCODE_SPECIAL_MAR);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_PC, InternalRegisterCode.RCODE_SPECIAL_MAR, enableFlags: false);
 
             // MDR -> IRA
-            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRA);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRA, enableFlags: false);
         }
         // Load second instruction word
         private void InstructionFetch2()
@@ -113,7 +113,7 @@ public partial class CPU
 
             // MDR -> IRB
             ResetBus3();
-            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRB);
+            CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRB, enableFlags: false);
 
             ResetBus3();
             Logging.LogInfo($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
@@ -221,6 +221,10 @@ public partial class CPU
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_STR_A(); }
                     else if (_currentInstruction.Opcode == Opcode.STR &&
                         _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_STR_R(); }
+                    else if (_currentInstruction.Opcode == Opcode.JMPR &&
+                        _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_JMPR_A(); }
+                    else if (_currentInstruction.Opcode == Opcode.JMPR &&
+                        _currentInstruction.AddressingMode == AddressingMode.PCRelative) { INSTRUCTION_R_JMPR_R(); }
                     else if (_currentInstruction.Opcode == Opcode.CALLR &&
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_CALLR_A(); }
                     else if (_currentInstruction.Opcode == Opcode.CALLR &&
