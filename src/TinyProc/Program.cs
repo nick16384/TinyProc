@@ -1,5 +1,6 @@
 ﻿using TinyProc.Assembling;
 using TinyProc.Application;
+using TinyProc.Processor.CPU;
 
 class Program
 {
@@ -64,7 +65,11 @@ class Program
             ExecutionContainer.INSTANCE0.LoadInitialProgram(programWrapper);
 
             // If this program is at this stage, it is probably running in CLI mode.
-            Logging.LogInfo("Program ready to execute. Press enter to start first cycle. Press \"q\" to exit. Press \"r\" to dump registers.");
+            Logging.LogInfo("Program ready to execute. Press enter to start first cycle. List of commands below:");
+            Logging.LogInfo("\"q\":    Exit.");
+            Logging.LogInfo("\"r\":    Dump registers.");
+            Logging.LogInfo("\"s\":    Print all elements of the stack up to (and incl.) the stack pointer.");
+            Logging.LogInfo("\"sN\": Print first N elements of the stack.");
             while (true)
             {
                 string? input = Console.ReadLine();
@@ -93,9 +98,45 @@ class Program
                     Logging.LogDebug($"SR:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:x8}");
                     Logging.LogDebug($"SP:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue:x8}");
                 }
+                else if (input.StartsWith('s'))
+                {
+                    // FIXME: This constant needs to be public by MMU and not here and there.
+                    const uint STACK_BASE = 0x00020000;
+                    if (input.Length > 1)
+                    {
+                        // User entered number of elements
+                        uint num = Assembler.ConvertStringToUInt(input[1..]);
+                        PrintStack(ExecutionContainer.INSTANCE0, num);
+                    }
+                    else
+                    {
+                        // Print stack until SP
+                        PrintStack(ExecutionContainer.INSTANCE0, ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue - STACK_BASE);
+                    }
+                }
                 else { ExecutionContainer.INSTANCE0.StepSingleCycle(); }
             }
             ExitClean();
+        }
+    }
+
+    /// <summary>
+    /// Print N elements of the stack of the specified execution container.
+    /// </summary>
+    /// <param name="executionContainer"></param>
+    /// <param name="n"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private static void PrintStack(ExecutionContainer executionContainer, uint n)
+    {
+        // FIXME: Fix dis
+        const uint STACK_BASE = 0x00020000;
+        if (n == 0)
+            return;
+        for (uint i = 0; i < n; i++)
+        {
+            uint stackaddr = STACK_BASE + i;
+            Logging.LogDebug($"{stackaddr:x8}: {executionContainer.ReadRAMDirect(stackaddr):x8}" +
+                $"{(stackaddr == executionContainer.CPUDebugPort.SPValue ? " <-- SP" : "")}");
         }
     }
 
