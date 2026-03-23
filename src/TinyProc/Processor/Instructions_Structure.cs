@@ -58,6 +58,8 @@ public sealed partial class Instructions
         else if (opcode == Opcode.IRET)  { return InstructionType.Jump; }
         else if (opcode == Opcode.AOPI)  { return InstructionType.Immediate; }
         else if (opcode == Opcode.AOPR)  { return InstructionType.Register; }
+        else if (opcode == Opcode.CMP)   { return InstructionType.Immediate; }
+        else if (opcode == Opcode.CMPR)  { return InstructionType.Register; }
         else if (opcode == Opcode.TST)   { return InstructionType.Register; }
         else if (opcode == Opcode.CLC)   { return InstructionType.Register; }
         else if (opcode == Opcode.CLZ)   { return InstructionType.Register; }

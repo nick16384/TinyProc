@@ -65,17 +65,16 @@ public partial class CPU
         }
 
         /// <summary>
-        /// Perform an arithmetic operation between two registers (source and destination) and store the result in the destination register.
+        /// Perform an arithmetic operation between two registers (destination and source) and store the result in the destination register.
         /// </summary>
         private void INSTRUCTION_R_AOPR()
         {
             Logging.LogDebugWithoutNewline(
                 "Arithmetic register operation: " +
-                $"Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}" +
+                $"Src:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}" +
                 $" <{_currentInstruction.R_ALUOpcode}> " +
-                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
+                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}");
             _alu.Status_EnableFlags = true;
-            // FIXME: Src and Dst swapped or not??? Also review InstructionLookup in Assembler...
             _alu.CurrentOpcode = _currentInstruction.R_ALUOpcode;
             _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
             _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
@@ -85,19 +84,19 @@ public partial class CPU
             Logging.PrintDebug($" --> Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}\n");
         }
         /// <summary>
-        /// Perform a subtraction between the source and destination register, discard the result and set flags.
+        /// Perform a subtraction between the destination and source register, discard the result and set flags.
         /// </summary>
         private void INSTRUCTION_R_CMPR()
         {
             Logging.LogDebug(
                 "Compare registers: " +
-                $"Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}" +
+                $"Src:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}" +
                 $" and " +
-                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
+                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}");
             _alu.Status_EnableFlags = true;
             _alu.CurrentOpcode = ALU.ALUOpcode.AB_SubtractionSigned;
-            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
-            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus1.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_SPECIAL_VOID;
             _alu.Status_EnableFlags = false;
             ResetBus3();

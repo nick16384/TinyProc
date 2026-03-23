@@ -35,13 +35,10 @@ public sealed partial class Instructions
 
         public static readonly Opcode LD    = new(0x30, "LD");
         public static readonly Opcode LDR   = new(0x31, "LDR");
-        public static readonly Opcode LDC   = new(0x32, "LDC");
-        public static readonly Opcode LDCR  = new(0x33, "LDCR");
-        public static readonly Opcode ST    = new(0x34, "ST");
-        public static readonly Opcode STR   = new(0x35, "STR");
-        public static readonly Opcode PUSH  = new(0x36, "PUSH");
-        public static readonly Opcode POP   = new(0x37, "POP");
-        public static readonly Opcode POPC  = new(0x38, "POPC");
+        public static readonly Opcode ST    = new(0x32, "ST");
+        public static readonly Opcode STR   = new(0x33, "STR");
+        public static readonly Opcode PUSH  = new(0x34, "PUSH");
+        public static readonly Opcode POP   = new(0x35, "POP");
 
         private readonly uint _value;
         private readonly string _name;

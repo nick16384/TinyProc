@@ -42,6 +42,7 @@ imm STACK_BASE = 0x00020000
     TST
     CLA
 
+    ; Reset stack
     MOV   sp, STACK_BASE
 
     ; Jump to the loader

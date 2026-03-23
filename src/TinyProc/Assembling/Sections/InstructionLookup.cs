@@ -136,6 +136,8 @@ public sealed class InstructionLookup
 		else if (mnemonic == "AND" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "AND" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "OR" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
+		else if (mnemonic == "CMP" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
+		else if (mnemonic == "CMP" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "OR" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "LD" && isSecondOperandNumber) { type = Instructions.InstructionType.Immediate; }
 		else if (mnemonic == "LD" && !isSecondOperandNumber) { type = Instructions.InstructionType.Register; }

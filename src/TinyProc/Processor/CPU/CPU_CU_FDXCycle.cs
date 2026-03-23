@@ -213,6 +213,7 @@ public partial class CPU
                     else if (_currentInstruction.Opcode == Opcode.AOPR)  { INSTRUCTION_R_AOPR(); }
                     else if (_currentInstruction.Opcode == Opcode.PUSH)  { INSTRUCTION_R_PUSH(); }
                     else if (_currentInstruction.Opcode == Opcode.POP)   { INSTRUCTION_R_POP(); }
+                    else if (_currentInstruction.Opcode == Opcode.CMPR)  { INSTRUCTION_R_CMPR(); }
                     else if (_currentInstruction.Opcode == Opcode.LDR &&
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_R_LDR_A(); }
                     else if (_currentInstruction.Opcode == Opcode.LDR &&
@@ -237,6 +238,7 @@ public partial class CPU
 
                 case InstructionType.Immediate:
                     if      (_currentInstruction.Opcode == Opcode.AOPI)  { INSTRUCTION_I_AOPI(); }
+                    else if (_currentInstruction.Opcode == Opcode.CMP)   { INSTRUCTION_I_CMP(); }
                     else if (_currentInstruction.Opcode == Opcode.LD &&
                         _currentInstruction.AddressingMode == AddressingMode.Absolute)   { INSTRUCTION_I_LD_A(); }
                     else if (_currentInstruction.Opcode == Opcode.LD &&

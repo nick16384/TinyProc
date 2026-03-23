@@ -106,7 +106,7 @@ imm sp_base_address = 0x00020000
         inc   gp8
         dec   gp7
         intng int_vector_reset ; If the program is empty, the decrement operation results in an underflow. This is not correct: Trigger reset interrupt
-        mov   gp7, gp7
+        cmp   gp7, 0
         bnz   [copySection]
         ret
     
@@ -130,11 +130,9 @@ imm sp_base_address = 0x00020000
     ; Clears the stack, all registers, and resumes indefinitely in a halt loop.
     programReturned:
         ; Clear the stack
-        ; TODO: Make SP accessible
-        ; mov   gp1, sp
-        ; sub   gp1, sp_base_address
-        ; pop   gp2
-        ; bnz   [programReturned]
+        pop   gp2
+        cmp   sp, sp_base_address
+        bnz   [programReturned]
         ; Clear registers
         call  [clearRegisters]
         jmp   [_halt]

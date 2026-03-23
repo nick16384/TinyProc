@@ -38,7 +38,7 @@ Flags:
 Arithmetic operations:
 10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
 11 - AOPI [Destination register] [Immediate] : Arithmetic operation between register and immediate
-12 - CMP [Source Register] [Destination register] : "SUB Src, Dst", discard result, set flags
+12 - CMPR [Source Register] [Destination register] : "SUB Src, Dst", discard result, set flags
 13 - CMP [Source Register] [Immediate value] : "SUB Src, Imm", discard result, set flags
 
 ALU Opcodes for arithmetic instructions:
@@ -57,13 +57,10 @@ Add documentation for which flags get set by instructions
 Memory:
 30 - LD [Destination register] [Memory address] : Load memory at address to register
 31 - LDR [Destination register] [Memory address from register] : Load memory from address in register
-32 - LDC [Memory address] : Load memory at address, discard the result, set flags
-33 - LDRC [Memory address from register] : Load memory from address in register, discard result, set flags
-34 - ST [Source register] [Memory address] : Store register at memory address
-35 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
-36 - PUSH [Source register]
-37 - POP  [Destination register]
-38 - POPC : Pop from stack, discard result, set flags
+32 - ST [Source register] [Memory address] : Store register at memory address
+33 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
+34 - PUSH [Source register]
+35 - POP  [Destination register]
 
 3F - <Highest possible value for opcode>
 
