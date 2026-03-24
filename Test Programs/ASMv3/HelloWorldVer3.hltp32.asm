@@ -7,7 +7,7 @@ imm int_syscall = 1
 imm int_syscall_conwrite = 10
 ; Hello world message must be stored as a pointer to the message, since the
 ; message itself is too large to be stored in a 32 bit value
-ptr hello_world_msg, "Hello, World!" + 0xA ; + [reserve: 50] ; Store string + newline
+ptr hello_world_msg "Hello, World!", 0xA ; + [reserve: 50] ; Store string + newline
 ; Block is guaranteed to be continuous in memory -> Can be addressed
 ; Block internal data cannot be addressed after the block is created without knowing an offset
 imm hello_world_msg_words len: hello_world_msg

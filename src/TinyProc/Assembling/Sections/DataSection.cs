@@ -382,6 +382,7 @@ public readonly struct DataSection(uint? fixedLoadAddress,
             // pointer name, "hello, world" + 0xA
             if (words[0] == KEYWORD_POINTER)
             {
+                // TODO: See ToDo.txt
                 if (words.Length < 3)
                     throw new ArgumentException("Number of literal words in pointer declaration is less than 4.");
                 string name = new([.. words[1].SkipLast(1)]);

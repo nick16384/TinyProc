@@ -113,6 +113,8 @@ although only part of it is relevant to instructions that are affected by flag v
 3. Zero
 4. Negative
 5. Carry
+6. Interrupted
+7. Interrupts enabled
 
 Globally addressable Registers
 Format: [Register name] [Register code in instruction]
