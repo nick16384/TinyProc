@@ -29,5 +29,21 @@ public partial class CPU
         public uint SPValue { get => _cpu._MMU.SP.ValueDirect; }
         public uint MARValue { get => _cpu._MMU.MAR.ValueDirect; }
         public uint MDRValue { get => _cpu._MMU.MDR.ValueDirect; }
+
+        /// <summary>
+        /// <i>Internal debug method, not for use as actual hardware.</i><br></br>
+        /// Reads any arbitrary address from virtual memory space.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public uint ReadVirtualMemDirect(uint address) => _cpu._MMU.Debug_ReadVirtualDirect(address);
+        /// <summary>
+        /// <i>Internal debug method, not for use as actual hardware.</i><br></br>
+        /// Writes to any arbitrary address from virtual memory space.
+        /// Writing to a ROM will still throw an error.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="value"></param>
+        public void WriteVirtualMemDirect(uint address, uint value) => _cpu._MMU.Debug_WriteVirtualDirect(address, value);
     }
 }

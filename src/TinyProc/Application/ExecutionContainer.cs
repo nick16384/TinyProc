@@ -155,16 +155,19 @@ public class ExecutionContainer
         */
         throw new NotImplementedException();
     }
-
-    // TODO: Replace direct read / write methods with an array and underlying yield methods.
-    public uint ReadVirtualMemDirect(uint address)
-    {
-        throw new NotImplementedException();
-    }
-    public uint WriteVirtualMemDirect(uint address, uint value)
-    {
-        throw new NotImplementedException();
-    }
+    
+    /// <summary>
+    /// Reads a word directly from the underlying virtual address space of the MMU.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <returns></returns>
+    public uint ReadVirtualMemDirect(uint address) => _cpu.DebugPort.ReadVirtualMemDirect(address);
+    /// <summary>
+    /// Writes a word directly to the underlying virtual address space of the MMU.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <param name="value"></param>
+    public void WriteVirtualMemDirect(uint address, uint value) => _cpu.DebugPort.WriteVirtualMemDirect(address, value);
 
     public TimeSpan StepSingleCycle()
     {

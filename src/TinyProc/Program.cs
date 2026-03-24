@@ -68,11 +68,17 @@ class Program
             Logging.LogInfo("Program ready to execute. Press enter to start first cycle. List of commands below:");
             Logging.LogInfo("\"q\":    Exit.");
             Logging.LogInfo("\"r\":    Dump registers.");
+            Logging.LogInfo("\"mS-E\": Print all addresses between (including both) S and E.");
             Logging.LogInfo("\"s\":    Print all elements of the stack up to (and incl.) the stack pointer.");
-            Logging.LogInfo("\"sN\": Print first N elements of the stack.");
+            Logging.LogInfo("\"sN\":   Print first N elements of the stack.");
             while (true)
             {
-                string? input = Console.ReadLine();
+                string? input = Console.ReadLine() ?? "";
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    ExecutionContainer.INSTANCE0.StepSingleCycle();
+                    continue;
+                }
                 if (input == "q")
                 {
                     // Quit the emulator.
@@ -98,45 +104,63 @@ class Program
                     Logging.LogDebug($"SR:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SRValue:x8}");
                     Logging.LogDebug($"SP:  {ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue:x8}");
                 }
+                else if (input.StartsWith('m'))
+                {
+                    // Print part of memory
+                    input = input[1..];
+                    uint start, end;
+                    try
+                    {
+                        start = Assembler.ConvertStringToUInt(input.Split('-')[0]);
+                        end   = Assembler.ConvertStringToUInt(input.Split('-')[1]);
+                    } catch (Exception)
+                    {
+                        Logging.LogDebug("Invalid start or end address.");
+                        continue;
+                    }
+                    PrintAddressSpace(ExecutionContainer.INSTANCE0, start, end);
+                }
                 else if (input.StartsWith('s'))
                 {
+                    // Print part of the stack
                     // FIXME: This constant needs to be public by MMU and not here and there.
                     const uint STACK_BASE = 0x00020000;
                     if (input.Length > 1)
                     {
                         // User entered number of elements
                         uint num = Assembler.ConvertStringToUInt(input[1..]);
-                        PrintStack(ExecutionContainer.INSTANCE0, num);
+                        PrintAddressSpace(ExecutionContainer.INSTANCE0, STACK_BASE, STACK_BASE + num - 1);
                     }
                     else
                     {
                         // Print stack until SP
-                        PrintStack(ExecutionContainer.INSTANCE0, ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue - STACK_BASE);
+                        PrintAddressSpace(ExecutionContainer.INSTANCE0, STACK_BASE, ExecutionContainer.INSTANCE0.CPUDebugPort.SPValue);
                     }
                 }
-                else { ExecutionContainer.INSTANCE0.StepSingleCycle(); }
             }
+            // End of main loop
             ExitClean();
         }
     }
 
     /// <summary>
-    /// Print N elements of the stack of the specified execution container.
+    /// Prints all words stored between the specified addresses (both included).
+    /// Also shows the location of the stack pointer if it would be pointing to somewhere in that space.
     /// </summary>
     /// <param name="executionContainer"></param>
-    /// <param name="n"></param>
-    /// <exception cref="NotImplementedException"></exception>
-    private static void PrintStack(ExecutionContainer executionContainer, uint n)
+    /// <param name="startInclusive"></param>
+    /// <param name="endInclusive"></param>
+    private static void PrintAddressSpace(ExecutionContainer executionContainer, uint startInclusive, uint endInclusive)
     {
-        // FIXME: Fix dis
-        const uint STACK_BASE = 0x00020000;
-        if (n == 0)
-            return;
-        for (uint i = 0; i < n; i++)
+        if (endInclusive <= startInclusive)
         {
-            uint stackaddr = STACK_BASE + i;
-            Logging.LogDebug($"{stackaddr:x8}: {executionContainer.ReadVirtualMemDirect(stackaddr):x8}" +
-                $"{(stackaddr == executionContainer.CPUDebugPort.SPValue ? " <-- SP" : "")}");
+            Logging.LogDebug("Nothing to print.");
+            return;
+        }
+        for (uint addr = startInclusive; addr <= endInclusive; addr++)
+        {
+            Logging.LogDebug($"{addr:x8}: {executionContainer.ReadVirtualMemDirect(addr):x8}" +
+                $"{(addr == executionContainer.CPUDebugPort.SPValue ? " <-- SP" : "")}");
         }
     }
 

@@ -10,6 +10,8 @@ public partial class CPU
     // memory flow in / out of the CPU
     private class MMU : IBusAttachable
     {
+        // TODO: Make part (esp. read/write of addresses) publicly available (via CPU debug port?)
+        // TODO: Clean up code for that
         public class MemoryAddressRegister(MMU mmu) : Register(0, true)
         {
             private readonly MMU _mmu = mmu;
@@ -123,7 +125,7 @@ public partial class CPU
             MemoryDataBus = new Bus(Register.SYSTEM_WORD_SIZE, UBID_MEMDATABUS, [rom, .. rams.Values]);
         }
 
-        private IMemoryDevice GetRAMAtVirtualAddress(uint addr)
+        private IMemoryDevice GetMemAtVirtualAddress(uint addr)
         {
             foreach ((IMemoryDevice ram, (uint, uint) ramSpace) in _MemorySpaces)
             {
@@ -139,7 +141,7 @@ public partial class CPU
 
         private IMemoryDevice RAM
         {
-            get => GetRAMAtVirtualAddress(MAR.ValueDirect);
+            get => GetMemAtVirtualAddress(MAR.ValueDirect);
         }
 
         private uint GetRelativeAddress(uint absoluteAddr, IMemoryDevice ram)
@@ -148,5 +150,33 @@ public partial class CPU
         }
 
         public void AttachToBus(uint ubid, Bus bus) { /* Do nothing. MMU already is the bus master. */ }
+
+        #region Debug methods
+
+        /// <summary>
+        /// <i>Internal debug method, not for use as actual hardware.</i><br></br>
+        /// Reads any arbitrary address from virtual memory space.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        internal uint Debug_ReadVirtualDirect(uint address)
+        {
+            IMemoryDevice dev = GetMemAtVirtualAddress(address);
+            return dev.ReadDirect(GetRelativeAddress(address, dev));
+        }
+        /// <summary>
+        /// <i>Internal debug method, not for use as actual hardware.</i><br></br>
+        /// Writes to any arbitrary address from virtual memory space.
+        /// Writing to a ROM will still throw an error.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="value"></param>
+        internal void Debug_WriteVirtualDirect(uint address, uint value)
+        {
+            IReadWriteMemoryDevice rwDev = GetMemAtVirtualAddress(address) as IReadWriteMemoryDevice;
+            rwDev.WriteDirect(GetRelativeAddress(address, rwDev), value);
+        }
+
+        #endregion Debug methods
     }
 }
