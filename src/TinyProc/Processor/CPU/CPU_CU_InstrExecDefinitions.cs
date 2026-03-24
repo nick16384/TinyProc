@@ -345,23 +345,23 @@ public partial class CPU
             ResetBus3();
         }
         /// <summary>
-        /// Jump to an absolute address in the destination register.
+        /// Jump to an absolute address in the source register.
         /// </summary>
         private void INSTRUCTION_R_JMPR_A()
         {
-            Logging.LogDebug($"Absolute jump to address in register Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
-            CopyFromRegisterToRegister(_currentInstruction.R_DestRegCode, InternalRegisterCode.RCODE_PC);
+            Logging.LogDebug($"Absolute jump to address in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}");
+            CopyFromRegisterToRegister(_currentInstruction.R_SrcRegCode, InternalRegisterCode.RCODE_PC);
         }
         /// <summary>
-        /// Jump to a relative offset (PC-relative) in the destination register.
+        /// Jump to a relative offset (PC-relative) from the source register.
         /// </summary>
         private void INSTRUCTION_R_JMPR_R()
         {
-            Logging.LogDebug($"Relative jump to offset in register Dst:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}" +
-                $" from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}");
+            Logging.LogDebug($"Relative jump to offset in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}" +
+                $" from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}");
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
-            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
         }
@@ -393,29 +393,29 @@ public partial class CPU
             ResetBus3();
         }
         /// <summary>
-        /// Call a subroutine at an absolute address in the destination register.
+        /// Call a subroutine at an absolute address in the source register.
         /// Does the same as JMPR_A except it also pushes the PC to the stack.
         /// </summary>
         private void INSTRUCTION_R_CALLR_A()
         {
             Logging.LogDebug(
-                $"Absolute call subroutine at address in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}");
+                $"Absolute call subroutine at address in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}");
             PushOntoStack(InternalRegisterCode.RCODE_PC);
-            CopyFromRegisterToRegister(_currentInstruction.R_DestRegCode, InternalRegisterCode.RCODE_PC);
+            CopyFromRegisterToRegister(_currentInstruction.R_SrcRegCode, InternalRegisterCode.RCODE_PC);
         }
         /// <summary>
-        /// Call a subroutine at a relative memory offset in the destination register (PC-relative).
+        /// Call a subroutine at a relative memory offset from the source register (PC-relative).
         /// Does the same as JMPR_R except it also pushes the PC to the stack.
         /// </summary>
         private void INSTRUCTION_R_CALLR_R()
         {
             Logging.LogDebug(
-                $"Relative call subroutine at offset in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_DestRegCode)}" +
-                $" from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_DestRegCode].ValueDirect:x8}");
+                $"Relative call subroutine at offset in register Src:{RegisterNameAndValueFormatted(_currentInstruction.R_SrcRegCode)}" +
+                $" from PC[{PC.ValueDirect:x8}] ==> {PC.ValueDirect + CU_ADDRESSABLE_REGISTERS[_currentInstruction.R_SrcRegCode].ValueDirect:x8}");
             
             _alu.CurrentOpcode = ALU.ALUOpcode.Addition;
             _IntBus1.BusSourceRegisterCode = InternalRegisterCode.RCODE_PC;
-            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_DestRegCode;
+            _IntBus2.BusSourceRegisterCode = _currentInstruction.R_SrcRegCode;
             _IntBus3.BusTargetRegisterCode = InternalRegisterCode.RCODE_PC;
             ResetBus3();
         }

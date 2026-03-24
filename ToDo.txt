@@ -57,7 +57,6 @@ In-progress ToDo's:
 - Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
 - Remove the need to use callr/call, ldr/ld and str/st in assembly, but infer it in assembler
 - Implement hardware faults
-- Fix SP overflow when resetting for long enough -> Make SP accessible to assembly, reset in 000000000_Reset
 - Calling convention: push / pop parameters
 - asm .data: Append ptr data directly, no padding with zeroes between them to realign (e.g. "string" + 0xA)
 - Modify absolute CALL in loader: Inject address into operand -> GP1 can be cleared as well:

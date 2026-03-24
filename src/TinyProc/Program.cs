@@ -163,7 +163,7 @@ class Program
     /// <param name="endInclusive"></param>
     private static void PrintAddressSpace(ExecutionContainer executionContainer, uint startInclusive, uint endInclusive)
     {
-        if (endInclusive <= startInclusive)
+        if (endInclusive < startInclusive)
         {
             Logging.LogDebug("Nothing to print.");
             return;

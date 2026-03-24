@@ -130,9 +130,7 @@ imm sp_base_address = 0x00020000
     ; Clears the stack, all registers, and resumes indefinitely in a halt loop.
     programReturned:
         ; Clear the stack
-        pop   gp2
-        cmp   sp, sp_base_address
-        bnz   [programReturned]
+        mov   sp, sp_base_address
         ; Clear registers
         call  [clearRegisters]
         jmp   [_halt]
