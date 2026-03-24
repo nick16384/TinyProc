@@ -53,7 +53,6 @@ Fix GUI for new CPU arch:
 - In reality, the CU would signal memory read/writes during execution, but not the MMU. Implement this.
 
 In-progress ToDo's:
-- Fix stack print
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
 - Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
 - Remove the need to use callr/call, ldr/ld and str/st in assembly, but infer it in assembler

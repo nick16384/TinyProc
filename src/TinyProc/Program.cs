@@ -67,6 +67,7 @@ class Program
             // If this program is at this stage, it is probably running in CLI mode.
             Logging.LogInfo("Program ready to execute. Press enter to start first cycle. List of commands below:");
             Logging.LogInfo("\"q\":    Exit.");
+            Logging.LogInfo("\"cN\":   Continue for N cycles.");
             Logging.LogInfo("\"r\":    Dump registers.");
             Logging.LogInfo("\"mS-E\": Print all addresses between (including both) S and E.");
             Logging.LogInfo("\"s\":    Print all elements of the stack up to (and incl.) the stack pointer.");
@@ -83,6 +84,18 @@ class Program
                 {
                     // Quit the emulator.
                     break;
+                }
+                else if (input.StartsWith('c'))
+                {
+                    uint count;
+                    try {
+                        count = Assembler.ConvertStringToUInt(input[1..]);
+                    } catch (Exception) {
+                        Logging.LogDebug("Invalid number of cycles.");
+                        continue;
+                    }
+                    for (uint i = 0; i < count; i++)
+                        ExecutionContainer.INSTANCE0.StepSingleCycle();
                 }
                 else if (input == "r")
                 {
@@ -109,12 +122,10 @@ class Program
                     // Print part of memory
                     input = input[1..];
                     uint start, end;
-                    try
-                    {
+                    try {
                         start = Assembler.ConvertStringToUInt(input.Split('-')[0]);
                         end   = Assembler.ConvertStringToUInt(input.Split('-')[1]);
-                    } catch (Exception)
-                    {
+                    } catch (Exception) {
                         Logging.LogDebug("Invalid start or end address.");
                         continue;
                     }
