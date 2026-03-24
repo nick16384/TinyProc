@@ -157,10 +157,14 @@ public class ExecutionContainer
     }
 
     // TODO: Replace direct read / write methods with an array and underlying yield methods.
-    public uint ReadRAMDirect(uint address) => _mem1.ReadDirect(address);
-    
-    public void WriteRAMDirect(uint address, int uintOffset, byte value)
-        => _mem1.WriteDirect(address, _mem1.ReadDirect(address) & ((uint)value << (uintOffset * 8)));
+    public uint ReadVirtualMemDirect(uint address)
+    {
+        throw new NotImplementedException();
+    }
+    public uint WriteVirtualMemDirect(uint address, uint value)
+    {
+        throw new NotImplementedException();
+    }
 
     public TimeSpan StepSingleCycle()
     {

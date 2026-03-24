@@ -135,7 +135,7 @@ class Program
         for (uint i = 0; i < n; i++)
         {
             uint stackaddr = STACK_BASE + i;
-            Logging.LogDebug($"{stackaddr:x8}: {executionContainer.ReadRAMDirect(stackaddr):x8}" +
+            Logging.LogDebug($"{stackaddr:x8}: {executionContainer.ReadVirtualMemDirect(stackaddr):x8}" +
                 $"{(stackaddr == executionContainer.CPUDebugPort.SPValue ? " <-- SP" : "")}");
         }
     }
