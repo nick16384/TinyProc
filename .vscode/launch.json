@@ -9,7 +9,7 @@
             //"projectPath": "${workspaceFolder}/src/TinyProc/TinyProc.csproj",
             "program": "${workspaceFolder}/src/TinyProc/bin/Debug/net9.0/TinyProc.dll",
             "args": [
-                "--run", "Test Programs/ASMv3/HelloWorldVer3.hltp32.bin"
+                "--run", "Test Programs/ASMv3/ASM3Test.hltp32.bin"
             ],
         }
     ]

@@ -54,6 +54,7 @@ Fix GUI for new CPU arch:
 
 In-progress ToDo's:
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)
+-> Also make centralized map for functions, so ideally adding one instruction only involves adding one entry to this map
 - Test fixed load address for program (and if both assembler and loader handle .data and .text correctly)
 - Remove the need to use callr/call, ldr/ld and str/st in assembly, but infer it in assembler
 - Implement hardware faults
@@ -64,6 +65,12 @@ In-progress ToDo's:
   4. Add words similar to NASMs "db" vs. "equ": db is stored, equ is more like C's #define. -> removes the need for "__attribute__ inline = all"
   5. Make name for "ptr" optional: "dw" for no name, "ptr" with pointer
   6. NASM: Prepend any line with "times N" to repeat it N times (e.g. "times 50 dw 0" for 50 0x0 words)
+  7. Revise keywords: no necessity for "imm", replace all with dw:
+     "imm name = value" => "dw name value"
+     "ptr name value, value2" => "dw name value, value2"
+     "imm name len: nameimm" => "dw name len: nameimm"
+     "#define name len: nameimm" => "equ name len: nameimm"
+     -> Still keep #define for more complex replacements
 - Modify absolute CALL in loader: Inject address into operand -> GP1 can be cleared as well:
   - clear stuff (GPRs and status)
   - call [modified address]
