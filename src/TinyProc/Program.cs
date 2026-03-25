@@ -54,7 +54,7 @@ class Program
         {
             string executableFilePath = args[1];
 
-            ExecutableWrapper programWrapper = new(executableFilePath);
+            ExecutableWrapper programWrapper = ExecutableWrapper.LoadProgramFromFile(executableFilePath);
 
             Console.CancelKeyPress += delegate
             {

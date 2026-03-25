@@ -42,7 +42,7 @@ public class RawMemory : IReadWriteMemoryDevice
             _writeEnable = !value && _writeEnable;
             // Read request via bus
             if (value)
-                MemoryDataBus.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0)));
+                MemoryDataBus!.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus!.Data, 0)));
         }
     }
     private bool _writeEnable;
@@ -57,13 +57,13 @@ public class RawMemory : IReadWriteMemoryDevice
             _readEnable = !value && _readEnable;
             // Write request via bus
             if (value)
-                Write(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus.Data, 0));
+                Write(Bus.BoolArrayToUInt(MemoryAddressBus!.Data, 0), Bus.BoolArrayToUInt(MemoryDataBus!.Data, 0));
         }
     }
 
     // Initialized as soon as attached to bus
-    private Bus MemoryAddressBus;
-    private Bus MemoryDataBus;
+    private Bus? MemoryAddressBus;
+    private Bus? MemoryDataBus;
 
     public RawMemory(uint numWords = FULL_SIZE) : this(numWords, []) {}
 
@@ -107,7 +107,7 @@ public class RawMemory : IReadWriteMemoryDevice
         if (_data[pageNumber] == null)
             return 0u;
         else
-            return _data[pageNumber][pageOffset];
+            return _data[pageNumber]![pageOffset];
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual void Write(uint addr, uint value)
@@ -118,7 +118,7 @@ public class RawMemory : IReadWriteMemoryDevice
         if (_data[pageNumber] == null)
             _data[pageNumber] = new uint[PAGE_SIZE];
         
-        _data[pageNumber][pageOffset] = value;
+        _data[pageNumber]![pageOffset] = value;
     }
 
     /// <summary>

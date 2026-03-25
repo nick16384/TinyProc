@@ -15,8 +15,7 @@ public class ExecutableWrapper
     public uint TextSectionLoadAddress { get => Program[Assembler.HEADER_INDEX_SEGMENT_TEXT_LOADADDRESS]; }
     public uint TextSectionSize { get => Program[Assembler.HEADER_INDEX_SEGMENT_TEXT_SIZE]; }
 
-    public ExecutableWrapper(string executableFilePath) => LoadProgramFromFile(executableFilePath);
-    public void LoadProgramFromFile(string executableFilePath)
+    public static ExecutableWrapper LoadProgramFromFile(string executableFilePath)
     {
         Logging.LogInfo($"Attempting to load binary executable {executableFilePath}");
         if (executableFilePath.Trim().EndsWith(".hltp32.bin"))
@@ -24,9 +23,10 @@ public class ExecutableWrapper
 
         Logging.LogDebug("Reading binary file");
         byte[] binFileContent = File.ReadAllBytes(executableFilePath);
-        Program = ByteArrayToUIntArray(binFileContent);
-        Logging.LogDebug($"Decoded binary file into {Program.Length} words.");
-        CheckAsmVersion();
+        ExecutableWrapper executable = new(ByteArrayToUIntArray(binFileContent));
+        Logging.LogDebug($"Decoded binary file into {executable.Program.Length} words.");
+        executable.CheckAsmVersion();
+        return executable;
     }
     public ExecutableWrapper(uint[] program)
     {
@@ -88,10 +88,8 @@ public class ExecutableWrapper
     private static void WriteBytesToFile(byte[] bytes, string filePath)
     {
         FileStream outputBinaryFileStream = File.Open(filePath, FileMode.Create);
-        using (BinaryWriter binaryWriter = new(outputBinaryFileStream))
-        {
-            Logging.LogDebug($"Write bytes count {bytes.Length}");
-            binaryWriter.Write(bytes);
-        }
+        using BinaryWriter binaryWriter = new(outputBinaryFileStream);
+        Logging.LogDebug($"Write bytes count {bytes.Length}");
+        binaryWriter.Write(bytes);
     }
 }

@@ -13,7 +13,8 @@ public class ExecutionContainer
 {
     // The first (and almost always only) instance of an ExecutionContainer, which is
     // exposed externally to be used by e.g. GUIs.
-    public static ExecutionContainer? INSTANCE0 { get; set; }
+    private static required ExecutionContainer _instance0;
+    public static ExecutionContainer INSTANCE0 { get => _instance0 ?? Initialize(); }
 
     private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";
     private const string LOADER_ASM_PROGRAM_PATH = "System Programs/00000100_Loader.hltp32.asm";
@@ -55,8 +56,8 @@ public class ExecutionContainer
 
     public static ExecutionContainer Initialize()
     {
-        INSTANCE0 = new ExecutionContainer();
-        return INSTANCE0;
+        _instance0 = new ExecutionContainer();
+        return _instance0;
     }
 
     private ExecutionContainer()
@@ -96,7 +97,7 @@ public class ExecutionContainer
             Logging.LogDebug("Memory object too large to dump.");
         Logging.LogDebug("Done.");
 
-        INSTANCE0 ??= this;
+        _instance0 ??= this;
     }
 
     public void ResetCPU() => _cpu.Reset();

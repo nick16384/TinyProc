@@ -20,7 +20,7 @@ public class ROM : IMemoryDevice
             _readEnable = value;
             // Read request via bus
             if (value)
-                MemoryDataBus.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus.Data, 0)));
+                MemoryDataBus!.Data = Bus.UIntToBoolArray(Read(Bus.BoolArrayToUInt(MemoryAddressBus!.Data, 0)));
         }
     }
     /// <summary>
@@ -33,8 +33,8 @@ public class ROM : IMemoryDevice
     public uint ReadDirect(uint address) => Read(address);
 
     // Initialized as soon as attached to bus
-    private Bus MemoryAddressBus;
-    private Bus MemoryDataBus;
+    private Bus? MemoryAddressBus;
+    private Bus? MemoryDataBus;
 
     public ROM(uint size, uint[] fixedData)
     {

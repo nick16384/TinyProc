@@ -83,6 +83,9 @@ public partial class CPU
             public static readonly ALUOpcode LogicalOR            = new((false, true, false, true, false, true));
             public static readonly ALUOpcode A_LogicalNOT         = new((false, false, true, true, false, true));
             public static readonly ALUOpcode B_LogicalNOT         = new((true, true, false, false, false, true));
+
+            public override bool Equals(object? obj) => object.Equals(this, obj);
+            public override int GetHashCode() => base.GetHashCode();
         }
 
         public class ALUInputRegister(ALU alu) : Register(0, isSpecial: true)
