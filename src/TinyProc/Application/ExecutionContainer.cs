@@ -13,7 +13,7 @@ public class ExecutionContainer
 {
     // The first (and almost always only) instance of an ExecutionContainer, which is
     // exposed externally to be used by e.g. GUIs.
-    private static required ExecutionContainer _instance0;
+    private static ExecutionContainer _instance0 = Initialize();
     public static ExecutionContainer INSTANCE0 { get => _instance0 ?? Initialize(); }
 
     private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";

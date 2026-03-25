@@ -26,6 +26,7 @@ public partial class Assembler
 
     // Assembler directives
     internal const string ASM_DIRECTIVE_VERSION = "#VERSION";
+    internal const string ASM_DIRECTIVE_DEFINE = "#DEFINE";
     internal const string ASM_DIRECTIVE_SECTION = "#SECTION";
     internal const string ASM_DIRECTIVE_SECTION_DATA = ".data";
     internal const string ASM_DIRECTIVE_SECTION_TEXT = ".text";
@@ -38,8 +39,6 @@ public partial class Assembler
     internal const string ASM_ATTRIBUTE_INLINE_ALL = "all";
 
     // Keywords
-    internal const string KEYWORD_IMMEDIATE = "imm";
-    internal const string KEYWORD_POINTER = "ptr";
-    internal const string KEYWORD_BLOCK = "blk";
+    internal const string KEYWORD_DEFINEWORD = "dw";
     internal const string KEYWORD_SPECIAL_LENGTH = "len:";
 }

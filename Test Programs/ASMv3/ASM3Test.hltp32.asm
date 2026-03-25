@@ -10,14 +10,16 @@
 #DEFINE VECTOR_RESET 0x00000000
 
 #SECTION (__attribute__ loadaddress = 0x20000000) .data
-imm imm1 = 0x39393939
-imm imm2 = 39393939h
-imm imm3 = 0b01010101
-imm imm4 = 39393939
-ptr ptr1 0x55, "This is a test string", 0xA, "Another test string"
-imm imm5 len: ptr1
+dw imm1 0x39393939
+dw imm2 39393939h
+dw imm3 0b01010101
+dw imm4 39393939
+dw ptr1 0x55, "This is a test string", 0xA, "Another test string"
+dw "Empty data here lol"
+equ imm5 len: ptr1
+dw imm6 len: ptr1
 times 50 db 0x0
-times REPEAT_TEST_TIMES db REPEAT_TEST_DATA
+times $REPEAT_TEST_TIMES db $REPEAT_TEST_DATA
 
 #SECTION (__attribute__ loadaddress = 0x30000000) .text
 _start:
@@ -30,12 +32,12 @@ _start:
     st gp1, [rel imm1]
     st gp1, [+imm1]
     st gp1, [-imm1]
-    st gp1, [LD_DATA_ADDR]
-    st gp1, [+LD_DATA_ADDR]
+    st gp1, [$LD_DATA_ADDR]
+    st gp1, [+$LD_DATA_ADDR]
 
     ; Calling / stack / interrupts
     call func
-    int VECTOR_RESET
+    int $VECTOR_RESET
 
 func:
     pop gp1

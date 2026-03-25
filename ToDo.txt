@@ -71,6 +71,7 @@ In-progress ToDo's:
      "imm name len: nameimm" => "dw name len: nameimm"
      "#define name len: nameimm" => "equ name len: nameimm"
      -> Still keep #define for more complex replacements
+  8. Add documentation for assembler (esp. directives, example code)
 - Modify absolute CALL in loader: Inject address into operand -> GP1 can be cleared as well:
   - clear stuff (GPRs and status)
   - call [modified address]

@@ -114,7 +114,7 @@ public readonly struct TextSection : IAssemblySection
                     // (since .text is loaded immediately after .data, only check for .data is necessary)
                     // ==> Use absolute addressing
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
-                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
+                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.ImmediateSequence pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
                     if (isImmediate)
                     {
@@ -145,7 +145,7 @@ public readonly struct TextSection : IAssemblySection
                     // This means that absolute load / stores won't work.
                     // ==> Use relative addressing
                     bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
-                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.Pointer pointer);
+                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.ImmediateSequence pointer);
                     bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
                     if (isImmediate)
                     {

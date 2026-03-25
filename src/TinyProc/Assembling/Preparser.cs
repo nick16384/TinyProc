@@ -40,41 +40,37 @@ public partial class Assembler
             throw new Exception($"Incompatible assembler version: Expected {ASSEMBLER_VERSION}, got {versionInAssemblyStr} instead.");
         Logging.LogDebug("Assembly version check successful!");
 
-        // Convert labels and string literals to addresses and values
+        // Stores directive names associated with their values
+        Dictionary<string, string> directives = [];
+        // Build dictionary
         foreach (string line in assemblyLines)
         {
-            // Convert string literals to uint sequences
-            string[] words = SplitLineIntoWords(line);
-            foreach (string word in words)
+            if (line.StartsWith(ASM_DIRECTIVE_DEFINE))
             {
-                if (word.StartsWith('\"') && word.EndsWith('\"'))
-                {
-                    string wordWithoutQuotes = new([.. word.Skip(1).SkipLast(1)]);
-                    List<string> wordUInts = [];
-                    for (int i = 0; i < wordWithoutQuotes.Length; i += 4)
-                    {
-                        // Each block of 4 letters can be represented as a uint
-                        uint char1 = (i + 0) < wordWithoutQuotes.Length ? wordWithoutQuotes[i + 0] : 0u;
-                        uint char2 = (i + 1) < wordWithoutQuotes.Length ? wordWithoutQuotes[i + 1] : 0u;
-                        uint char3 = (i + 2) < wordWithoutQuotes.Length ? wordWithoutQuotes[i + 2] : 0u;
-                        uint char4 = (i + 3) < wordWithoutQuotes.Length ? wordWithoutQuotes[i + 3] : 0u;
-                        uint textBlockAsUInt =
-                                char1 << 24
-                            | char2 << 16
-                            | char3 << 8
-                            | char4 << 0;
-                        wordUInts.Add(textBlockAsUInt.ToString("x8") + "h");
-                    }
-                    string wordUIntRepresentation = string.Join(" + ", wordUInts);
-                    assemblyCode = assemblyCode.Replace(word, wordUIntRepresentation);
-                    assemblyLines = [.. assemblyCode.Split("\n")];
-                    assemblyLines = FilterCommentsAndRemoveExcessWhitespace(assemblyLines);
-                    Logging.LogDebug($"Replaced string literal {word} with uint sequence {wordUIntRepresentation}");
-                }
+                string[] words = line.Split([' '], 3);
+                if (words.Length != 3 || words[0] != ASM_DIRECTIVE_DEFINE)
+                    throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {line}");
+                
+                string name = words[1];
+                string value = words[2];
+                Logging.LogDebug($"Found define: \"{name}\" = \"{value}\"");
+                directives.Add(name, value);
             }
         }
-
-        Logging.LogWarn("Pre-parser missing parsing #define directives!");
+        // Second iteration: Replace names in previously built dictionary with their values in code
+        for (int i = 0; i < assemblyLines.Count; i++)
+        {
+            string line = assemblyLines[i];
+            foreach ((string name, string value) in directives)
+            {
+                // To ensure not any word within another word is replaced to produce garbage,
+                // the name is prepended with a "$" sign during use. This is different from e.g. the C pre-parser, but
+                // prevents this code section from growing too large to check for tokens instead of occurrences.
+                if (line.Contains("$" + name))
+                    line = line.Replace("$" + name, value);
+            }
+            assemblyLines[i] = line;
+        }
 
         return assemblyLines;
     }
