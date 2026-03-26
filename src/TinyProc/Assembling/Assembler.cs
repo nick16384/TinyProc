@@ -11,13 +11,14 @@ public partial class Assembler
     /// of a program, but returns them directly instead of merging them together with a header.
     /// </summary>
     /// <param name="assemblyCode"></param>
-    /// <returns>The entry point, the .data section and the .text section</returns>
+    /// <returns>The load address, the .data section and the .text section</returns>
     public static (uint, DataSection, TextSection) AssembleToDirectMachineCode(string assemblyCode)
     {
         List<string> assemblyLines = PreParse(assemblyCode);
         try
         {
             // ========== Parse assembly header entry point ==========
+            // TODO: Implement #ORG directive
             if (!assemblyLines[1].StartsWith(ASM_DIRECTIVE_ENTRYPOINT))
                 throw new Exception($"Missing {ASM_DIRECTIVE_ENTRYPOINT} directive after version directive. Cannot determine program entry point.");
             if (SplitLineIntoWords(assemblyLines[1]).Length < 2)
@@ -27,7 +28,7 @@ public partial class Assembler
             uint? entryPoint = null;
             try
             {
-                entryPoint = ConvertStringToUInt(entryPointStr);
+                TryConvertStringToUInt(entryPointStr, out entryPoint);
                 Logging.LogDebug($"Base entry point: {entryPoint:x8}");
             }
             catch (Exception) { Logging.LogDebug($"Entry point {entryPointStr} seems to reference a label. Resolving later."); }
@@ -144,14 +145,24 @@ public partial class Assembler
         return [.. assembledBinary];
     }
 
-    // Converts a number string from
-    // 1. Base 2 (prefix 0b)
-    // 2. Base 10 (no prefix)
-    // 3. Base 16 (prefix 0x)
-    // to a uint
+    /// <summary>
+    /// Converts a number string from<br></br>
+    /// 1. Base 2 (prefix 0b)<br></br>
+    /// 2. Base 10 (no prefix)<br></br>
+    /// 3. Base 16 (prefix 0x or postfix h)<br></br>
+    /// to a uint
+    /// </summary>
+    /// <param name="numStr">The number string</param>
+    /// <param name="numValue">The numeric value. Null if the conversion was unsuccessful.</param>
+    /// <returns>Whether the conversion was successful or not.</returns>
+    internal static bool TryConvertStringToUInt(string numStr, out uint? numValue)
+    {
+        try { numValue = ConvertStringToUInt(numStr); }
+        catch (Exception) { numValue = null; return false; }
+        return true;
+    }
     internal static uint ConvertStringToUInt(string numStr)
     {
-        numStr = numStr.ToLower();
         // Base-2 (binary)
         if (numStr.StartsWith("0b"))
             return Convert.ToUInt32(numStr[2..], 2);
@@ -172,20 +183,20 @@ public partial class Assembler
             .ConvertAll(line => line.Split(";")[0].Trim())
             .Where(line => !string.IsNullOrEmpty(line))];
 
+    private const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
+    private static readonly string[] prefilterSymbols = [","];
     /// <summary>
-    /// Splits a line (expecting zero line breaks) into an array of words, but
-    /// words enclosed in quotation marks (") and brackets ([]) remain as one word.
+    /// Splits a line (expecting zero line breaks) into an array of words (splitting at whitespace and commas), but
+    /// words enclosed in quotation marks (") and square brackets ([]) remain as one word.
+    /// The function preserves both symbols in the resulting list of strings, but removes commas and spaces.
     /// </summary>
     /// <param name="line"></param>
     /// <returns></returns>
-    private const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
-    private static readonly string[] prefilterSymbols = [","];
     internal static string[] SplitLineIntoWords(string line)
     {
-        
         // Split into words
         var matches = Regex.Matches(line, pattern);
-        string[] words = [.. matches.Select(m => m.Value)];
+        string[] words = [.. matches.Select(m => m.Value.Trim())];
         // Remove separator strings (",") but not if they are enquoted
         foreach (string excludeSymbol in prefilterSymbols)
             words = [.. words.Select(word =>

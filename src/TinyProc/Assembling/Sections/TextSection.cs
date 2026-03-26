@@ -2,25 +2,22 @@ using static TinyProc.Processor.Instructions;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
 using System.Data;
-using System.Text.RegularExpressions;
+using static TinyProc.Assembling.Sections.DataSection;
 
 namespace TinyProc.Assembling.Sections;
 
 public readonly struct TextSection : IAssemblySection
 {
     public uint Size { get; }
-    public uint? FixedLoadAddress { get; }
+    public uint EntryPoint { get; }
 
     public List<IInstruction> Instructions { get; }
     public Dictionary<string, uint> LabelAddressMap { get; }
     public List<uint> BinaryRepresentation { get; }
 
-    public TextSection(uint? fixedLoadAddress,
-        List<IInstruction> instructions,
-        Dictionary<string, uint> labelAddressMap)
+    public TextSection(List<IInstruction> instructions, Dictionary<string, uint> labelAddressMap)
     {
         Size = (uint)instructions.Count * 2;
-        FixedLoadAddress = fixedLoadAddress;
         Instructions = instructions;
         LabelAddressMap = labelAddressMap;
 
@@ -39,12 +36,17 @@ public readonly struct TextSection : IAssemblySection
         List<string> lines = [.. assemblyCodeTextSection.Split("\n")];
         lines = FilterCommentsAndRemoveExcessWhitespace(lines);
 
-        uint? fixedLoadAddress;
+        uint entryPoint;
         List<IInstruction> instructions = [];
         Dictionary<string, uint> labelAddressMap = [];
 
-        uint? headerAttributes = ParseHeader(lines[0]);
-        fixedLoadAddress = headerAttributes;
+        // Parse section header
+        Either<uint, string> headerAttributes = ParseHeader(lines[0]);
+        if (headerAttributes.Is<uint>())
+            entryPoint = headerAttributes.A;
+        else
+            Logging.LogDebug($"Entry point seems to reference a label, resolving later.");
+
         lines.RemoveAt(0);
 
         // .text section pre-parser:
@@ -63,7 +65,16 @@ public readonly struct TextSection : IAssemblySection
             }
             currentAddress += 2;
         }
+        // Try to find entry point label again
+        if (headerAttributes.Is<string>())
+        {
+            if (labelAddressMap.TryGetValue(headerAttributes, out entryPoint))
+                throw new Exception($"Cannot infer entry point {headerAttributes.B}");
+        }
         currentAddress = 0;
+        // TODO: Implement #ORG directive (in main Assembler.cs file)
+        // TODO: Finish .text section parser (with new #ORG and no custom load addresses for sections)
+        throw new NotImplementedException();
 
         foreach (string lineUnparsed in lines)
         {
@@ -91,11 +102,8 @@ public readonly struct TextSection : IAssemblySection
                 string word = wordWithClutter;
                 foreach (string symbolStrip in (IEnumerable<string>)["(", ")", "[", "]"])
                     word = word.Replace(symbolStrip, "");
-                if ((dataSection.ImmediateValues.ContainsKey(word) ? 1 : 0) +
-                    (dataSection.Pointers.ContainsKey(word) ? 1 : 0) +
-                    (dataSection.BlockPointers.ContainsKey(word) ? 1 : 0) +
-                    (labelAddressMap.ContainsKey(word) ? 1 : 0) >= 2)
-                    // If at least two of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
+                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == word) && labelAddressMap.ContainsKey(word))
+                    // If both of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
                     throw new Exception($"Address label / .data section reference is ambiguous for \"{word}\".");
                 
                 if (labelAddressMap.TryGetValue(word, out uint labelAddress))
@@ -113,9 +121,8 @@ public readonly struct TextSection : IAssemblySection
                     // Location in memory is static for both .data and .text section
                     // (since .text is loaded immediately after .data, only check for .data is necessary)
                     // ==> Use absolute addressing
-                    bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
-                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.ImmediateSequence pointer);
-                    bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
+                    ImmediateSequence seq = dataSection.ImmediateSequences.First(seq => seq.Alias == word);
+
                     if (isImmediate)
                     {
                         uint immediateValue = immediate.Value;
@@ -206,17 +213,16 @@ public readonly struct TextSection : IAssemblySection
     }
 
     /// <summary>
-    /// Processes the header of the .text section
-    /// Mostly similar to the header of the .data section, but not identical,
-    /// since some attributes are section specific.
+    /// Processes the header of the .text section, additionally parsing attributes.
     /// </summary>
     /// <param name="lines"></param>
-    /// <returns></returns>
+    /// <returns>The entry point as uint or a label string if the entry point is a label</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static uint? ParseHeader(string headerLine)
+    private static Either<uint, string> ParseHeader(string headerLine)
     {
-        uint? fixedLoadAddress = null;
+        // By default, the entry point (offset into .text section) is zero
+        Either<uint, string> entryPoint = 0x00000000;
         // Parse section header
         string[] headerWords = SplitLineIntoWords(headerLine);
         if (headerWords[0] != ASM_DIRECTIVE_SECTION || headerWords.Last() != ASM_DIRECTIVE_SECTION_TEXT)
@@ -249,8 +255,11 @@ public readonly struct TextSection : IAssemblySection
                 // TODO: Throw exception when encountering same attribute multiple times
                 switch (identifier)
                 {
-                    case ASM_ATTRIBUTE_SECTION_LOADADDRESS:
-                        fixedLoadAddress = ConvertStringToUInt(value);
+                    case ASM_ATTRIBUTE_TEXT_ENTRYPOINT:
+                        TryConvertStringToUInt(value, out uint? entryPointUInt);
+                        if (entryPointUInt.HasValue)
+                            entryPoint = entryPointUInt.Value; // Address
+                        entryPoint = value; // Label
                         break;
                     default:
                         throw new ArgumentException($"Invalid attribute identifier \"{identifier}\"");
@@ -262,6 +271,6 @@ public readonly struct TextSection : IAssemblySection
         }
         Logging.LogDebug("Successfully verified and parsed .text section header.");
 
-        return fixedLoadAddress;
+        return entryPoint;
     }
 }

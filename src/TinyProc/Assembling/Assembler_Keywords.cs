@@ -31,14 +31,14 @@ public partial class Assembler
     internal const string ASM_DIRECTIVE_SECTION_DATA = ".data";
     internal const string ASM_DIRECTIVE_SECTION_TEXT = ".text";
     internal const string ASM_DIRECTIVE_ENTRYPOINT = "#ENTRY";
+    internal const string ASM_DIRECTIVE_LOADADDRESS = "#ORG";
 
     // Attributes
     internal const string ASM_ATTRIBUTE = "__attribute__";
-    internal const string ASM_ATTRIBUTE_SECTION_LOADADDRESS = "loadaddress";
-    internal const string ASM_ATTRIBUTE_INLINE = "inline";
-    internal const string ASM_ATTRIBUTE_INLINE_ALL = "all";
+    internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "entry";
 
     // Keywords
     internal const string KEYWORD_DEFINEWORD = "dw";
+    internal const string KEYWORD_EQUATE = "equ";
     internal const string KEYWORD_SPECIAL_LENGTH = "len:";
 }

@@ -75,15 +75,9 @@ public sealed class InstructionLookup
 	/// Returns true otherwise.</returns>
 	private static bool IsNthOperandNumber(string[] words, int n)
 	{
-		try {
-			string operand = words[n];
-			if (operand.StartsWith('[') && operand.EndsWith(']'))
-				operand = operand[1..^1];
-			Logging.LogDebug($"Operand {n}: {operand}");
-			// This throws an exception if the number is not numeric (hex, binary, or decimal):
-			ConvertStringToUInt(operand);
-		} catch (Exception) { return false; }
-		return true;
+		bool result = words.Length - 1 >= n && TryConvertStringToUInt(words[n], out _);
+		Logging.LogDebug($"Operand {n}: {words[n]}");
+		return result;
 	}
 
 	internal static Instructions.IInstruction ParseAsInstruction(string[] words, Instructions.AddressingMode? adrMode)

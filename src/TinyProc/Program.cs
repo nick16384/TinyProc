@@ -87,10 +87,9 @@ class Program
                 }
                 else if (input.StartsWith('c'))
                 {
-                    uint count;
-                    try {
-                        count = Assembler.ConvertStringToUInt(input[1..]);
-                    } catch (Exception) {
+                    Assembler.TryConvertStringToUInt(input[1..], out uint? count);
+                    if (!count.HasValue)
+                    {
                         Logging.LogDebug("Invalid number of cycles.");
                         continue;
                     }
@@ -121,15 +120,14 @@ class Program
                 {
                     // Print part of memory
                     input = input[1..];
-                    uint start, end;
-                    try {
-                        start = Assembler.ConvertStringToUInt(input.Split('-')[0]);
-                        end   = Assembler.ConvertStringToUInt(input.Split('-')[1]);
-                    } catch (Exception) {
+                    Assembler.TryConvertStringToUInt(input.Split('-')[0], out uint? start);
+                    Assembler.TryConvertStringToUInt(input.Split('-')[1], out uint? end);
+                    if (!start.HasValue || !end.HasValue)
+                    {
                         Logging.LogDebug("Invalid start or end address.");
                         continue;
                     }
-                    PrintAddressSpace(ExecutionContainer.INSTANCE0, start, end);
+                    PrintAddressSpace(ExecutionContainer.INSTANCE0, start.Value, end.Value);
                 }
                 else if (input.StartsWith('s'))
                 {
@@ -139,8 +137,13 @@ class Program
                     if (input.Length > 1)
                     {
                         // User entered number of elements
-                        uint num = Assembler.ConvertStringToUInt(input[1..]);
-                        PrintAddressSpace(ExecutionContainer.INSTANCE0, STACK_BASE, STACK_BASE + num - 1);
+                        Assembler.TryConvertStringToUInt(input[1..], out uint? num);
+                        if (!num.HasValue)
+                        {
+                            Logging.LogDebug("Invalid number of stack elements.");
+                            continue;
+                        }
+                        PrintAddressSpace(ExecutionContainer.INSTANCE0, STACK_BASE, STACK_BASE + num.Value - 1);
                     }
                     else
                     {
