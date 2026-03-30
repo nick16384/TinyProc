@@ -1,7 +1,6 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using TinyProc.Assembling.Sections;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;

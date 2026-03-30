@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using TinyProc.Application;
 using TinyProc.Assembling.Sections;
+using TinyProc.Processor;
 
 namespace TinyProc.Assembling;
 
@@ -183,6 +184,18 @@ public partial class Assembler
             .ConvertAll(line => line.Split(";")[0].Trim())
             .Where(line => !string.IsNullOrEmpty(line))];
 
+    
+    /// <summary>
+    /// Receives full assembly code (without comments) and splits the code into
+    /// tokens usable by the assembler.
+    /// </summary>
+    /// <param name="assemblyCode"></param>
+    /// <returns>A list of tokens in assembly with every statement ending in an EOL token.</returns>
+    internal static Token[] TokenizeAssembly(string assemblyCode)
+    {
+        string[] assemblyLines = assemblyCode.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        throw new NotImplementedException();
+    }
     private const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
     private static readonly string[] prefilterSymbols = [","];
     /// <summary>
@@ -236,5 +249,43 @@ public partial class Assembler
         string pattern = Regex.Escape(wildcard).Replace(@"\#", "#").Replace(@"\*", ".*");
         MatchCollection matches = Regex.Matches(data, pattern);
         return matches.Count;
+    }
+
+    private enum TokenType
+    {
+        // Load address directive
+        DIRECTIVE_ORG,
+        // Entry point directive
+        DIRECTIVE_ENTRYPOINT,
+        // Define word directive
+        DIRECTIVE_DEFINEWORD,
+        // Equate directive
+        DIRECTIVE_EQUATE,
+        // Instruction mnemonic
+        MNEMONIC,
+        // Instruction register
+        REGISTER,
+        // Numeric value
+        NUMERIC_VALUE,
+        // Address label
+        LABEL,
+        // String value
+        STRING,
+        // End-of-line (special token)
+        EOL
+    }
+    private class Token(TokenType type, string value)
+    {
+        public readonly TokenType Type = type;
+        public readonly string Value = value;
+        public uint AsUInt() => ConvertStringToUInt(Value);
+        public Instructions.AddressableRegisterCode AsRegisterCode() => (Instructions.AddressableRegisterCode)Value;
+        public byte[] AsByteArray()
+        {
+            List<byte> bytesList = [];
+            foreach (char c in Value)
+                bytesList.Add((byte)c);
+            return [.. bytesList];
+        }
     }
 }
