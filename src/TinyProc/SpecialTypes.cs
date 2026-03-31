@@ -19,6 +19,16 @@ public sealed class Either<T1, T2>(T1? a, T2? b)
     public static implicit operator Either<T1, T2>(T1 a) => new(a, default);
     public static implicit operator Either<T1, T2>(T2 b) => new(default, b);
 
-    public static implicit operator T1(Either<T1, T2> either) => either.A;
-    public static implicit operator T2(Either<T1, T2> either) => either.B;
+    public static implicit operator T1(Either<T1, T2> either)
+    {
+        if (!either.Is<T1>())
+            throw new InvalidCastException($"Either is not type T1:{typeof(T1)}, but of T2:{typeof(T2)}. Cannot convert to T1.");
+        return either.A!;
+    }
+    public static implicit operator T2(Either<T1, T2> either)
+    {
+        if (!either.Is<T2>())
+            throw new InvalidCastException($"Either is not type T2:{typeof(T2)}, but of T1:{typeof(T1)}. Cannot convert to T2.");
+        return either.B!;
+    }
 }

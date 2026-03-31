@@ -15,6 +15,11 @@ public readonly struct TextSection : IAssemblySection
     public Dictionary<string, uint> LabelAddressMap { get; }
     public List<uint> BinaryRepresentation { get; }
 
+    private readonly struct TextSectionHeader(Either<uint, string> entryPoint)
+    {
+        public readonly Either<uint, string> EntryPoint = entryPoint;
+    }
+
     public TextSection(List<IInstruction> instructions, Dictionary<string, uint> labelAddressMap)
     {
         Size = (uint)instructions.Count * 2;
@@ -41,9 +46,9 @@ public readonly struct TextSection : IAssemblySection
         Dictionary<string, uint> labelAddressMap = [];
 
         // Parse section header
-        Either<uint, string> headerAttributes = ParseHeader(lines[0]);
-        if (headerAttributes.Is<uint>())
-            entryPoint = headerAttributes.A;
+        TextSectionHeader header = ParseHeader(lines[0]);
+        if (header.EntryPoint.Is<uint>())
+            entryPoint = header.EntryPoint.A;
         else
             Logging.LogDebug($"Entry point seems to reference a label, resolving later.");
 
@@ -66,10 +71,10 @@ public readonly struct TextSection : IAssemblySection
             currentAddress += 2;
         }
         // Try to find entry point label again
-        if (headerAttributes.Is<string>())
+        if (header.EntryPoint.Is<string>())
         {
-            if (labelAddressMap.TryGetValue(headerAttributes, out entryPoint))
-                throw new Exception($"Cannot infer entry point {headerAttributes.B}");
+            if (labelAddressMap.TryGetValue(header.EntryPoint, out entryPoint))
+                throw new Exception($"Cannot infer entry point {header.EntryPoint.B}");
         }
         currentAddress = 0;
         // TODO: Implement #ORG directive (in main Assembler.cs file)
@@ -219,7 +224,7 @@ public readonly struct TextSection : IAssemblySection
     /// <returns>The entry point as uint or a label string if the entry point is a label</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static Either<uint, string> ParseHeader(string headerLine)
+    private static TextSectionHeader ParseHeader(string headerLine)
     {
         // By default, the entry point (offset into .text section) is zero
         Either<uint, string> entryPoint = 0x00000000;
@@ -271,6 +276,6 @@ public readonly struct TextSection : IAssemblySection
         }
         Logging.LogDebug("Successfully verified and parsed .text section header.");
 
-        return entryPoint;
+        return new TextSectionHeader(entryPoint);
     }
 }

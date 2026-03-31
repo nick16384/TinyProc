@@ -41,16 +41,15 @@ Fix GUI for new CPU arch:
 --> Optionally make header usable; When header detected, switch to full assembly mode (requires header, .data and .text)
 - Fix disassembler
 - In hex editor: Do not display entire virtual memory, but instead address sections (user inputs start - end)
-
 - Put ROM at top and not bottom (as per typical convention; Put reset vector at lowest ROM address)
 - Implement +[reserve: XYZ] for ASMv3 pointers
-
 - Implement interrupt masking (maskable interrupts / non-maskable interrupts(NMIs))
 -> NMIs still trigger if Interrupt Enable is not set
 -> Trigger double fault when NMI is triggered when Interrupted flag is already set
 - Make assembler error messages more user friendly (e.g. "Line 16: Unknown mnemonic XYZ" instead of "KeyNotFoundException")
 - Abstract actual hardware emulation to allow for fast CPU emulation variant that isn't emulating hardware components, but is only optimized for speed (C code with native interface)
 - In reality, the CU would signal memory read/writes during execution, but not the MMU. Implement this.
+- Implement assembly "#INCLUDE"s to include separate source code files, similar to C (with pre-parser)
 
 In-progress ToDo's:
 - Centralize linking of instruction - type somewhere central (currently separated in assembler & Instructions class)

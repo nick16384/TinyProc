@@ -135,6 +135,8 @@ public sealed partial class Instructions
             _name = name;
             _values.Add(value, this);
         }
+        public static bool IsValidRegisterName(string name) => _values.Values.Any(register => register._name == name);
+        public static bool IsValidRegisterCode(uint code) => _values.Values.Any(register => register._value == code);
         public static implicit operator AddressableRegisterCode(uint value)
         {
             try { return _values[value]; }

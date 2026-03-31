@@ -5,16 +5,44 @@ using TinyProc.Processor;
 
 namespace TinyProc.Assembling;
 
+// TODO: Find a better name for this class
+/// <summary>
+/// A meta class containing machine code from an assembled program, both the .data and .text section, and a load address.
+/// </summary>
+/// <param name="loadAddress"></param>
+/// <param name="dataSection"></param>
+/// <param name="textSection"></param>
+public class AssemblyOutput(uint loadAddress, DataSection dataSection, TextSection textSection)
+{
+    public readonly uint LoadAddress = loadAddress;
+    public readonly DataSection DataSection = dataSection;
+    public readonly TextSection TextSection = textSection;
+    public readonly uint[] MachineCodeBinary = [.. dataSection.BinaryRepresentation, .. textSection.BinaryRepresentation];
+}
+
+/// <summary>
+/// The assembler reads assembly program code (as a string) and assembles (converts) it into a machine code.
+/// It is crucial to note that this is the only step this class is supposed to do.
+/// </summary>
 public partial class Assembler
 {
     /// <summary>
-    /// This method is (mostly) used internally. It extracts and parses the .data and .text section
-    /// of a program, but returns them directly instead of merging them together with a header.
+    /// Takes in HLTP32 assembly code (e.g. read from a source file) and converts it into machine code.
+    /// The machine code contains a .data section for data and a .text section for executable instructions in sequence.
+    /// The .text section follows the .data section.
     /// </summary>
     /// <param name="assemblyCode"></param>
-    /// <returns>The load address, the .data section and the .text section</returns>
-    public static (uint, DataSection, TextSection) AssembleToDirectMachineCode(string assemblyCode)
+    /// <returns>A meta class containing machine code, both sections and the load address.</returns>
+    /// <exception cref="Exception">If the assembler encounters an error.</exception>
+    public static AssemblyOutput Assemble(string assemblyCode)
     {
+        // Assembling steps:
+        // 1. Cleanup: Remove comments and excess whitespace
+        // 2. Tokenize: Parse code as a list of tokens for the assembler to work with
+        // 3. Pre-parse: Expand #DEFINE and "times N"
+        // 4. .data section
+        // 5. .text section
+
         List<string> assemblyLines = PreParse(assemblyCode);
         try
         {
@@ -83,11 +111,7 @@ public partial class Assembler
     }
 
     /// <summary>
-    /// The assembler reads assembly program code (as a string) and assembles (converts) it into a binary file.
-    /// It is crucial to note that this is the only step this class is supposed to do. The following happens
-    /// after the program has been assembled by this method:
-    /// The resulting binary file can be read by the CPU loader program, which copies the binary data
-    /// into the space it finds the most appropriate and start execution of this machine code.
+    /// 
     /// </summary>
     /// <param name="assemblyCode"></param>
     /// <returns></returns>
@@ -96,14 +120,9 @@ public partial class Assembler
     {
         Logging.LogInfo($"HLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
 
-        // Assembling steps:
-        // 1. Parse assembly header
-        // 2. Pre-parser (labels, string literals)
-        // 3. .data section
-        // 4. .text section (assemble)
-        // 5. Combine header & sections and return
+        
 
-        (uint, DataSection, TextSection) assembledDataRaw = AssembleToDirectMachineCode(assemblyCode);
+        (uint, DataSection, TextSection) assembledDataRaw = Assemble(assemblyCode);
         uint entryPoint = assembledDataRaw.Item1;
         DataSection dataSection = assembledDataRaw.Item2;
         TextSection textSection = assembledDataRaw.Item3;
@@ -191,12 +210,80 @@ public partial class Assembler
     /// </summary>
     /// <param name="assemblyCode"></param>
     /// <returns>A list of tokens in assembly with every statement ending in an EOL token.</returns>
-    internal static Token[] TokenizeAssembly(string assemblyCode)
+    private static Token[] TokenizeAssembly(string assemblyCode)
     {
         string[] assemblyLines = assemblyCode.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        throw new NotImplementedException();
+        List<Token> tokens = [];
+        foreach (string line in assemblyLines)
+        {
+            string[] words = SplitLineIntoWords(line);
+            foreach (string word in words)
+            {
+                Token token;
+                // Assembly directives
+                if      (word == ASM_DIRECTIVE_LOADADDRESS)
+                    token = new Token(TokenType.DIRECTIVE_ORG, word);
+                else if (word == ASM_DIRECTIVE_DEFINE)
+                    token = new Token(TokenType.DIRECTIVE_DEFINE, word);
+                else if (word == ASM_DIRECTIVE_SECTION)
+                    token = new Token(TokenType.DIRECTIVE_SECTION, word);
+                else if (word == ASM_DIRECTIVE_SECTION_DATA)
+                    token = new Token(TokenType.DIRECTIVE_SECTION_DATA, word);
+                else if (word == ASM_DIRECTIVE_SECTION_TEXT)
+                    token = new Token(TokenType.DIRECTIVE_SECTION_TEXT, word);
+                // Special keywords
+                else if (word == KEYWORD_DEFINEWORD)
+                    token = new Token(TokenType.KEYWORD_DEFINEWORD, word);
+                else if (word == KEYWORD_EQUATE)
+                    token = new Token(TokenType.KEYWORD_EQUATE, word);
+                else if (word == KEYWORD_LENGTH)
+                    token = new Token(TokenType.KEYWORD_LENGTH, word);
+                else if (word == KEYWORD_TIMES)
+                    token = new Token(TokenType.KEYWORD_TIMES, word);
+                // "Normal" tokens
+                // Single letters
+                else if (word == "[")
+                    token = new Token(TokenType.SQUARE_BRACKET_OPEN, "[");
+                else if (word == "]")
+                    token = new Token(TokenType.SQUARE_BRACKET_CLOSE, "]");
+                else if (word == "(")
+                    token = new Token(TokenType.BRACKET_OPEN, "(");
+                else if (word == ")")
+                    token = new Token(TokenType.BRACKET_CLOSE, ")");
+                else if (word == "+")
+                    token = new Token(TokenType.SYMBOL_PLUS, "+");
+                else if (word == "-")
+                    token = new Token(TokenType.SYMBOL_MINUS, "-");
+                else if (word == "*")
+                    token = new Token(TokenType.SYMBOL_MULTIPLY, "*");
+                // Check if parseable as mnemonic
+                // FIXME: Check for conditional codes!!!
+                else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == word))
+                    token = new Token(TokenType.MNEMONIC, word);
+                // Check if parseable as register
+                else if (Instructions.AddressableRegisterCode.IsValidRegisterName(word))
+                    token = new Token(TokenType.REGISTER, word);
+                // Check if parseable as uint
+                else if (TryConvertStringToUInt(word, out _))
+                    token = new Token(TokenType.NUMERIC_VALUE, word);
+                // Check if word is followed by colon, and it's the only word in the line
+                else if (word.EndsWith(':') && words.Length <= 1)
+                    token = new Token(TokenType.LABEL, word);
+                // Check if the word is enclosed in quotes
+                else if (word.StartsWith('"') && word.EndsWith('"'))
+                    token = new Token(TokenType.STRING, word[1..^1]);
+                else
+                    token = new Token(TokenType.LITERAL_WORD, word);
+                tokens.Add(token);
+            }
+            tokens.Add(new Token(TokenType.EOL, string.Empty));
+        }
+        return [.. tokens];
     }
-    private const string pattern = @"\[[^\]]*\]|""[^""]*""|[,]|\S+";
+    // Scary regex: Matches single words, or words enclosed in quotes, brackets or square brackets,
+    // while keeping brackets and square brackets separated, and enquoted strings intact including the quotes themselves.
+    // Useful site: https://regex101.com/ (set to .NET flavor)
+    private const string pattern = @"\[|\]|\(|\)|""[^""]+""|[^""\s\[\]\(\)""]+";
     private static readonly string[] prefilterSymbols = [","];
     /// <summary>
     /// Splits a line (expecting zero line breaks) into an array of words (splitting at whitespace and commas), but
@@ -205,7 +292,7 @@ public partial class Assembler
     /// </summary>
     /// <param name="line"></param>
     /// <returns></returns>
-    internal static string[] SplitLineIntoWords(string line)
+    private static string[] SplitLineIntoWords(string line)
     {
         // Split into words
         var matches = Regex.Matches(line, pattern);
@@ -253,26 +340,29 @@ public partial class Assembler
 
     private enum TokenType
     {
-        // Load address directive
-        DIRECTIVE_ORG,
-        // Entry point directive
-        DIRECTIVE_ENTRYPOINT,
-        // Define word directive
-        DIRECTIVE_DEFINEWORD,
-        // Equate directive
-        DIRECTIVE_EQUATE,
-        // Instruction mnemonic
-        MNEMONIC,
-        // Instruction register
-        REGISTER,
-        // Numeric value
+        DIRECTIVE_ORG, // Load address directive
+        DIRECTIVE_DEFINE, // Define (similar to C's #define)
+        DIRECTIVE_SECTION,
+        DIRECTIVE_SECTION_DATA,
+        DIRECTIVE_SECTION_TEXT,
+        KEYWORD_DEFINEWORD,
+        KEYWORD_EQUATE,
+        KEYWORD_LENGTH,
+        KEYWORD_TIMES,
+        SQUARE_BRACKET_OPEN,
+        SQUARE_BRACKET_CLOSE,
+        BRACKET_OPEN,
+        BRACKET_CLOSE,
+        SYMBOL_PLUS,
+        SYMBOL_MINUS,
+        SYMBOL_MULTIPLY,
+        MNEMONIC, // Instruction mnemonic
+        REGISTER, // Instruction register
         NUMERIC_VALUE,
-        // Address label
-        LABEL,
-        // String value
-        STRING,
-        // End-of-line (special token)
-        EOL
+        LABEL, // Address label
+        LITERAL_WORD, // A literal word
+        STRING, // A literal word enclosed in quotes
+        EOL // End-of-line (special token)
     }
     private class Token(TokenType type, string value)
     {

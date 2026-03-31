@@ -114,7 +114,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 string? alias = hasAlias ? words[1] : null;
                 string[] dataStrings = hasAlias ? words[2..] : words[1..];
                 List<uint> data;
-                if (dataStrings[0] == KEYWORD_SPECIAL_LENGTH)
+                if (dataStrings[0] == KEYWORD_LENGTH)
                     data = [(uint)immediateSequences.First(seq => seq.Alias == dataStrings[1]).Data.Length];
                 else
                 {
@@ -140,7 +140,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 string alias = words[1];
                 string[] dataStrings = words[2..];
                 List<uint> data;
-                if (dataStrings[0] == KEYWORD_SPECIAL_LENGTH)
+                if (dataStrings[0] == KEYWORD_LENGTH)
                     data = [(uint)immediateSequences.First(seq => seq.Alias == dataStrings[1]).Data.Length];
                 else
                 {

@@ -68,8 +68,8 @@ public class ExecutionContainer
         Logging.LogDebug("Assembling Reset and Loader programs");
         string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
         string loaderProgramCode = File.ReadAllText(LOADER_ASM_PROGRAM_PATH);
-        (uint, DataSection, TextSection) resetProgram = Assembling.Assembler.AssembleToDirectMachineCode(resetProgramCode);
-        (uint, DataSection, TextSection) loaderProgram = Assembling.Assembler.AssembleToDirectMachineCode(loaderProgramCode);
+        (uint, DataSection, TextSection) resetProgram = Assembling.Assembler.Assemble(resetProgramCode);
+        (uint, DataSection, TextSection) loaderProgram = Assembling.Assembler.Assemble(loaderProgramCode);
         Logging.LogDebug("Saving Reset and Loader programs in ROM");
         uint resetLoadAddress = resetProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);
         uint loaderLoadAddress = loaderProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);

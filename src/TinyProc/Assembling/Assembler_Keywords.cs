@@ -30,15 +30,14 @@ public partial class Assembler
     internal const string ASM_DIRECTIVE_SECTION = "#SECTION";
     internal const string ASM_DIRECTIVE_SECTION_DATA = ".data";
     internal const string ASM_DIRECTIVE_SECTION_TEXT = ".text";
-    internal const string ASM_DIRECTIVE_ENTRYPOINT = "#ENTRY";
     internal const string ASM_DIRECTIVE_LOADADDRESS = "#ORG";
 
     // Attributes
-    internal const string ASM_ATTRIBUTE = "__attribute__";
-    internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "entry";
+    internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "__entry";
 
     // Keywords
     internal const string KEYWORD_DEFINEWORD = "dw";
     internal const string KEYWORD_EQUATE = "equ";
-    internal const string KEYWORD_SPECIAL_LENGTH = "len:";
+    internal const string KEYWORD_LENGTH = "len:";
+    internal const string KEYWORD_TIMES = "times";
 }
