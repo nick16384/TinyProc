@@ -9,69 +9,68 @@ public partial class Assembler
     /// splits it into code lines, and does some work (see below for more details) to make the code usable for
     /// the rest of the assembler.<br></br>
     /// Currently, the pre-parser does the following:<br></br>
-    /// 1. Splits the code into lines, removes comments and excess whitespace<br></br>
-    /// 2. Checks for the correct assembly version.<br></br>
-    /// 3. Parses #define directives and replaces all occurrences of their labels.
+    /// 1. Parses "#define" directives and replaces all occurrences of their labels.<br></br>
+    /// 2. Parses "times N": Duplicates the following statement N times
     /// </summary>
     /// <param name="assemblyCode">The raw assembly source code</param>
     /// <returns>The lines of the assembly code after pre-parsing</returns>
-    private static List<string> PreParse(string assemblyCode)
+    private static List<Statement> PreParse(List<Statement> assemblyStatements)
     {
-        // FIXME: Edge case: When a comment is enclosed in quotes, it will still be discarded as a comment,
-        // which is obviously not intended behaviour.
+        assemblyStatements = PreParseDefines(assemblyStatements);
+        assemblyStatements = PreParseTimes(assemblyStatements);
+        return assemblyStatements;
+    }
 
-        // TODO: Work with StringBuilder instead of rewriting strings over and over.
-        // use separate indices array to mark newlines, words, etc.
-        // If the StringBuilder content needs to be updated (e.g. labels replaced), also update the index arrays.
-        List<string> assemblyLines = [.. assemblyCode.Split("\n")];
-        assemblyLines = FilterCommentsAndRemoveExcessWhitespace(assemblyLines);
-        assemblyCode = string.Join("\n", assemblyLines);
-
-        Logging.LogInfo("===== Assembly begin =====");
-        assemblyLines.ForEach(Logging.LogInfo);
-        Logging.LogInfo("=====  Assembly end  =====");
-
-        if (!assemblyLines[0].StartsWith(ASM_DIRECTIVE_VERSION))
-            throw new Exception($"Missing {ASM_DIRECTIVE_VERSION} directive at the start. Cannot determine assembly version.");
-        if (SplitLineIntoWords(assemblyLines[0]).Length < 2)
-            throw new Exception($"Missing version number after {ASM_DIRECTIVE_VERSION} directive.");
-        string versionInAssemblyStr = SplitLineIntoWords(assemblyLines[0])[1];
-        if (versionInAssemblyStr != ASSEMBLER_VERSION)
-            throw new Exception($"Incompatible assembler version: Expected {ASSEMBLER_VERSION}, got {versionInAssemblyStr} instead.");
-        Logging.LogDebug("Assembly version check successful!");
-
-        // Stores directive names associated with their values
-        Dictionary<string, string> directives = [];
+    private static List<Statement> PreParseDefines(List<Statement> assemblyStatements)
+    {
+        // Stores define names associated with their values
+        Dictionary<string, string> defines = [];
         // Build dictionary
-        foreach (string line in assemblyLines)
+        foreach (Statement statement in assemblyStatements)
         {
-            if (line.StartsWith(ASM_DIRECTIVE_DEFINE))
+            if (statement.Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
             {
-                string[] words = line.Split([' '], 3);
-                if (words.Length != 3 || words[0] != ASM_DIRECTIVE_DEFINE)
-                    throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {line}");
-                
-                string name = words[1];
-                string value = words[2];
+                if (statement.Length < 3)
+                    throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {statement}");
+                string name = statement.Tokens[1].Value;
+                string value = statement.Tokens[2..].Select(t => t.Value).Aggregate((t1, t2) => t1 + t2);
                 Logging.LogDebug($"Found define: \"{name}\" = \"{value}\"");
-                directives.Add(name, value);
+                defines.Add(name, value);
             }
         }
-        // Second iteration: Replace names in previously built dictionary with their values in code
-        for (int i = 0; i < assemblyLines.Count; i++)
-        {
-            string line = assemblyLines[i];
-            foreach ((string name, string value) in directives)
-            {
-                // To ensure not any word within another word is replaced to produce garbage,
-                // the name is prepended with a "$" sign during use. This is different from e.g. the C pre-parser, but
-                // prevents this code section from growing too large to check for tokens instead of occurrences.
-                if (line.Contains("$" + name))
-                    line = line.Replace("$" + name, value);
-            }
-            assemblyLines[i] = line;
-        }
+        // Remove all #define statements
+        for (int i = 0; i < assemblyStatements.Count; i++)
+            if (assemblyStatements[i].Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
+                assemblyStatements.RemoveAt(i--);
 
-        return assemblyLines;
+        // Second iteration: Replace names in previously built dictionary with their values in code
+        // To ensure not any word within another word is replaced to produce garbage,
+        // the name is prepended with a "$" sign during use. This is different from e.g. the C pre-parser, but
+        // prevents this code section from growing too large to check for tokens instead of occurrences.
+        foreach (Statement statement in assemblyStatements)
+            foreach (Token token in statement.Tokens)
+                if (token.Type == TokenType.LITERAL_WORD && defines.Keys.Any(name => name == "$" + token.Value))
+                    token.Value = defines[token.Value];
+        return assemblyStatements;
+    }
+
+    private static List<Statement> PreParseTimes(List<Statement> assemblyStatements)
+    {
+        for (int i = 0; i < assemblyStatements.Count; i++)
+        {
+            Statement statement = assemblyStatements[i];
+            if (statement.Tokens[0].Type == TokenType.KEYWORD_TIMES)
+            {
+                if (statement.Length < 3 || statement.Tokens[1].Type != TokenType.NUMERIC_VALUE)
+                    throw new Exception($"Invalid {KEYWORD_TIMES} N: {statement}");
+                List<Token> duplicateTokens = [.. statement.Tokens[2..^1]];
+                int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[1].Value);
+
+                assemblyStatements.RemoveAt(i--);
+                for (int j = 0; j < repeatTimes; j++)
+                    assemblyStatements.Insert(i++, new Statement([.. duplicateTokens, new Token(TokenType.EOS, "\n")]));
+            }
+        }
+        return assemblyStatements;
     }
 }

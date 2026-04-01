@@ -43,126 +43,77 @@ public partial class Assembler
         // 4. .data section
         // 5. .text section
 
-        List<string> assemblyLines = PreParse(assemblyCode);
-        try
-        {
-            // ========== Parse assembly header entry point ==========
-            // TODO: Implement #ORG directive
-            if (!assemblyLines[1].StartsWith(ASM_DIRECTIVE_ENTRYPOINT))
-                throw new Exception($"Missing {ASM_DIRECTIVE_ENTRYPOINT} directive after version directive. Cannot determine program entry point.");
-            if (SplitLineIntoWords(assemblyLines[1]).Length < 2)
-                throw new Exception($"Missing entry point after {ASM_DIRECTIVE_ENTRYPOINT} directive.");
+        // TODO: Implement #ORG directive (in main Assembler.cs file)
+        // TODO: Finish .text section parser (with new #ORG and no custom load addresses for sections)
 
-            string entryPointStr = SplitLineIntoWords(assemblyLines[1])[1];
-            uint? entryPoint = null;
-            try
-            {
-                TryConvertStringToUInt(entryPointStr, out entryPoint);
-                Logging.LogDebug($"Base entry point: {entryPoint:x8}");
-            }
-            catch (Exception) { Logging.LogDebug($"Entry point {entryPointStr} seems to reference a label. Resolving later."); }
+        assemblyCode = FilterCommentsAndRemoveExcessWhitespace(assemblyCode);
+        Logging.LogInfo(
+            "===== Assembly begin =====\n" +
+            assemblyCode +
+            "=====  Assembly end  =====");
+        if (!CheckAssemblyVersion(assemblyCode))
+            throw new Exception("Invalid assembly version.");
+        Token[] assemblyTokens = TokenizeAssembly(assemblyCode);
+        Logging.LogDebug("Tokenized:");
+        foreach (Token token in assemblyTokens)
+            Logging.LogDebug($"{token.Type}: {token.Value}");
+        List<Statement> assemblyStatements = TokensToStatements(assemblyTokens);
+        assemblyStatements = PreParse(assemblyStatements);
+        Logging.LogDebug("Tokenized + pre-parsed:");
+        foreach (Statement statement in assemblyStatements)
+            foreach (Token token in statement.Tokens)
+                Logging.LogDebug($"{token.Type}: {token.Value}");
 
-            // ========== Process .data and .text sections ==========
+        // ========== Process .data and .text sections ==========
 
-            // Split full assembly code into sections (.data and .text)
-            // Check valid section structure
-            string dataSectionWildcard = $"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_DATA}";
-            string textSectionWildcard = $"{ASM_DIRECTIVE_SECTION}*{ASM_DIRECTIVE_SECTION_TEXT}";
-            if (!StringContainsWithWildcard(assemblyCode, dataSectionWildcard))
-                throw new Exception("No .data section found.");
-            if (!StringContainsWithWildcard(assemblyCode, textSectionWildcard))
-                throw new Exception("No .text section found.");
-            if (StringIndexOfWithWildcard(assemblyCode, dataSectionWildcard)
-                > StringIndexOfWithWildcard(assemblyCode, textSectionWildcard))
-                throw new Exception(".data and .text sections in wrong order. Define .data first, then .text");
-            if (StringWildcardMatchCount(assemblyCode, dataSectionWildcard) > 2)
-                throw new Exception("Multiple .data sections found. Please only specify one.");
-            if (StringWildcardMatchCount(assemblyCode, textSectionWildcard) > 2)
-                throw new Exception("Multiple .text sections found. Please only specify one.");
-            // At this point it is guaranteed, that there is exactly one .data and one .text section,
-            // and they are in the following order: .data, .text
-
-            // Determine start and end indices of sections
-            int dataSectionStartIdx = StringIndexOfWithWildcard(assemblyCode, dataSectionWildcard);
-            int textSectionStartIdx = StringIndexOfWithWildcard(assemblyCode, textSectionWildcard);
-            int dataSectionEndIdx = textSectionStartIdx - 1;
-            int textSectionEndIdx = assemblyCode.Length - 1;
-            string dataSectionCode = new(assemblyCode.AsSpan()[dataSectionStartIdx..(dataSectionEndIdx + 1)].Trim());
-            string textSectionCode = new(assemblyCode.AsSpan()[textSectionStartIdx..(textSectionEndIdx + 1)].Trim());
-
-            DataSection dataSection = DataSection.CreateFromAssemblyCode(dataSectionCode);
-            TextSection textSection = TextSection.CreateFromAssemblyCode(textSectionCode, dataSection);
-
-            // Replace entry point, if it was a label instead of an address
-            if (!entryPoint.HasValue)
-            {
-                try { entryPoint = textSection.LabelAddressMap[entryPointStr]; }
-                catch (Exception) { throw new Exception($"Failed to convert entry point {entryPointStr} into a valid address."); }
-                Logging.LogDebug($"Base entry point: {entryPoint:x8}");
-            }
-            entryPoint += textSection.FixedLoadAddress.GetValueOrDefault(0x0);
-
-            return (entryPoint.Value, dataSection, textSection);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error while assembling: ", ex);
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="assemblyCode"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public static uint[] AssembleToLoadableProgram(string assemblyCode)
-    {
-        Logging.LogInfo($"HLTP-x25-32 Assembler v{ASSEMBLER_VERSION}");
-
+        // Search for .data section:
+        int dataSectionStart = assemblyStatements.TakeWhile(statement =>
+            statement.Length < 2 ||
+            statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
+            statement.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_DATA 
+        ).Count();
+        if (dataSectionStart >= assemblyStatements.Count)
+            throw new Exception("No .data section found.");
+        // Search for .text section:
+        int textSectionStart = assemblyStatements.TakeWhile(statement =>
+            statement.Length < 2 ||
+            statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
+            statement.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_TEXT 
+        ).Count();
+        if (textSectionStart >= assemblyStatements.Count)
+            throw new Exception("No .text section found.");
         
+        int dataSectionEnd = textSectionStart - 1;
+        int textSectionEnd = assemblyStatements.Count - 1;
+        
+        // TODO: Add support for multiple .data and .text sections in arbitrary order
 
-        (uint, DataSection, TextSection) assembledDataRaw = Assemble(assemblyCode);
-        uint entryPoint = assembledDataRaw.Item1;
-        DataSection dataSection = assembledDataRaw.Item2;
-        TextSection textSection = assembledDataRaw.Item3;
-
-        // ========== Merge .data & .text sections and add header ==========
+        DataSection dataSection = DataSection.CreateFromAssemblyCode(assemblyStatements[dataSectionStart .. dataSectionEnd]);
+        TextSection textSection = TextSection.CreateFromAssemblyCode(assemblyStatements[textSectionStart .. textSectionEnd], dataSection);
 
         // Assembly header metadata words:
         // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
         // 2. Entry point (offset in .text section)
-        // 3. .data section fixed load address (or 0x0 if relocatable)
+        // 3. Global load address
         // 4. .data segment size in words
-        // 5. .text section fixed load address (ox 0x0 if relocatable)
-        // 6. .text segment size in words
+        // 5. .text segment size in words
+        // 6. 0x0
         // 7. 0x0
         // 8. 0x0
         Logging.LogDebug(
             "Assembly header:\n" +
             $"Version:.................{ASSEMBLER_VERSION_ENCODED:x8}\n" +
-            $"Entry point:.............{entryPoint:x8}\n" +
-            $".data load address:......{(dataSection.FixedLoadAddress.HasValue ? dataSection.FixedLoadAddress.Value : "RELOC"):x8}\n" +
+            $"Global load address:.....{"Not implemented yet (#ORG)":x8}\n" +
+            $"Entry point (rel):.......{textSection.EntryPoint:x8}\n" +
             $".data size (dec, words):.{dataSection.Size}\n" +
-            $".text load address:......{(textSection.FixedLoadAddress.HasValue ? textSection.FixedLoadAddress.Value : "RELOC"):x8}\n" +
             $".text size (dec, words):.{textSection.Size}\n" +
             $"Padding (1):.............{0:x8}\n" +
-            $"Padding (2):.............{0:x8}");
-        List<uint> assembledBinary =
-        [
-            ASSEMBLER_VERSION_ENCODED,
-            entryPoint,
-            dataSection.FixedLoadAddress.GetValueOrDefault(0x0),
-            dataSection.Size,
-            textSection.FixedLoadAddress.GetValueOrDefault(0x0),
-            textSection.Size,
-            0x0,
-            0x0
-        ];
-        assembledBinary.AddRange(dataSection.BinaryRepresentation);
-        assembledBinary.AddRange(textSection.BinaryRepresentation);
-
-        return [.. assembledBinary];
+            $"Padding (2):.............{0:x8}\n" +
+            $"Padding (3):.............{0:x8}");
+        
+        return new AssemblyOutput(
+            0x0, dataSection, textSection
+        );
     }
 
     /// <summary>
@@ -198,10 +149,25 @@ public partial class Assembler
         catch (Exception) { throw new Exception($"Unable to parse \"{numStr}\" as uint."); }
     }
 
-    internal static List<string> FilterCommentsAndRemoveExcessWhitespace(List<string> textLines)
-        => [.. textLines
-            .ConvertAll(line => line.Split(";")[0].Trim())
-            .Where(line => !string.IsNullOrEmpty(line))];
+    /// <summary>
+    /// Removes assembly comments (starting with a semicolon) and excess whitespace
+    /// (this includes leading / trailing whitespace in lines and replacing e.g. multi-spaces or tabs with single spaces)
+    /// </summary>
+    /// <param name="assemblyCode"></param>
+    /// <returns></returns>
+    private static string FilterCommentsAndRemoveExcessWhitespace(string assemblyCode)
+    {
+        // FIXME: Edge case: When a comment is enclosed in quotes, it will still be discarded as a comment,
+        // which is obviously not intended behaviour.
+        string[] lines = assemblyCode.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        lines = [.. lines
+            .Select(line => line.Split(";")[0]) // Discard everything after comment symbol
+            .Select(line => Regex.Replace(line, @"\s+", " ")) // Replace multi-space or tab with single space
+            .Select(line => line.Trim()) // Remove leading or trailing whitespace
+            .Where(line => !string.IsNullOrWhiteSpace(line)) // Only keep strings with remaining content
+            ];
+        return string.Join("\n", lines);
+    }
 
     
     /// <summary>
@@ -220,26 +186,27 @@ public partial class Assembler
             foreach (string word in words)
             {
                 Token token;
+                
                 // Assembly directives
                 if      (word == ASM_DIRECTIVE_LOADADDRESS)
-                    token = new Token(TokenType.DIRECTIVE_ORG, word);
+                    token = new Token(TokenType.DIRECTIVE_ORG, ASM_DIRECTIVE_LOADADDRESS);
                 else if (word == ASM_DIRECTIVE_DEFINE)
-                    token = new Token(TokenType.DIRECTIVE_DEFINE, word);
+                    token = new Token(TokenType.DIRECTIVE_DEFINE, ASM_DIRECTIVE_DEFINE);
                 else if (word == ASM_DIRECTIVE_SECTION)
-                    token = new Token(TokenType.DIRECTIVE_SECTION, word);
+                    token = new Token(TokenType.DIRECTIVE_SECTION, ASM_DIRECTIVE_SECTION);
                 else if (word == ASM_DIRECTIVE_SECTION_DATA)
-                    token = new Token(TokenType.DIRECTIVE_SECTION_DATA, word);
+                    token = new Token(TokenType.DIRECTIVE_SECTION_DATA, ASM_DIRECTIVE_SECTION_DATA);
                 else if (word == ASM_DIRECTIVE_SECTION_TEXT)
-                    token = new Token(TokenType.DIRECTIVE_SECTION_TEXT, word);
+                    token = new Token(TokenType.DIRECTIVE_SECTION_TEXT, ASM_DIRECTIVE_SECTION_TEXT);
                 // Special keywords
                 else if (word == KEYWORD_DEFINEWORD)
-                    token = new Token(TokenType.KEYWORD_DEFINEWORD, word);
+                    token = new Token(TokenType.KEYWORD_DEFINEWORD, KEYWORD_DEFINEWORD);
                 else if (word == KEYWORD_EQUATE)
-                    token = new Token(TokenType.KEYWORD_EQUATE, word);
+                    token = new Token(TokenType.KEYWORD_EQUATE, KEYWORD_EQUATE);
                 else if (word == KEYWORD_LENGTH)
-                    token = new Token(TokenType.KEYWORD_LENGTH, word);
+                    token = new Token(TokenType.KEYWORD_LENGTH, KEYWORD_LENGTH);
                 else if (word == KEYWORD_TIMES)
-                    token = new Token(TokenType.KEYWORD_TIMES, word);
+                    token = new Token(TokenType.KEYWORD_TIMES, KEYWORD_TIMES);
                 // "Normal" tokens
                 // Single letters
                 else if (word == "[")
@@ -256,6 +223,8 @@ public partial class Assembler
                     token = new Token(TokenType.SYMBOL_MINUS, "-");
                 else if (word == "*")
                     token = new Token(TokenType.SYMBOL_MULTIPLY, "*");
+                else if (word == "=")
+                    token = new Token(TokenType.SYMBOL_EQUALS, "=");
                 // Check if parseable as mnemonic
                 // FIXME: Check for conditional codes!!!
                 else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == word))
@@ -268,7 +237,7 @@ public partial class Assembler
                     token = new Token(TokenType.NUMERIC_VALUE, word);
                 // Check if word is followed by colon, and it's the only word in the line
                 else if (word.EndsWith(':') && words.Length <= 1)
-                    token = new Token(TokenType.LABEL, word);
+                    token = new Token(TokenType.LABEL, word[..^1]);
                 // Check if the word is enclosed in quotes
                 else if (word.StartsWith('"') && word.EndsWith('"'))
                     token = new Token(TokenType.STRING, word[1..^1]);
@@ -276,7 +245,7 @@ public partial class Assembler
                     token = new Token(TokenType.LITERAL_WORD, word);
                 tokens.Add(token);
             }
-            tokens.Add(new Token(TokenType.EOL, string.Empty));
+            tokens.Add(Token.CreateEOS());
         }
         return [.. tokens];
     }
@@ -309,6 +278,36 @@ public partial class Assembler
         return words;
     }
 
+    private static bool CheckAssemblyVersion(string assemblyCode)
+    {
+        string firstLine = assemblyCode.Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+        bool isVersionValid = firstLine == $"{ASM_DIRECTIVE_VERSION} {ASSEMBLER_VERSION}";
+        if (!isVersionValid)
+            Logging.LogError($"Invalid assembly version. Missing {ASM_DIRECTIVE_VERSION} directive or wrong version.");
+        return isVersionValid;
+    }
+
+    /// <summary>
+    /// Convert a list of tokens to a list of statements. Every statement must end with an EOS token to be recognized as such.
+    /// </summary>
+    /// <param name="tokens"></param>
+    /// <returns></returns>
+    private static List<Statement> TokensToStatements(Token[] tokens)
+    {
+        List<Statement> statements = [];
+        List<Token> currentStatementTokens = [];
+        foreach (Token token in tokens)
+        {
+            currentStatementTokens.Add(token);
+            if (token.Type == TokenType.EOS)
+            {
+                statements.Add(new Statement([.. currentStatementTokens]));
+                currentStatementTokens = [];
+            }
+        }
+        return [.. statements];
+    }
+
     /// <summary>
     /// Checks if a string contains a string specified in the wildcard argument.
     /// This method is mostly similar to string.Contains(otherString), except it also
@@ -338,7 +337,7 @@ public partial class Assembler
         return matches.Count;
     }
 
-    private enum TokenType
+    internal enum TokenType
     {
         DIRECTIVE_ORG, // Load address directive
         DIRECTIVE_DEFINE, // Define (similar to C's #define)
@@ -356,18 +355,25 @@ public partial class Assembler
         SYMBOL_PLUS,
         SYMBOL_MINUS,
         SYMBOL_MULTIPLY,
+        SYMBOL_EQUALS,
         MNEMONIC, // Instruction mnemonic
         REGISTER, // Instruction register
         NUMERIC_VALUE,
         LABEL, // Address label
         LITERAL_WORD, // A literal word
         STRING, // A literal word enclosed in quotes
-        EOL // End-of-line (special token)
+        EOS // End-of-statement (special token)
     }
-    private class Token(TokenType type, string value)
+    /// <summary>
+    /// A token is an abstract type for representing symbols, strings, words or numbers as an alternative, more
+    /// useful representation of code. Usually, tokens appear in a sequence, e.g. in lists or arrays representing the entire code.
+    /// </summary>
+    /// <param name="type">The token type, e.g. an opening bracket, string or numeric value.</param>
+    /// <param name="value">The token value for non-fixed token types. (e.g. the number itself for numeric tokens)</param>
+    internal class Token(TokenType type, string value)
     {
         public readonly TokenType Type = type;
-        public readonly string Value = value;
+        public string Value = value;
         public uint AsUInt() => ConvertStringToUInt(Value);
         public Instructions.AddressableRegisterCode AsRegisterCode() => (Instructions.AddressableRegisterCode)Value;
         public byte[] AsByteArray()
@@ -377,5 +383,31 @@ public partial class Assembler
                 bytesList.Add((byte)c);
             return [.. bytesList];
         }
+        /// <summary>
+        /// Creates a new EOS (end-of-statement) token.
+        /// </summary>
+        /// <returns></returns>
+        public static Token CreateEOS() => new(TokenType.EOS, "\n");
+        /// <summary>
+        /// Adds the values of the tokens together to a string and puts a space between them.
+        /// </summary>
+        /// <param name="t1"></param>
+        /// <param name="t2"></param>
+        /// <returns></returns>
+        public static string operator +(Token t1, Token t2) => t1.Value + " " + t2.Value;
+    }
+    /// <summary>
+    /// A statement is a logical group of tokens, usually representing a "single thing to be done".
+    /// Most statements basically represent one line of code.
+    /// </summary>
+    /// <param name="statementTokens"></param>
+    internal class Statement(Token[] statementTokens)
+    {
+        public readonly Token[] Tokens = statementTokens;
+        /// <summary>
+        /// The number of tokens in this statement excluding EOS
+        /// </summary>
+        public int Length { get => Tokens.Length - 1; }
+        public override string ToString() => string.Join(" ", Tokens.SkipLast(1).Select(token => token.Value));
     }
 }

@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using TinyProc.Assembling;
 using TinyProc.Assembling.Sections;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
@@ -68,16 +69,14 @@ public class ExecutionContainer
         Logging.LogDebug("Assembling Reset and Loader programs");
         string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
         string loaderProgramCode = File.ReadAllText(LOADER_ASM_PROGRAM_PATH);
-        (uint, DataSection, TextSection) resetProgram = Assembling.Assembler.Assemble(resetProgramCode);
-        (uint, DataSection, TextSection) loaderProgram = Assembling.Assembler.Assemble(loaderProgramCode);
+        AssemblyOutput resetProgram = Assembler.Assemble(resetProgramCode);
+        AssemblyOutput loaderProgram = Assembler.Assemble(loaderProgramCode);
         Logging.LogDebug("Saving Reset and Loader programs in ROM");
-        uint resetLoadAddress = resetProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);
-        uint loaderLoadAddress = loaderProgram.Item3.FixedLoadAddress.GetValueOrDefault(0x0);
-        List<uint> resetExecutableProgram = resetProgram.Item3.BinaryRepresentation;
-        List<uint> loaderExecutableProgram = loaderProgram.Item3.BinaryRepresentation;
-        uint[] romData = new uint[loaderLoadAddress + loaderProgram.Item3.Size];
-        Array.Copy(resetExecutableProgram.ToArray(), 0, romData, resetLoadAddress, resetExecutableProgram.Count);
-        Array.Copy(loaderExecutableProgram.ToArray(), 0, romData, loaderLoadAddress, loaderExecutableProgram.Count);
+        uint[] resetExecutableProgram = resetProgram.MachineCodeBinary;
+        uint[] loaderExecutableProgram = loaderProgram.MachineCodeBinary;
+        uint[] romData = new uint[loaderProgram.LoadAddress + loaderProgram.MachineCodeBinary.Length];
+        Array.Copy(resetExecutableProgram, 0, romData, resetProgram.LoadAddress, resetExecutableProgram.Length);
+        Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.LoadAddress, loaderExecutableProgram.Length);
         _rom1 = new ROM(ROM_SIZE, romData);
 
         Logging.LogDebug("Creating CPU object, loading main program");

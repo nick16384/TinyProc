@@ -58,27 +58,24 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
     /// </summary>
     /// <param name="assemblyCodeDataSection"></param>
     /// <returns></returns>
-    internal static DataSection CreateFromAssemblyCode(string assemblyCodeDataSection)
+    internal static DataSection CreateFromAssemblyCode(List<Statement> assemblyStatements)
     {
-        List<string> lines = [.. assemblyCodeDataSection.Split("\n")];
-        lines = FilterCommentsAndRemoveExcessWhitespace(lines);
-
-        string[] headerWords = SplitLineIntoWords(lines[0]);
-        if (headerWords[0] != ASM_DIRECTIVE_SECTION || headerWords.Last() != ASM_DIRECTIVE_SECTION_DATA)
+        Statement header = assemblyStatements[0];
+        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^1].Type != TokenType.DIRECTIVE_SECTION_DATA)
             throw new ArgumentException("Cannot parse assembly .data section: Incorrect header");
         // No need for attribute parsing - will maybe be necessary in future
         Logging.LogDebug("Successfully verified and parsed .data section header.");
 
-        lines.RemoveAt(0);
-        if (!lines.Any(line => !string.IsNullOrEmpty(line)))
+        assemblyStatements.RemoveAt(0);
+        if (assemblyStatements.Count <= 0)
         {
-            // If no further lines exist or they're all empty, the .data section is empty.
+            // If no further statements exist, the .data section is empty.
             Logging.LogDebug(".data section is empty.");
             return DataSection.CreateEmpty();
         }
 
         // Main parser for .data section
-        List<ImmediateSequence> data = ExtractImmediateSequences([.. lines]);
+        List<ImmediateSequence> data = ExtractImmediateSequences(assemblyStatements);
 
         // Log immediate values and pointers (summary)
         Logging.LogDebug($"Successfully parsed {data.Count} immediate sequences.");
@@ -88,39 +85,33 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         return resultDataSection;
     }
 
-    private static List<ImmediateSequence> ExtractImmediateSequences(string[] lines)
+    private static List<ImmediateSequence> ExtractImmediateSequences(List<Statement> statements)
     {
         List<ImmediateSequence> immediateSequences = [];
         uint currentOffset = 0;
 
-        for (int lineCount = 0; lineCount < lines.Length; lineCount++)
+        foreach (Statement statement in statements)
         {
-            string line = lines[lineCount];
-            // Split into words, but preserve values in quotation marks, and remove commas
-            string[] words = SplitLineIntoWords(line);
-
             // Pointers (word sequences)
             // Usage:
             // dw name* [sequence of values]
             // e.g.
             // dw ptr1 "Hello, world!", 0xA
             // *: Name is optional
-            if (words[0] == KEYWORD_DEFINEWORD)
+            if (statement.Tokens[0].Type == TokenType.KEYWORD_DEFINEWORD)
             {
-                if (words.Length < 2)
+                if (statement.Length < 2)
                     throw new ArgumentException("Number of literal words in word sequence declaration is less than 2.");
                 // Look if second word contains data immediately, or an alias comes first
-                bool hasAlias = !TryParseImmediateSequence(words[1..], out _);
-                string? alias = hasAlias ? words[1] : null;
-                string[] dataStrings = hasAlias ? words[2..] : words[1..];
+                bool hasAlias = statement.Tokens[1].Type == TokenType.LITERAL_WORD;
+                string? alias = hasAlias ? statement.Tokens[1].Value : null;
+                Token[] dataTokens = hasAlias ? statement.Tokens[2..] : statement.Tokens[1..];
                 List<uint> data;
-                if (dataStrings[0] == KEYWORD_LENGTH)
-                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataStrings[1]).Data.Length];
+                if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
+                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
                 else
                 {
-                    bool parseSuccess = TryParseImmediateSequence(dataStrings, out List<byte> dataBytes);
-                    if (!parseSuccess)
-                        throw new Exception($"Part of word sequence is neither a string in quotation marks nor a numeric value: {string.Join(", ", dataStrings)}");
+                    List<byte> dataBytes = ParseImmediateSequence(dataTokens);
                     data = ByteSequenceToUIntSequence(dataBytes);
                 }
                 currentOffset += (uint)data.Count * sizeof(uint);
@@ -133,20 +124,18 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // e.g.
             // equ const1 0xA
             // *: Name is required
-            else if (words[0] == KEYWORD_EQUATE)
+            else if (statement.Tokens[0].Type == TokenType.KEYWORD_EQUATE)
             {
-                if (words.Length < 3)
+                if (statement.Length < 3)
                     throw new ArgumentException("Number of literal words in constant declaration is less than 3.");
-                string alias = words[1];
-                string[] dataStrings = words[2..];
+                string alias = statement.Tokens[1].Value;
+                Token[] dataTokens = statement.Tokens[2..];
                 List<uint> data;
-                if (dataStrings[0] == KEYWORD_LENGTH)
-                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataStrings[1]).Data.Length];
+                if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
+                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
                 else
                 {
-                    bool parseSuccess = TryParseImmediateSequence(dataStrings, out List<byte> dataBytes);
-                    if (!parseSuccess)
-                        throw new Exception($"Part of constant is neither a string in quotation marks nor a numeric value: {string.Join(", ", dataStrings)}");
+                    List<byte> dataBytes = ParseImmediateSequence(dataTokens);
                     data = ByteSequenceToUIntSequence(dataBytes);
                 }
                 immediateSequences.Add(new ImmediateSequence(alias, null, [.. data]));
@@ -160,14 +149,15 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         return immediateSequences;
     }
 
-    private static bool TryParseImmediateSequence(string[] dataStrings, out List<byte> data)
+    private static List<byte> ParseImmediateSequence(Token[] dataTokens)
     {
-        data = [];
-        foreach (string dataStr in dataStrings)
+        List<byte> data = [];
+        foreach (Token dataToken in dataTokens)
         {
             // Parse as numeric value
-            if (TryConvertStringToUInt(dataStr, out uint? num))
+            if (dataToken.Type == TokenType.NUMERIC_VALUE)
             {
+                uint num = ConvertStringToUInt(dataToken.Value);
                 data.Add((byte)((num! & 0xFF000000) >> 24));
                 data.Add((byte)((num! & 0x00FF0000) >> 16));
                 data.Add((byte)((num! & 0x0000FF00) >> 8));
@@ -175,19 +165,17 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 continue;
             }
             // Parse as string
-            if (dataStr.StartsWith('"') && dataStr.EndsWith('"'))
+            if (dataToken.Type == TokenType.STRING)
             {
                 // Convert string literals to uint sequences
-                string dataStrWithoutQuotes = new([.. dataStr.Skip(1).SkipLast(1)]);
-                for (int i = 0; i < dataStr.Length; i++)
-                    data.Add((byte)dataStrWithoutQuotes[i]);
+                data.AddRange(dataToken.AsByteArray());
                 continue;
             }
             // Unable to parse
-            return false;
+            throw new Exception($"Invalid token type {dataToken.Type} for immediate sequence data.");
         }
         // Everything parsed successfully
-        return true;
+        return data;
     }
 
     private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence)

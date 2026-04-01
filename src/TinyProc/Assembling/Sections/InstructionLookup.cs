@@ -52,18 +52,18 @@ public sealed class InstructionLookup
 		{ ("CLA",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLA,   DEFAULT_EMPTY_ALU_OPCODE) }
     };
 
-	internal static bool IsJumpInstruction(string[] words)
+	internal static bool IsJumpInstruction(Statement instruction)
 	{
 		return
-			words[0].StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
+			instruction.Tokens[0].Value.StartsWith("JMP", StringComparison.OrdinalIgnoreCase) ||
+			instruction.Tokens[0].Value.StartsWith("B", StringComparison.OrdinalIgnoreCase) ||
+			instruction.Tokens[0].Value.StartsWith("CALL", StringComparison.OrdinalIgnoreCase);
 	}
-	internal static bool IsLoadStoreInstruction(string[] words)
+	internal static bool IsLoadStoreInstruction(Statement instruction)
 	{
 		return
-			words[0].StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
-			words[0].StartsWith("ST", StringComparison.OrdinalIgnoreCase);
+			instruction.Tokens[0].Value.StartsWith("LD", StringComparison.OrdinalIgnoreCase) ||
+			instruction.Tokens[0].Value.StartsWith("ST", StringComparison.OrdinalIgnoreCase);
 	}
 
 	/// <summary>

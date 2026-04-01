@@ -1,6 +1,6 @@
 ; Test for all (or most) ASMv3 features
 ; Doesn't serve a distinct purpose except debugging
-#VERSION 3.0
+#VERSION 3.1
 #ENTRY _start
 
 #DEFINE REPEAT_TEST_TIMES 50
@@ -9,7 +9,7 @@
 #DEFINE SP_BASE 0x00020000
 #DEFINE VECTOR_RESET 0x00000000
 
-#SECTION (__attribute__ loadaddress = 0x20000000) .data
+#SECTION .data
 dw imm1 0x39393939
 dw imm2 39393939h
 dw imm3 0b01010101
@@ -21,7 +21,7 @@ dw imm6 len: ptr1
 times 50 db 0x0
 times $REPEAT_TEST_TIMES db $REPEAT_TEST_DATA
 
-#SECTION (__attribute__ loadaddress = 0x30000000) .text
+#SECTION (__entry = _start) .text
 _start:
     ; Basic arithmetic
     mov gp1, imm1

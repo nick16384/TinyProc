@@ -14,6 +14,8 @@ class Program
         Logging.SuppressWarningMessages = false;
         Logging.SuppressErrorMessages = false;
 
+        throw new NotImplementedException();
+
         Logging.LogInfo(
             $"TinyProc ver. {VersionData.TINYPROC_PROGRAM_VERSION_STR} " +
             $"Processor revision {VersionData.PROCESSOR_REVISION_VERSION_STR}");
@@ -38,7 +40,7 @@ class Program
                 Logging.LogWarn("Warning: Source file name does not end with standard suffix \".hltp32.asm\".");
 
             string assemblyCode = File.ReadAllText(sourceFilePath);
-            uint[] MAIN_PROGRAM = Assembler.AssembleToLoadableProgram(assemblyCode);
+            uint[] MAIN_PROGRAM = Assembler.Assemble(assemblyCode).MachineCodeBinary;
 
             ExecutableWrapper programWrapper = new(MAIN_PROGRAM);
 

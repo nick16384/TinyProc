@@ -36,82 +36,108 @@ public readonly struct TextSection : IAssemblySection
     /// </summary>
     /// <param name="assemblyCodeTextSection"></param>
     /// <returns></returns>
-    internal static TextSection CreateFromAssemblyCode(string assemblyCodeTextSection, DataSection dataSection)
+    internal static TextSection CreateFromAssemblyCode(List<Statement> assemblyStatements, DataSection dataSection)
     {
-        List<string> lines = [.. assemblyCodeTextSection.Split("\n")];
-        lines = FilterCommentsAndRemoveExcessWhitespace(lines);
-
         uint entryPoint;
         List<IInstruction> instructions = [];
         Dictionary<string, uint> labelAddressMap = [];
 
         // Parse section header
-        TextSectionHeader header = ParseHeader(lines[0]);
+        TextSectionHeader header = ParseHeader(assemblyStatements[0]);
         if (header.EntryPoint.Is<uint>())
-            entryPoint = header.EntryPoint.A;
+            entryPoint = header.EntryPoint; // Absolute value already determined
         else
             Logging.LogDebug($"Entry point seems to reference a label, resolving later.");
-
-        lines.RemoveAt(0);
+        assemblyStatements.RemoveAt(0);
 
         // .text section pre-parser:
         // Replace label encounters with their corresponding address.
         uint currentAddress = 0;
-        for (int i = 0; i < lines.Count; i++)
+        for (int i = 0; i < assemblyStatements.Count; i++)
         {
-            string line = lines[i];
-            if (line.EndsWith(':'))
+            Statement statement = assemblyStatements[i];
+            if (statement.Tokens[0].Type == TokenType.LABEL)
             {
-                string labelName = new([.. line.SkipLast(1)]);
-                labelAddressMap.Add(labelName, currentAddress);
-                Logging.LogDebug($"Found label declaration \"{labelName}\" at address {currentAddress:x8}");
-                lines.RemoveAt(i--);
-                continue;
+                labelAddressMap.Add(statement.Tokens[0].Value, currentAddress);
+                Logging.LogDebug($"Found label declaration \"{statement.Tokens[0].Value}\" at address {currentAddress:x8}");
+                assemblyStatements.RemoveAt(i--);
+                continue; // Prevent address increment
             }
             currentAddress += 2;
         }
         // Try to find entry point label again
         if (header.EntryPoint.Is<string>())
-        {
-            if (labelAddressMap.TryGetValue(header.EntryPoint, out entryPoint))
+            if (!labelAddressMap.TryGetValue(header.EntryPoint, out entryPoint))
                 throw new Exception($"Cannot infer entry point {header.EntryPoint.B}");
-        }
         currentAddress = 0;
-        // TODO: Implement #ORG directive (in main Assembler.cs file)
-        // TODO: Finish .text section parser (with new #ORG and no custom load addresses for sections)
-        throw new NotImplementedException();
 
-        foreach (string lineUnparsed in lines)
+        // Parse each line / statement separately
+        foreach (Statement statement in assemblyStatements)
         {
             Logging.NewlineDebug();
-            Logging.LogDebug($"Parsing line: {lineUnparsed}");
-            string line = lineUnparsed;
+            Logging.LogDebug($"Parsing line: {statement}");
+            // Check for blatantly invalid instruction syntax:
+            if (statement.Length < 1 || statement.Tokens[0].Type != TokenType.MNEMONIC)
+                throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {statement}");
+
             // Replace occurrences of immediate value / pointer identifiers of the .data section
             // with their corresponding numeric value.
 
-            // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses
-            string[] words = SplitLineIntoWords(line);
+            // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
             // The addressing mode specifies how an address is interpreted by the CPU.
             // There are (currently) two addressing modes:
             // 1. A (Absolute): An absolute address in the entire memory space
             // 2. R (PC-relative): The address is treated as an offset relative to the address of the next instruction (PC)
-            // The instruction is relative, if if it references a label, pointer or block pointer.
+            // The instruction is relative, if if it references a label or pointer.
             // Otherwise, it is implicitly absolute.
             AddressingMode? adrMode = null;
-            if (InstructionLookup.IsJumpInstruction(words) || InstructionLookup.IsLoadStoreInstruction(words))
+            if (InstructionLookup.IsJumpInstruction(statement) || InstructionLookup.IsLoadStoreInstruction(statement))
                 adrMode = AddressingMode.Absolute;
 
-            foreach (string wordWithClutter in words.SelectMany(word => word.Split(" ")))
+            foreach (Token token in statement.Tokens)
             {
-                // Remove possible brackets from constant expressions (which always require brackets to be identifiable as such)
-                string word = wordWithClutter;
-                foreach (string symbolStrip in (IEnumerable<string>)["(", ")", "[", "]"])
-                    word = word.Replace(symbolStrip, "");
-                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == word) && labelAddressMap.ContainsKey(word))
+                // Skip bracket and square bracket tokens (irrelevant here)
+                if (token.Type == TokenType.BRACKET_OPEN ||
+                    token.Type == TokenType.BRACKET_CLOSE ||
+                    token.Type == TokenType.SQUARE_BRACKET_OPEN ||
+                    token.Type == TokenType.SQUARE_BRACKET_CLOSE)
+                    continue;
+                    
+                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value) && labelAddressMap.ContainsKey(token.Value))
                     // If both of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
-                    throw new Exception($"Address label / .data section reference is ambiguous for \"{word}\".");
+                    throw new Exception($"Address label / .data section reference is ambiguous for \"{token.Value}\".");
                 
-                if (labelAddressMap.TryGetValue(word, out uint labelAddress))
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                // FIXME: Fix all da red stuff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                if (labelAddressMap.TryGetValue(token.Value, out uint labelAddress))
                 {
                     // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                     uint labelRelAddress = labelAddress - currentAddress - 2;
@@ -224,47 +250,60 @@ public readonly struct TextSection : IAssemblySection
     /// <returns>The entry point as uint or a label string if the entry point is a label</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    private static TextSectionHeader ParseHeader(string headerLine)
+    private static TextSectionHeader ParseHeader(Statement header)
     {
         // By default, the entry point (offset into .text section) is zero
         Either<uint, string> entryPoint = 0x00000000;
         // Parse section header
-        string[] headerWords = SplitLineIntoWords(headerLine);
-        if (headerWords[0] != ASM_DIRECTIVE_SECTION || headerWords.Last() != ASM_DIRECTIVE_SECTION_TEXT)
+        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^1].Type != TokenType.DIRECTIVE_SECTION_TEXT)
             throw new ArgumentException("Cannot parse assembly .text section: Incorrect header");
 
-        if (headerWords.Length > 2)
+        if (header.Length > 2)
         {
             // Header contains attributes
             // Remove first word "#SECTION" and last word ".text"
-            headerWords = [.. headerWords.Skip(1).SkipLast(1)];
+            header = new Statement(header.Tokens[1..^1]);
             // Split by brackets
-            string[] attributes =
-                [.. string.Join(" ", headerWords)
-                .Split(["(", ")"], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
-
-            foreach (string attribute in attributes)
+            List<Statement> attributes = [];
+            bool isBracketOpen = false;
+            foreach (Token token in header.Tokens)
             {
-                string[] attributeWords = attribute.Split([" ", "="], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                if (token.Type == TokenType.BRACKET_OPEN)
+                {
+                    // Open new attribute
+                    isBracketOpen = true;
+                    attributes.Add(new Statement([]));
+                }
+                else if (token.Type == TokenType.BRACKET_CLOSE)
+                {
+                    // Close attribute with EOS
+                    isBracketOpen = false;
+                    attributes[^1] = new Statement([.. attributes[^1].Tokens, Token.CreateEOS()]);
+                }
+                if (isBracketOpen)
+                    // Add attribute content
+                    attributes[^1] = new Statement([.. attributes[^1].Tokens, token]);
+            }
 
+            foreach (Statement attribute in attributes)
+            {
                 // Check if the attribute is even in the correct format
-                if (attributeWords.Length != 3)
-                    throw new Exception($"Unable to parse attribute \"{attribute}\". Too many or too few words.");
-                string attributeKeyword = attributeWords[0];
-                string identifier = attributeWords[1];
-                string value = attributeWords[2];
-                if (attributeKeyword != ASM_ATTRIBUTE)
-                    throw new Exception($"Unable to parse attribute \"{attribute}\". Missing attribute keyword \"{ASM_ATTRIBUTE}\".");
+                if (attribute.Length != 3 || attribute.Tokens[0].Type != TokenType.LITERAL_WORD || attribute.Tokens[1].Type != TokenType.SYMBOL_EQUALS)
+                    throw new Exception($"Unable to parse attribute \"{attribute}\". Wrong syntax");
+                string identifier = attribute.Tokens[0].Value;
+                Token valueToken = attribute.Tokens[2];
 
                 // Extract attribute values
                 // TODO: Throw exception when encountering same attribute multiple times
                 switch (identifier)
                 {
                     case ASM_ATTRIBUTE_TEXT_ENTRYPOINT:
-                        TryConvertStringToUInt(value, out uint? entryPointUInt);
-                        if (entryPointUInt.HasValue)
-                            entryPoint = entryPointUInt.Value; // Address
-                        entryPoint = value; // Label
+                        if (valueToken.Type == TokenType.NUMERIC_VALUE)
+                            entryPoint = ConvertStringToUInt(valueToken.Value);
+                        else if (valueToken.Type == TokenType.LITERAL_WORD)
+                            entryPoint = valueToken.Value;
+                        else
+                            throw new Exception($"Invalid entry point {valueToken.Value}: Unrecognized type");
                         break;
                     default:
                         throw new ArgumentException($"Invalid attribute identifier \"{identifier}\"");

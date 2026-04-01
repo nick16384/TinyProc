@@ -11,8 +11,8 @@ else
 	AOT_COMPILED_GUI = $(SRC_CODE_DIR_GUI)/bin/Release/net9.0/TinyProcVisualizer
 endif
 
-SOURCE_FILE_ASM = "Test Programs/ASMv3/ASM3Test.hltp32.asm"
-TARGET_FILE_BIN = "Test Programs/ASMv3/ASM3Test.hltp32.bin"
+SOURCE_FILE_ASM = "Test Programs/ASMv3.1/ASM3Test.hltp32.asm"
+TARGET_FILE_BIN = "Test Programs/ASMv3.1/ASM3Test.hltp32.bin"
 
 assemble:
 	$(DOTNET) run --project $(SRC_CODE_DIR) --assemble $(SOURCE_FILE_ASM)

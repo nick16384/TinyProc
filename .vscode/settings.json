@@ -1,3 +1,8 @@
 {
-    "makefile.configureOnOpen": false
+    "makefile.configureOnOpen": false,
+    "editor.codeActionsOnSave":
+    {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
+    }
 }

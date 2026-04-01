@@ -2,8 +2,8 @@ namespace TinyProc.Assembling;
 
 public partial class Assembler
 {
-    public const string ASSEMBLER_VERSION = "3.0";
-    public const uint ASSEMBLER_VERSION_ENCODED = (3 << 24) | (0 << 16);
+    public const string ASSEMBLER_VERSION = "3.1";
+    public const uint ASSEMBLER_VERSION_ENCODED = (3 << 24) | (1 << 16);
     private const uint ENCODED_VERSION_BITMASK_MAJOR = 0b11111111_00000000_00000000_00000000;
     private const uint ENCODED_VERSION_BITMASK_MINOR = 0b00000000_11111111_00000000_00000000;
     public static string GetVersionStringFromEncodedValue(uint encodedVersion)
