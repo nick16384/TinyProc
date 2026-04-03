@@ -14,8 +14,6 @@ class Program
         Logging.SuppressWarningMessages = false;
         Logging.SuppressErrorMessages = false;
 
-        throw new NotImplementedException();
-
         Logging.LogInfo(
             $"TinyProc ver. {VersionData.TINYPROC_PROGRAM_VERSION_STR} " +
             $"Processor revision {VersionData.PROCESSOR_REVISION_VERSION_STR}");

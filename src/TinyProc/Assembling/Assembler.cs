@@ -372,7 +372,7 @@ public partial class Assembler
     /// <param name="value">The token value for non-fixed token types. (e.g. the number itself for numeric tokens)</param>
     internal class Token(TokenType type, string value)
     {
-        public readonly TokenType Type = type;
+        public TokenType Type = type;
         public string Value = value;
         public uint AsUInt() => ConvertStringToUInt(Value);
         public Instructions.AddressableRegisterCode AsRegisterCode() => (Instructions.AddressableRegisterCode)Value;

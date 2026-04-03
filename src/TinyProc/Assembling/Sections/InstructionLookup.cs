@@ -69,26 +69,23 @@ public sealed class InstructionLookup
 	/// <summary>
 	/// Checks if the nth operand of the assembly instruction is representing a number.
 	/// </summary>
-	/// <param name="words"></param>
+	/// <param name="instruction"></param>
 	/// <param name="n"></param>
 	/// <returns>Returns false if there are less operands than n, or the nth operand is not a number.
 	/// Returns true otherwise.</returns>
-	private static bool IsNthOperandNumber(string[] words, int n)
+	private static bool IsNthOperandNumber(Statement instruction, int n)
 	{
-		bool result = words.Length - 1 >= n && TryConvertStringToUInt(words[n], out _);
-		Logging.LogDebug($"Operand {n}: {words[n]}");
+		bool result = instruction.Length - 1 >= n && TryConvertStringToUInt(instruction.Tokens[n].Value, out _);
+		Logging.LogDebug($"Operand {n}: {instruction.Tokens[n].Value}");
 		return result;
 	}
 
-	internal static Instructions.IInstruction ParseAsInstruction(string[] words, Instructions.AddressingMode? adrMode)
+	internal static Instructions.IInstruction ParseAsInstruction(Statement instruction, Instructions.AddressingMode? adrMode)
 	{
-		// Strip addressing brackets (e.g. in "ld gp1, [0x00000000]")
-		if (adrMode.HasValue)
-			words[^1] = words[^1][1..^1];
 		// Set default addressing mode, even if the instruction doesn't need it
 		adrMode ??= Instructions.AddressingMode.Absolute;
 		
-		string mnemonic = words[0].ToUpper();
+		string mnemonic = instruction.Tokens[0].Value.ToUpper();
 
 		Instructions.Condition conditional = Instructions.Condition.ALWAYS;
 		if (mnemonic.Length >= 3)
@@ -101,7 +98,7 @@ public sealed class InstructionLookup
 				// Mnemonic has conditional at this point
 				Logging.LogDebug($"Mnemonic {mnemonic} has condition code {conditional}");
 				mnemonic = mnemonic[..^2];
-				words[0] = mnemonic;
+				instruction.Tokens[0].Value = mnemonic;
 			}
 			catch (KeyNotFoundException) { Logging.LogDebug($"Mnemonic {mnemonic} has no condition code."); }
 		}
@@ -110,8 +107,8 @@ public sealed class InstructionLookup
 
 		// Determine instruction type (R/I/J)
 		Instructions.InstructionType type;
-		bool isFirstOperandNumber = IsNthOperandNumber(words, 1);
-		bool isSecondOperandNumber = IsNthOperandNumber(words, 2);
+		bool isFirstOperandNumber = IsNthOperandNumber(instruction, 1);
+		bool isSecondOperandNumber = IsNthOperandNumber(instruction, 2);
 
 		if (mnemonic == "TST") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLC") { type = Instructions.InstructionType.Register; }
@@ -153,17 +150,17 @@ public sealed class InstructionLookup
 		Logging.LogDebug($"Type: {type}");
 		return type switch
 		{
-			Instructions.InstructionType.Register => RegRegInstructionLookup(words, adrMode.Value, conditional),
-			Instructions.InstructionType.Immediate => RegImmInstructionLookup(words, adrMode.Value, conditional),
-			Instructions.InstructionType.Jump => JumpInstructionLookup(words, adrMode.Value, conditional),
-			_ => throw new ArgumentException($"Line {string.Join(" ", words)} does not parse as an instruction.")
+			Instructions.InstructionType.Register => RegRegInstructionLookup(instruction, adrMode.Value, conditional),
+			Instructions.InstructionType.Immediate => RegImmInstructionLookup(instruction, adrMode.Value, conditional),
+			Instructions.InstructionType.Jump => JumpInstructionLookup(instruction, adrMode.Value, conditional),
+			_ => throw new ArgumentException($"Line {instruction} does not parse as an instruction.")
 		};
 	}
 
     private static Instructions.RegRegInstruction RegRegInstructionLookup(
-		string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
+		Statement instruction, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
 	{
-		string mnemonic = words[0].ToUpper();
+		string mnemonic = instruction.Tokens[0].Value.ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Register)].Item1;
 		CPU.ALU.ALUOpcode aluOpcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Register)].Item2;
 
@@ -173,8 +170,8 @@ public sealed class InstructionLookup
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
-					(Instructions.AddressableRegisterCode)words[1],
-					(Instructions.AddressableRegisterCode)words[2],
+					(Instructions.AddressableRegisterCode)instruction.Tokens[1].Value,
+					(Instructions.AddressableRegisterCode)instruction.Tokens[2].Value,
 					aluOpcode,
 					adrMode
 				),
@@ -184,7 +181,7 @@ public sealed class InstructionLookup
 					opcode,
 					conditional,
 					DEFAULT_UNUSED_REGISTER,
-					(Instructions.AddressableRegisterCode)words[1],
+					(Instructions.AddressableRegisterCode)instruction.Tokens[1].Value,
 					aluOpcode,
 					adrMode
 				),
@@ -193,7 +190,7 @@ public sealed class InstructionLookup
 				=> new Instructions.RegRegInstruction(
 					opcode,
 					conditional,
-					(Instructions.AddressableRegisterCode)words[1],
+					(Instructions.AddressableRegisterCode)instruction.Tokens[1].Value,
 					DEFAULT_UNUSED_REGISTER,
 					aluOpcode,
 					adrMode
@@ -224,9 +221,9 @@ public sealed class InstructionLookup
 	public static readonly Instructions.AddressableRegisterCode DEFAULT_UNUSED_REGISTER = (Instructions.AddressableRegisterCode)0x0u;
 
     private static Instructions.RegImmInstruction RegImmInstructionLookup(
-        string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
+        Statement instruction, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
     {
-        string mnemonic = words[0].ToUpper();
+        string mnemonic = instruction.Tokens[0].Value.ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Immediate)].Item1;
 		CPU.ALU.ALUOpcode aluOpcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Immediate)].Item2;
 
@@ -236,10 +233,10 @@ public sealed class InstructionLookup
 				=> new Instructions.RegImmInstruction(
 					opcode,
 					conditional,
-					(Instructions.AddressableRegisterCode)words[1],
+					(Instructions.AddressableRegisterCode)instruction.Tokens[1].Value,
 					aluOpcode,
 					adrMode,
-					ConvertStringToUInt(words[2])),
+					ConvertStringToUInt(instruction.Tokens[2].Value)),
 			
 			// For LOAD and STORE instructions:
 			// Multiple ALU opcodes required during execution; Therefore, none are set here.
@@ -248,7 +245,7 @@ public sealed class InstructionLookup
 				=> new Instructions.RegImmInstruction(
 					opcode,
 					conditional,
-					(Instructions.AddressableRegisterCode)words[1],
+					(Instructions.AddressableRegisterCode)instruction.Tokens[1].Value,
 					aluOpcode,
 					adrMode,
 					IMMEDIATE_DEFAULT_VALUE),
@@ -258,9 +255,9 @@ public sealed class InstructionLookup
     }
 
     private static Instructions.JumpInstruction JumpInstructionLookup(
-        string[] words, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
+        Statement instruction, Instructions.AddressingMode adrMode, Instructions.Condition conditional)
     {
-        string mnemonic = words[0].ToUpper();
+        string mnemonic = instruction.Tokens[0].Value.ToUpper();
 		Instructions.Opcode opcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Jump)].Item1;
 		CPU.ALU.ALUOpcode aluOpcode = MnemonicOpcodeMap[(mnemonic, Instructions.InstructionType.Jump)].Item2;
 
@@ -277,7 +274,7 @@ public sealed class InstructionLookup
 					opcode,
 					conditional,
 					adrMode,
-					ConvertStringToUInt(words[1])),
+					ConvertStringToUInt(instruction.Tokens[1].Value)),
 			
 			"RET" or "IRET"
 				=> new Instructions.JumpInstruction(

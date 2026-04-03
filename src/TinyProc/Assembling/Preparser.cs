@@ -33,7 +33,7 @@ public partial class Assembler
                 if (statement.Length < 3)
                     throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {statement}");
                 string name = statement.Tokens[1].Value;
-                string value = statement.Tokens[2..].Select(t => t.Value).Aggregate((t1, t2) => t1 + t2);
+                string value = statement.Tokens[2..^1].Select(t => t.Value).Aggregate((t1, t2) => t1 + t2);
                 Logging.LogDebug($"Found define: \"{name}\" = \"{value}\"");
                 defines.Add(name, value);
             }

@@ -61,7 +61,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
     internal static DataSection CreateFromAssemblyCode(List<Statement> assemblyStatements)
     {
         Statement header = assemblyStatements[0];
-        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^1].Type != TokenType.DIRECTIVE_SECTION_DATA)
+        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_DATA)
             throw new ArgumentException("Cannot parse assembly .data section: Incorrect header");
         // No need for attribute parsing - will maybe be necessary in future
         Logging.LogDebug("Successfully verified and parsed .data section header.");
@@ -144,7 +144,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             var sequencesWithSameNameButDifferentValues =
                 immediateSequences.Where(seq1 => immediateSequences.Any(seq2 => seq1.Alias == seq2.Alias && seq1 != seq2));
             if (sequencesWithSameNameButDifferentValues.Count() >= 2)
-                throw new Exception($"Two immediate sequences with the same alias: {sequencesWithSameNameButDifferentValues.First().Alias}");
+                throw new Exception($"Multiple immediate sequences with the same alias: {sequencesWithSameNameButDifferentValues.First().Alias}");
         }
         return immediateSequences;
     }

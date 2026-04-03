@@ -72,16 +72,14 @@ public readonly struct TextSection : IAssemblySection
         currentAddress = 0;
 
         // Parse each line / statement separately
-        foreach (Statement statement in assemblyStatements)
+        for (int i = 0; i < assemblyStatements.Count; i++)
         {
+            Statement statement = assemblyStatements[i];
             Logging.NewlineDebug();
             Logging.LogDebug($"Parsing line: {statement}");
             // Check for blatantly invalid instruction syntax:
             if (statement.Length < 1 || statement.Tokens[0].Type != TokenType.MNEMONIC)
                 throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {statement}");
-
-            // Replace occurrences of immediate value / pointer identifiers of the .data section
-            // with their corresponding numeric value.
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
             // The addressing mode specifies how an address is interpreted by the CPU.
@@ -96,139 +94,75 @@ public readonly struct TextSection : IAssemblySection
 
             foreach (Token token in statement.Tokens)
             {
-                // Skip bracket and square bracket tokens (irrelevant here)
-                if (token.Type == TokenType.BRACKET_OPEN ||
-                    token.Type == TokenType.BRACKET_CLOSE ||
-                    token.Type == TokenType.SQUARE_BRACKET_OPEN ||
-                    token.Type == TokenType.SQUARE_BRACKET_CLOSE)
+                // Skip brackets, square brackets, mnemonics, etc.
+                // Only literal words are relevant here for potential replacement
+                if (token.Type != TokenType.LITERAL_WORD)
                     continue;
                     
                 if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value) && labelAddressMap.ContainsKey(token.Value))
                     // If both of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
                     throw new Exception($"Address label / .data section reference is ambiguous for \"{token.Value}\".");
                 
-
-
-
-
-
-
-
-
-
-
-
-
-
-                
-                // FIXME: Fix all da red stuff
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 if (labelAddressMap.TryGetValue(token.Value, out uint labelAddress))
                 {
                     // Subtract two to account for PC-relative instructions always using the address from the next instruction.
                     uint labelRelAddress = labelAddress - currentAddress - 2;
-                    line = line.Replace(word, labelRelAddress.ToString());
+                    Logging.LogDebug($".text replace label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelRelAddress.ToString();
                     adrMode = AddressingMode.PCRelative;
-                    Logging.LogDebug($".text replace label \"{word}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
                 }
 
-                // The instruction is a load / store instruction possibly using relative addressing modes
-                if (dataSection.FixedLoadAddress.HasValue)
+                // Although the data section loads at a predefined address, we'll use relative addressing
+                // for future proofing, since relative addresses are shorter and could therefore be encoded shorter.
+                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value))
                 {
-                    // Location in memory is static for both .data and .text section
-                    // (since .text is loaded immediately after .data, only check for .data is necessary)
-                    // ==> Use absolute addressing
-                    ImmediateSequence seq = dataSection.ImmediateSequences.First(seq => seq.Alias == word);
+                    ImmediateSequence immediateSequence = dataSection.ImmediateSequences.First(seq => seq.Alias == token.Value);
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    adrMode = AddressingMode.PCRelative;
+                    
+                    // If the immediate sequence is a constant or a single value, do a replacement with the instruction operand
+                    if (immediateSequence.Data.Length == 1)
+                    {
+                        Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {immediateSequence.Data[0]:x8}h / {immediateSequence.Data[0]}");
+                        token.Value = immediateSequence.Data[0].ToString();
+                    }
+                    // If the immediate sequence is a multi-word, replace the operand with a relative address
+                    else if (immediateSequence.Data.Length > 1)
+                    {
+                        uint relAddr = immediateSequence.Offset!.Value - currentAddress - dataSection.Size - 1;
+                        Logging.LogDebug($".text replace multi-word (R) \"{token.Value}\" --> {relAddr:x8}h / {relAddr}");
+                        token.Value = relAddr.ToString();
+                    }
+                    // This should not be possible
+                    else
+                        throw new Exception("Immediate sequence has length of zero. This is an internal error.");
+                }
 
-                    if (isImmediate)
-                    {
-                        uint immediateValue = immediate.Value;
-                        line = line.Replace(word, immediateValue.ToString());
-                        Logging.LogDebug($".text replace immediate \"{word}\" --> {immediateValue:x8}h / {immediateValue}");
-                    }
-                    else if (isPointer)
-                    {
-                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint pointerAbsAddress = dataSection.FixedLoadAddress.Value + pointer.Offset;
-                        line = line.Replace(word, pointerAbsAddress.ToString());
-                        adrMode = AddressingMode.Absolute;
-                        Logging.LogDebug($".text replace pointer (A) \"{word}\" --> {pointerAbsAddress:x8}h / {pointerAbsAddress}");
-                    }
-                    else if (isBlockPointer)
-                    {
-                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint blockPointerRelAddress = dataSection.FixedLoadAddress.Value + blockPointer.Offset;
-                        line = line.Replace(word, blockPointerRelAddress.ToString());
-                        adrMode = AddressingMode.Absolute;
-                        Logging.LogDebug($".text replace block pointer (A) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
-                    }
-                }
-                else
-                {
-                    // Location in memory is dynamic for either the .data or the .text section.
-                    // This means that absolute load / stores won't work.
-                    // ==> Use relative addressing
-                    bool isImmediate = dataSection.ImmediateValues.TryGetValue(word, out DataSection.ImmediateValue immediate);
-                    bool isPointer = dataSection.Pointers.TryGetValue(word, out DataSection.ImmediateSequence pointer);
-                    bool isBlockPointer = dataSection.BlockPointers.TryGetValue(word, out DataSection.ContinuousBlock blockPointer);
-                    if (isImmediate)
-                    {
-                        uint immediateValue = immediate.Value;
-                        line = line.Replace(word, immediateValue.ToString());
-                        Logging.LogDebug($".text replace immediate \"{word}\" --> {immediateValue:x8}h / {immediateValue}");
-                    }
-                    else if (isPointer)
-                    {
-                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint pointerRelAddress = pointer.Offset - currentAddress - dataSection.Size - 1;
-                        line = line.Replace(word, pointerRelAddress.ToString());
-                        adrMode = AddressingMode.PCRelative;
-                        Logging.LogDebug($".text replace pointer (R) \"{word}\" --> {pointerRelAddress:x8}h / {pointerRelAddress}");
-                    }
-                    else if (isBlockPointer)
-                    {
-                        // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                        uint blockPointerRelAddress = blockPointer.Offset - currentAddress - dataSection.Size - 1;
-                        line = line.Replace(word, blockPointerRelAddress.ToString());
-                        adrMode = AddressingMode.PCRelative;
-                        Logging.LogDebug($".text replace block pointer (R) \"{word}\" --> {blockPointerRelAddress:x8}h / {blockPointerRelAddress}");
-                    }
-                }
+                // At this point, the token type should be a numeric value, so if no replacement was found
+                // this indicates the word doesn't map to anything useful for further assembling.
+                if (token.Type == TokenType.LITERAL_WORD)
+                    throw new Exception($"Unresolved reference {token.Value} in {statement}");
             }
 
             // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
-            List<string> constantExpressions = [.. line.Split(["(", ")"], StringSplitOptions.None)];
-            // Remove parts not lying between opening and closing brackets (in that order)
-            constantExpressions = [.. constantExpressions.Where((str, index) => index % 2 != 0)];
-            foreach (string expression in constantExpressions)
+            List<Statement> constantExpressions = GetEnclosedStatements(TokenType.BRACKET_OPEN, TokenType.BRACKET_CLOSE, statement);
+            foreach (Statement expression in constantExpressions)
             {
-                string expressionPreParsed = expression;
-                List<string> expressionWords = [.. SplitLineIntoWords(expression)];
-
                 // Evaluate constant expression
-                uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expressionPreParsed, null));
-                line = line.Replace("(" + expression + ")", expressionValue.ToString());
+                uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expression.ToString(), null));
+                // TODO: This could be made more clean?
+                int expressionTokenIdx = Array.IndexOf(statement.Tokens, expression.Tokens[0]);
+                List<Token> statementTokensNew = [.. statement.Tokens];
+                statementTokensNew.RemoveAll(token => expression.Tokens.Contains(token));
+                statementTokensNew.Insert(expressionTokenIdx, new Token(TokenType.NUMERIC_VALUE, expressionValue.ToString()));
+                statement = new Statement([.. statementTokensNew]);
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}] \"{lineUnparsed}\" -> \"{line}\"");
-            words = SplitLineIntoWords(line);
+            Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[i]}\" -> \"{statement}\"");
 
             // Parse assembly line as instruction object
-            IInstruction instruction = InstructionLookup.ParseAsInstruction(words, adrMode);
+            IInstruction instruction = InstructionLookup.ParseAsInstruction(statement, adrMode);
 
             // Note: Since the introduction of relative / absolute jumps, it is no longer necessary
             // to adjust any instructions pointing to memory, since they're either absolute in memory
@@ -240,7 +174,7 @@ public readonly struct TextSection : IAssemblySection
 
         Logging.NewlineDebug();
         Logging.LogDebug($".text section successfully parsed into a total of {instructions.Count * 2} word(s).");
-        return new TextSection(fixedLoadAddress, instructions, labelAddressMap);
+        return new TextSection(instructions, labelAddressMap);
     }
 
     /// <summary>
@@ -255,7 +189,7 @@ public readonly struct TextSection : IAssemblySection
         // By default, the entry point (offset into .text section) is zero
         Either<uint, string> entryPoint = 0x00000000;
         // Parse section header
-        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^1].Type != TokenType.DIRECTIVE_SECTION_TEXT)
+        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_TEXT)
             throw new ArgumentException("Cannot parse assembly .text section: Incorrect header");
 
         if (header.Length > 2)
@@ -264,26 +198,7 @@ public readonly struct TextSection : IAssemblySection
             // Remove first word "#SECTION" and last word ".text"
             header = new Statement(header.Tokens[1..^1]);
             // Split by brackets
-            List<Statement> attributes = [];
-            bool isBracketOpen = false;
-            foreach (Token token in header.Tokens)
-            {
-                if (token.Type == TokenType.BRACKET_OPEN)
-                {
-                    // Open new attribute
-                    isBracketOpen = true;
-                    attributes.Add(new Statement([]));
-                }
-                else if (token.Type == TokenType.BRACKET_CLOSE)
-                {
-                    // Close attribute with EOS
-                    isBracketOpen = false;
-                    attributes[^1] = new Statement([.. attributes[^1].Tokens, Token.CreateEOS()]);
-                }
-                if (isBracketOpen)
-                    // Add attribute content
-                    attributes[^1] = new Statement([.. attributes[^1].Tokens, token]);
-            }
+            List<Statement> attributes = GetEnclosedStatements(TokenType.BRACKET_OPEN, TokenType.BRACKET_CLOSE, header);
 
             foreach (Statement attribute in attributes)
             {
@@ -316,5 +231,39 @@ public readonly struct TextSection : IAssemblySection
         Logging.LogDebug("Successfully verified and parsed .text section header.");
 
         return new TextSectionHeader(entryPoint);
+    }
+
+    /// <summary>
+    /// Takes in a statement and searches for inner statements enclosed between delimiter tokens.
+    /// An illustrative example would be GetEnclosedStatements("(", ")", "Random text (with words) inside (brackets)")
+    /// which would return "with words" and "brackets", thereby giving statements inside opening and closing bracket delimiters.
+    /// </summary>
+    /// <param name="delimiterOpen">The type of token for a sub-statement opening</param>
+    /// <param name="delimiterClose">The type of token for a sub-statement close</param>
+    /// <param name="statement">The original statement / sequence of tokens</param>
+    /// <returns>A list of sub-statements enclosed in the delimiters</returns>
+    private static List<Statement> GetEnclosedStatements(TokenType delimiterOpen, TokenType delimiterClose, Statement statement)
+    {
+        List<Statement> enclosedStatements = [];
+        bool isOpen = false;
+        foreach (Token token in statement.Tokens)
+        {
+            if (token.Type == delimiterOpen)
+            {
+                // Open in-bracket statement
+                isOpen = true;
+                enclosedStatements.Add(new Statement([]));
+            }
+            else if (token.Type == TokenType.BRACKET_CLOSE)
+            {
+                // Close attribute with EOS
+                isOpen = false;
+                enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, Token.CreateEOS()]);
+            }
+            if (isOpen)
+                // Add attribute content
+                enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, token]);
+        }
+        return enclosedStatements;
     }
 }
