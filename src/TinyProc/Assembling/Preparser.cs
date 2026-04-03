@@ -43,14 +43,16 @@ public partial class Assembler
             if (assemblyStatements[i].Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
                 assemblyStatements.RemoveAt(i--);
 
-        // Second iteration: Replace names in previously built dictionary with their values in code
-        // To ensure not any word within another word is replaced to produce garbage,
-        // the name is prepended with a "$" sign during use. This is different from e.g. the C pre-parser, but
-        // prevents this code section from growing too large to check for tokens instead of occurrences.
+        // The define needs to be prepended with a "$" in code. This is for mere convenience.
+        // It no longer serves an actual purpose except being a clear syntactical difference from constants / pointers.
         foreach (Statement statement in assemblyStatements)
             foreach (Token token in statement.Tokens)
                 if (token.Type == TokenType.LITERAL_WORD && defines.Keys.Any(name => name == "$" + token.Value))
+                {
+                    // TODO: Re-tokenize after this to set proper token types => otherwise types get messed up
                     token.Value = defines[token.Value];
+                    throw new NotImplementedException("See TODO");
+                }
         return assemblyStatements;
     }
 
