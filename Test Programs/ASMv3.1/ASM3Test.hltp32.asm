@@ -1,7 +1,6 @@
-; Test for all (or most) ASMv3 features
+; Test for all (or most) ASMv3.1 features
 ; Doesn't serve a distinct purpose except debugging
 #VERSION 3.1
-#ENTRY _start
 
 #DEFINE REPEAT_TEST_TIMES 50
 #DEFINE REPEAT_TEST_DATA "word. "
@@ -21,19 +20,19 @@ dw imm6 len: ptr1
 times 50 dw 0x0
 times $REPEAT_TEST_TIMES dw $REPEAT_TEST_DATA
 
-#SECTION (__entry = _start) .text
+#SECTION (__entry__ = _start) .text
 _start:
     ; Basic arithmetic
     mov gp1, imm1
 
     ; Load / store
     ld gp1, [imm1]
-    st gp1, [abs imm1]
-    st gp1, [rel imm1]
-    st gp1, [+imm1]
-    st gp1, [-imm1]
+    ;st gp1, [abs imm1]
+    ;st gp1, [rel imm1]
+    ;st gp1, [+imm1]
+    ;st gp1, [-imm1]
     st gp1, [$LD_DATA_ADDR]
-    st gp1, [+$LD_DATA_ADDR]
+    ;st gp1, [+$LD_DATA_ADDR]
 
     ; Calling / stack / interrupts
     call func

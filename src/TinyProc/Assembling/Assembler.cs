@@ -386,6 +386,15 @@ public partial class Assembler
             return [.. bytesList];
         }
         /// <summary>
+        /// Copies the information of this token into another token.
+        /// </summary>
+        /// <param name="target"></param>
+        public void CopyTo(Token target)
+        {
+            target.Type = Type;
+            target.Value = Value;
+        }
+        /// <summary>
         /// Creates a new EOS (end-of-statement) token.
         /// </summary>
         /// <returns></returns>
@@ -405,7 +414,7 @@ public partial class Assembler
     /// <param name="statementTokens"></param>
     internal class Statement(Token[] statementTokens)
     {
-        public readonly Token[] Tokens = statementTokens;
+        public Token[] Tokens = statementTokens;
         /// <summary>
         /// The number of tokens in this statement excluding EOS
         /// </summary>

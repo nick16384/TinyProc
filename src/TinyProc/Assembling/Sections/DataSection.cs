@@ -82,6 +82,9 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
 
         DataSection resultDataSection = new([.. data]);
         Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
+
+        throw new Exception("Something is off here... 107 sequences must be larger than a few words...");
+
         return resultDataSection;
     }
 

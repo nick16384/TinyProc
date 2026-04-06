@@ -33,7 +33,7 @@ public partial class Assembler
     internal const string ASM_DIRECTIVE_LOADADDRESS = "#ORG";
 
     // Attributes
-    internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "__entry";
+    internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "__entry__";
 
     // Keywords
     internal const string KEYWORD_DEFINEWORD = "dw";
