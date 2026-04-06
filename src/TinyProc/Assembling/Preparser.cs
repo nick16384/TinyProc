@@ -43,16 +43,22 @@ public partial class Assembler
             if (assemblyStatements[i].Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
                 assemblyStatements.RemoveAt(i--);
 
-        // The define needs to be prepended with a "$" in code. This is for mere convenience.
+        // The define needs to be prepended with a "$" (or anything else, but dollar sign is convention) in code. This is for mere convenience.
         // It no longer serves an actual purpose except being a clear syntactical difference from constants / pointers.
         foreach (Statement statement in assemblyStatements)
             foreach (Token token in statement.Tokens)
-                if (token.Type == TokenType.LITERAL_WORD && defines.Keys.Any(name => name == "$" + token.Value))
+            {
+                Console.WriteLine($"Check token {token.Value}");
+                if (token.Type == TokenType.LITERAL_WORD && defines.Keys.Any(name => name == token.Value[1..]))
                 {
-                    // TODO: Re-tokenize after this to set proper token types => otherwise types get messed up
-                    token.Value = defines[token.Value];
-                    throw new NotImplementedException("See TODO");
+                    Console.WriteLine($"Define match: {token.Value}");
+                    // StringToToken() redetermines the type.
+                    // Since "token" cannot be set directly as a foreach iteration veriable, we modify it's members.
+                    Token newToken = StringToToken(defines[token.Value[1..]]);
+                    token.Type = newToken.Type;
+                    token.Value = newToken.Value;
                 }
+            }
         return assemblyStatements;
     }
 

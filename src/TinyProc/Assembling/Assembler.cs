@@ -185,65 +185,7 @@ public partial class Assembler
             string[] words = SplitLineIntoWords(line);
             foreach (string word in words)
             {
-                Token token;
-                
-                // Assembly directives
-                if      (word == ASM_DIRECTIVE_LOADADDRESS)
-                    token = new Token(TokenType.DIRECTIVE_ORG, ASM_DIRECTIVE_LOADADDRESS);
-                else if (word == ASM_DIRECTIVE_DEFINE)
-                    token = new Token(TokenType.DIRECTIVE_DEFINE, ASM_DIRECTIVE_DEFINE);
-                else if (word == ASM_DIRECTIVE_SECTION)
-                    token = new Token(TokenType.DIRECTIVE_SECTION, ASM_DIRECTIVE_SECTION);
-                else if (word == ASM_DIRECTIVE_SECTION_DATA)
-                    token = new Token(TokenType.DIRECTIVE_SECTION_DATA, ASM_DIRECTIVE_SECTION_DATA);
-                else if (word == ASM_DIRECTIVE_SECTION_TEXT)
-                    token = new Token(TokenType.DIRECTIVE_SECTION_TEXT, ASM_DIRECTIVE_SECTION_TEXT);
-                // Special keywords
-                else if (word == KEYWORD_DEFINEWORD)
-                    token = new Token(TokenType.KEYWORD_DEFINEWORD, KEYWORD_DEFINEWORD);
-                else if (word == KEYWORD_EQUATE)
-                    token = new Token(TokenType.KEYWORD_EQUATE, KEYWORD_EQUATE);
-                else if (word == KEYWORD_LENGTH)
-                    token = new Token(TokenType.KEYWORD_LENGTH, KEYWORD_LENGTH);
-                else if (word == KEYWORD_TIMES)
-                    token = new Token(TokenType.KEYWORD_TIMES, KEYWORD_TIMES);
-                // "Normal" tokens
-                // Single letters
-                else if (word == "[")
-                    token = new Token(TokenType.SQUARE_BRACKET_OPEN, "[");
-                else if (word == "]")
-                    token = new Token(TokenType.SQUARE_BRACKET_CLOSE, "]");
-                else if (word == "(")
-                    token = new Token(TokenType.BRACKET_OPEN, "(");
-                else if (word == ")")
-                    token = new Token(TokenType.BRACKET_CLOSE, ")");
-                else if (word == "+")
-                    token = new Token(TokenType.SYMBOL_PLUS, "+");
-                else if (word == "-")
-                    token = new Token(TokenType.SYMBOL_MINUS, "-");
-                else if (word == "*")
-                    token = new Token(TokenType.SYMBOL_MULTIPLY, "*");
-                else if (word == "=")
-                    token = new Token(TokenType.SYMBOL_EQUALS, "=");
-                // Check if parseable as mnemonic
-                // FIXME: Check for conditional codes!!!
-                else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == word))
-                    token = new Token(TokenType.MNEMONIC, word);
-                // Check if parseable as register
-                else if (Instructions.AddressableRegisterCode.IsValidRegisterName(word))
-                    token = new Token(TokenType.REGISTER, word);
-                // Check if parseable as uint
-                else if (TryConvertStringToUInt(word, out _))
-                    token = new Token(TokenType.NUMERIC_VALUE, word);
-                // Check if word is followed by colon, and it's the only word in the line
-                else if (word.EndsWith(':') && words.Length <= 1)
-                    token = new Token(TokenType.LABEL, word[..^1]);
-                // Check if the word is enclosed in quotes
-                else if (word.StartsWith('"') && word.EndsWith('"'))
-                    token = new Token(TokenType.STRING, word[1..^1]);
-                else
-                    token = new Token(TokenType.LITERAL_WORD, word);
-                tokens.Add(token);
+                tokens.Add(StringToToken(word));
             }
             tokens.Add(Token.CreateEOS());
         }
@@ -275,7 +217,67 @@ public partial class Assembler
                     return word.Replace(excludeSymbol, "");
                 return word;
             })];
+        words = [.. words.Where(word => !string.IsNullOrWhiteSpace(word))];
         return words;
+    }
+    private static Token StringToToken(string tokenString)
+    {
+        // Assembly directives
+        if      (tokenString == ASM_DIRECTIVE_LOADADDRESS)
+            return new Token(TokenType.DIRECTIVE_ORG, ASM_DIRECTIVE_LOADADDRESS);
+        else if (tokenString == ASM_DIRECTIVE_DEFINE)
+            return new Token(TokenType.DIRECTIVE_DEFINE, ASM_DIRECTIVE_DEFINE);
+        else if (tokenString == ASM_DIRECTIVE_SECTION)
+            return new Token(TokenType.DIRECTIVE_SECTION, ASM_DIRECTIVE_SECTION);
+        else if (tokenString == ASM_DIRECTIVE_SECTION_DATA)
+            return new Token(TokenType.DIRECTIVE_SECTION_DATA, ASM_DIRECTIVE_SECTION_DATA);
+        else if (tokenString == ASM_DIRECTIVE_SECTION_TEXT)
+            return new Token(TokenType.DIRECTIVE_SECTION_TEXT, ASM_DIRECTIVE_SECTION_TEXT);
+        // Special keywords
+        else if (tokenString == KEYWORD_DEFINEWORD)
+            return new Token(TokenType.KEYWORD_DEFINEWORD, KEYWORD_DEFINEWORD);
+        else if (tokenString == KEYWORD_EQUATE)
+            return new Token(TokenType.KEYWORD_EQUATE, KEYWORD_EQUATE);
+        else if (tokenString == KEYWORD_LENGTH)
+            return new Token(TokenType.KEYWORD_LENGTH, KEYWORD_LENGTH);
+        else if (tokenString == KEYWORD_TIMES)
+            return new Token(TokenType.KEYWORD_TIMES, KEYWORD_TIMES);
+        // "Normal" tokens
+        // Single letters
+        else if (tokenString == "[")
+            return new Token(TokenType.SQUARE_BRACKET_OPEN, "[");
+        else if (tokenString == "]")
+            return new Token(TokenType.SQUARE_BRACKET_CLOSE, "]");
+        else if (tokenString == "(")
+            return new Token(TokenType.BRACKET_OPEN, "(");
+        else if (tokenString == ")")
+            return new Token(TokenType.BRACKET_CLOSE, ")");
+        else if (tokenString == "+")
+            return new Token(TokenType.SYMBOL_PLUS, "+");
+        else if (tokenString == "-")
+            return new Token(TokenType.SYMBOL_MINUS, "-");
+        else if (tokenString == "*")
+            return new Token(TokenType.SYMBOL_MULTIPLY, "*");
+        else if (tokenString == "=")
+            return new Token(TokenType.SYMBOL_EQUALS, "=");
+        // Check if parseable as mnemonic
+        // FIXME: Check for conditional codes!!!
+        else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == tokenString))
+            return new Token(TokenType.MNEMONIC, tokenString);
+        // Check if parseable as register
+        else if (Instructions.AddressableRegisterCode.IsValidRegisterName(tokenString))
+            return new Token(TokenType.REGISTER, tokenString);
+        // Check if parseable as uint
+        else if (TryConvertStringToUInt(tokenString, out _))
+            return new Token(TokenType.NUMERIC_VALUE, tokenString);
+        // Check if word is followed by colon, and implicitly assumes it's the only word in the line
+        else if (tokenString.EndsWith(':'))
+            return new Token(TokenType.LABEL, tokenString[..^1]);
+        // Check if the word is enclosed in quotes
+        else if (tokenString.StartsWith('"') && tokenString.EndsWith('"'))
+            return new Token(TokenType.STRING, tokenString[1..^1]);
+        else
+            return new Token(TokenType.LITERAL_WORD, tokenString);
     }
 
     private static bool CheckAssemblyVersion(string assemblyCode)

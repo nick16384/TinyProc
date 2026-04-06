@@ -18,8 +18,8 @@ dw ptr1 0x55, "This is a test string", 0xA, "Another test string"
 dw "Empty data here lol"
 equ imm5 len: ptr1
 dw imm6 len: ptr1
-times 50 db 0x0
-times $REPEAT_TEST_TIMES db $REPEAT_TEST_DATA
+times 50 dw 0x0
+times $REPEAT_TEST_TIMES dw $REPEAT_TEST_DATA
 
 #SECTION (__entry = _start) .text
 _start:

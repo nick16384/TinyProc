@@ -92,6 +92,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
 
         foreach (Statement statement in statements)
         {
+            Logging.LogDebug(statement.ToString());
             // Pointers (word sequences)
             // Usage:
             // dw name* [sequence of values]
@@ -105,7 +106,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 // Look if second word contains data immediately, or an alias comes first
                 bool hasAlias = statement.Tokens[1].Type == TokenType.LITERAL_WORD;
                 string? alias = hasAlias ? statement.Tokens[1].Value : null;
-                Token[] dataTokens = hasAlias ? statement.Tokens[2..] : statement.Tokens[1..];
+                Token[] dataTokens = hasAlias ? statement.Tokens[2..^1] : statement.Tokens[1..^1];
                 List<uint> data;
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                     data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
@@ -126,10 +127,10 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // *: Name is required
             else if (statement.Tokens[0].Type == TokenType.KEYWORD_EQUATE)
             {
-                if (statement.Length < 3)
+                if (statement.Length <= 3)
                     throw new ArgumentException("Number of literal words in constant declaration is less than 3.");
                 string alias = statement.Tokens[1].Value;
-                Token[] dataTokens = statement.Tokens[2..];
+                Token[] dataTokens = statement.Tokens[2..^1];
                 List<uint> data;
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                     data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
@@ -139,6 +140,11 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                     data = ByteSequenceToUIntSequence(dataBytes);
                 }
                 immediateSequences.Add(new ImmediateSequence(alias, null, [.. data]));
+            }
+
+            else
+            {
+                throw new Exception($"Invalid statement {statement} found in .data section.");
             }
 
             var sequencesWithSameNameButDifferentValues =
@@ -170,6 +176,11 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 // Convert string literals to uint sequences
                 data.AddRange(dataToken.AsByteArray());
                 continue;
+            }
+            if (dataToken.Type == TokenType.EOS)
+            {
+                Logging.LogWarn("Internal warning: Immediate data contains EOS token! Aborting possibly early.");
+                break;
             }
             // Unable to parse
             throw new Exception($"Invalid token type {dataToken.Type} for immediate sequence data.");
