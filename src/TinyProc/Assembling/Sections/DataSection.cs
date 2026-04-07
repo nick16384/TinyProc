@@ -83,8 +83,6 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         DataSection resultDataSection = new([.. data]);
         Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
 
-        throw new Exception("Something is off here... 107 sequences must be larger than a few words...");
-
         return resultDataSection;
     }
 
@@ -150,8 +148,13 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 throw new Exception($"Invalid statement {statement} found in .data section.");
             }
 
-            var sequencesWithSameNameButDifferentValues =
-                immediateSequences.Where(seq1 => immediateSequences.Any(seq2 => seq1.Alias == seq2.Alias && seq1 != seq2));
+            var sequencesWithSameNameButDifferentValues = immediateSequences
+                .Where(seq1 => immediateSequences.Any(seq2 =>
+                    seq1.HasAlias &&
+                    seq2.HasAlias &&
+                    seq1.Alias == seq2.Alias &&
+                    seq1 != seq2
+                ));
             if (sequencesWithSameNameButDifferentValues.Count() >= 2)
                 throw new Exception($"Multiple immediate sequences with the same alias: {sequencesWithSameNameButDifferentValues.First().Alias}");
         }
@@ -192,21 +195,22 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         return data;
     }
 
+    /// <summary>
+    /// Converts a list of bytes to a list of uints in big endian.
+    /// If the number of bytes doesn't fit evenly into the uints, padding bytes (0x00) are added.
+    /// </summary>
+    /// <param name="byteSequence"></param>
+    /// <returns></returns>
     private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence)
     {
-        int paddingBytesRequired = byteSequence.Count % sizeof(uint);
-        for (int i = 0; i < paddingBytesRequired; i++)
-            byteSequence.Add(0x00b);
-        List<uint> uintSequence = new(byteSequence.Count / 4);
-        for (int i = 0; i < uintSequence.Count; i++)
+        uint[] uintSequence = new uint[(int)Math.Ceiling((double)byteSequence.Count / 4)];
+        Array.Fill(uintSequence, 0u); // Just to be sure, fill with zeroes (incl. padding bytes)
+        for (int i = 0; i < byteSequence.Count; i++)
         {
-            uint bytesAsUInt =
-                ((uint)byteSequence[i*sizeof(uint) + 0] << 24) |
-                ((uint)byteSequence[i*sizeof(uint) + 1] << 16) |
-                ((uint)byteSequence[i*sizeof(uint) + 2] << 8)  |
-                ((uint)byteSequence[i*sizeof(uint) + 3] << 0);
-            uintSequence.Add(bytesAsUInt);
+            int uintArrayIdx = i / 4;
+            int byteIdx = i % 4;
+            uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (4 * byteIdx));
         }
-        return uintSequence;
+        return [.. uintSequence];
     }
 }
