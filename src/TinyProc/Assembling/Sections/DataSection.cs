@@ -61,7 +61,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
     internal static DataSection CreateFromAssemblyCode(List<Statement> assemblyStatements)
     {
         Statement header = assemblyStatements[0];
-        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_DATA)
+        if (header.STLength < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_DATA)
             throw new ArgumentException("Cannot parse assembly .data section: Incorrect header");
         // No need for attribute parsing - will maybe be necessary in future
         Logging.LogDebug("Successfully verified and parsed .data section header.");
@@ -102,7 +102,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // *: Name is optional
             if (statement.Tokens[0].Type == TokenType.KEYWORD_DEFINEWORD)
             {
-                if (statement.Length < 2)
+                if (statement.STLength < 2)
                     throw new ArgumentException("Number of literal words in word sequence declaration is less than 2.");
                 // Look if second word contains data immediately, or an alias comes first
                 bool hasAlias = statement.Tokens[1].Type == TokenType.LITERAL_WORD;
@@ -128,7 +128,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // *: Name is required
             else if (statement.Tokens[0].Type == TokenType.KEYWORD_EQUATE)
             {
-                if (statement.Length <= 3)
+                if (statement.STLength <= 3)
                     throw new ArgumentException("Number of literal words in constant declaration is less than 3.");
                 string alias = statement.Tokens[1].Value;
                 Token[] dataTokens = statement.Tokens[2..^1];

@@ -8,6 +8,8 @@ namespace TinyProc.Assembling.Sections;
 
 public readonly struct TextSection : IAssemblySection
 {
+    private static readonly Token TOKEN_BRACKET_OPEN = new(TokenType.BRACKET_OPEN, "(");
+    private static readonly Token TOKEN_BRACKET_CLOSE = new(TokenType.BRACKET_CLOSE, ")");
     public uint Size { get; }
     public uint EntryPoint { get; }
 
@@ -45,9 +47,14 @@ public readonly struct TextSection : IAssemblySection
         // Parse section header
         TextSectionHeader header = ParseHeader(assemblyStatements[0]);
         if (header.EntryPoint.Is<uint>())
+        {
             entryPoint = header.EntryPoint; // Absolute value already determined
+            Logging.LogDebug($"Entry point (direct): {entryPoint:x8}");
+        }
         else
+        {
             Logging.LogDebug($"Entry point seems to reference a label, resolving later.");
+        }
         assemblyStatements.RemoveAt(0);
 
         // .text section pre-parser:
@@ -67,7 +74,9 @@ public readonly struct TextSection : IAssemblySection
         }
         // Try to find entry point label again
         if (header.EntryPoint.Is<string>())
-            if (!labelAddressMap.TryGetValue(header.EntryPoint, out entryPoint))
+            if (labelAddressMap.TryGetValue(header.EntryPoint, out entryPoint))
+                Logging.LogDebug($"Entry point (from label): {entryPoint:x8}");
+            else
                 throw new Exception($"Cannot infer entry point {header.EntryPoint.B}");
         currentAddress = 0;
 
@@ -78,7 +87,7 @@ public readonly struct TextSection : IAssemblySection
             Logging.NewlineDebug();
             Logging.LogDebug($"Parsing line: {statement}");
             // Check for blatantly invalid instruction syntax:
-            if (statement.Length < 1 || statement.Tokens[0].Type != TokenType.MNEMONIC)
+            if (statement.STLength < 1 || statement.Tokens[0].Type != TokenType.MNEMONIC)
                 throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {statement}");
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
@@ -146,7 +155,7 @@ public readonly struct TextSection : IAssemblySection
             }
 
             // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
-            List<Statement> constantExpressions = GetEnclosedStatements(TokenType.BRACKET_OPEN, TokenType.BRACKET_CLOSE, statement);
+            List<Statement> constantExpressions = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, statement);
             foreach (Statement expression in constantExpressions)
             {
                 // Evaluate constant expression
@@ -189,21 +198,21 @@ public readonly struct TextSection : IAssemblySection
         // By default, the entry point (offset into .text section) is zero
         Either<uint, string> entryPoint = 0x00000000;
         // Parse section header
-        if (header.Length < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_TEXT)
+        if (header.STLength < 2 || header.Tokens[0].Type != TokenType.DIRECTIVE_SECTION || header.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_TEXT)
             throw new ArgumentException("Cannot parse assembly .text section: Incorrect header");
 
-        if (header.Length > 2)
+        if (header.STLength > 2)
         {
             // Header contains attributes
             // Remove first word "#SECTION" and last word ".text"
-            header = new Statement(header.Tokens[1..^1]);
+            header = new Statement(header.Tokens[1..^2]);
             // Split by brackets
-            List<Statement> attributes = GetEnclosedStatements(TokenType.BRACKET_OPEN, TokenType.BRACKET_CLOSE, header);
+            List<Statement> attributes = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, header);
 
             foreach (Statement attribute in attributes)
             {
                 // Check if the attribute is even in the correct format
-                if (attribute.Length != 3 || attribute.Tokens[0].Type != TokenType.LITERAL_WORD || attribute.Tokens[1].Type != TokenType.SYMBOL_EQUALS)
+                if (attribute.STLength != 3 || attribute.Tokens[0].Type != TokenType.LITERAL_WORD || attribute.Tokens[1].Type != TokenType.SYMBOL_EQUALS)
                     throw new Exception($"Unable to parse attribute \"{attribute}\". Wrong syntax");
                 string identifier = attribute.Tokens[0].Value;
                 Token valueToken = attribute.Tokens[2];
@@ -238,32 +247,43 @@ public readonly struct TextSection : IAssemblySection
     /// An illustrative example would be GetEnclosedStatements("(", ")", "Random text (with words) inside (brackets)")
     /// which would return "with words" and "brackets", thereby giving statements inside opening and closing bracket delimiters.
     /// </summary>
-    /// <param name="delimiterOpen">The type of token for a sub-statement opening</param>
-    /// <param name="delimiterClose">The type of token for a sub-statement close</param>
+    /// <remarks>
+    /// Note: Since the == operator for tokens is overridden to only compare the type and value, it is safe to
+    /// assume the delimiter tokens are equal to any other delimiter token with the same type and value.
+    /// </remarks>
+    /// <param name="delimiterOpen">The token for a sub-statement opening</param>
+    /// <param name="delimiterClose">The token for a sub-statement close</param>
     /// <param name="statement">The original statement / sequence of tokens</param>
     /// <returns>A list of sub-statements enclosed in the delimiters</returns>
-    private static List<Statement> GetEnclosedStatements(TokenType delimiterOpen, TokenType delimiterClose, Statement statement)
+    private static List<Statement> GetEnclosedStatements(Token delimiterOpen, Token delimiterClose, Statement statement)
     {
         List<Statement> enclosedStatements = [];
         bool isOpen = false;
         foreach (Token token in statement.Tokens)
         {
-            if (token.Type == delimiterOpen)
+            Console.WriteLine(token.Value);
+            if (token == delimiterOpen)
             {
                 // Open in-bracket statement
+                if (isOpen)
+                    Logging.LogWarn($"Warning: Double open delimiter \"{delimiterOpen.Value}\" in enclosed statement.");
                 isOpen = true;
                 enclosedStatements.Add(new Statement([]));
+                continue;
             }
-            else if (token.Type == TokenType.BRACKET_CLOSE)
+            else if (token == delimiterClose)
             {
                 // Close attribute with EOS
                 isOpen = false;
                 enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, Token.CreateEOS()]);
+                continue;
             }
             if (isOpen)
                 // Add attribute content
                 enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, token]);
         }
+        if (isOpen)
+            throw new Exception($"Unclosed delimiter in enclosed statement: missing \"{delimiterClose.Value}\"");
         return enclosedStatements;
     }
 }

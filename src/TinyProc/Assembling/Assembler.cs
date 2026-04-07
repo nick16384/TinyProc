@@ -48,27 +48,28 @@ public partial class Assembler
 
         assemblyCode = FilterCommentsAndRemoveExcessWhitespace(assemblyCode);
         Logging.LogInfo(
-            "===== Assembly begin =====\n" +
+            "\n===== Assembly begin =====\n" +
             assemblyCode +
-            "=====  Assembly end  =====");
+            "\n=====  Assembly end  =====");
         if (!CheckAssemblyVersion(assemblyCode))
             throw new Exception("Invalid assembly version.");
         Token[] assemblyTokens = TokenizeAssembly(assemblyCode);
-        Logging.LogDebug("Tokenized:");
-        foreach (Token token in assemblyTokens)
-            Logging.LogDebug($"{token.Type}: {token.Value}");
+        Logging.LogDebug(
+            "\n===== Tokenized begin =====");
+        assemblyTokens.ToList().ForEach(t => {
+            if (t.Type == TokenType.EOS) { Logging.NewlineDebug(); return; }
+            Logging.PrintDebug($"{t.Type}({t.Value}) ");
+        });
+        Logging.LogDebug(
+            "\n===== Tokenized end =====");
         List<Statement> assemblyStatements = TokensToStatements(assemblyTokens);
         assemblyStatements = PreParse(assemblyStatements);
-        Logging.LogDebug("Tokenized + pre-parsed:");
-        foreach (Statement statement in assemblyStatements)
-            foreach (Token token in statement.Tokens)
-                Logging.LogDebug($"{token.Type}: {token.Value}");
 
         // ========== Process .data and .text sections ==========
 
         // Search for .data section:
         int dataSectionStart = assemblyStatements.TakeWhile(statement =>
-            statement.Length < 2 ||
+            statement.STLength < 2 ||
             statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
             statement.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_DATA 
         ).Count();
@@ -76,7 +77,7 @@ public partial class Assembler
             throw new Exception("No .data section found.");
         // Search for .text section:
         int textSectionStart = assemblyStatements.TakeWhile(statement =>
-            statement.Length < 2 ||
+            statement.STLength < 2 ||
             statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
             statement.Tokens[^2].Type != TokenType.DIRECTIVE_SECTION_TEXT 
         ).Count();
@@ -262,11 +263,11 @@ public partial class Assembler
             return new Token(TokenType.SYMBOL_EQUALS, "=");
         // Check if parseable as mnemonic
         // FIXME: Check for conditional codes!!!
-        else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == tokenString))
-            return new Token(TokenType.MNEMONIC, tokenString);
+        else if (InstructionLookup.MnemonicOpcodeMap.Keys.Any(mnemonicAndType => mnemonicAndType.Item1 == tokenString.ToUpper()))
+            return new Token(TokenType.MNEMONIC, tokenString.ToUpper());
         // Check if parseable as register
-        else if (Instructions.AddressableRegisterCode.IsValidRegisterName(tokenString))
-            return new Token(TokenType.REGISTER, tokenString);
+        else if (Instructions.AddressableRegisterCode.IsValidRegisterName(tokenString.ToUpper()))
+            return new Token(TokenType.REGISTER, tokenString.ToUpper());
         // Check if parseable as uint
         else if (TryConvertStringToUInt(tokenString, out _))
             return new Token(TokenType.NUMERIC_VALUE, tokenString);
@@ -416,9 +417,10 @@ public partial class Assembler
     {
         public Token[] Tokens = statementTokens;
         /// <summary>
-        /// The number of tokens in this statement excluding EOS
+        /// The number of tokens in this statement excluding EOS.
+        /// The name STLength helps to make clear this is different from any normal List.Length or string.Length.
         /// </summary>
-        public int Length { get => Tokens.Length - 1; }
+        public int STLength { get => Tokens.Length - 1; }
         public override string ToString() => string.Join(" ", Tokens.SkipLast(1).Select(token => token.Value));
     }
 }

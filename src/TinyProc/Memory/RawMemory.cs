@@ -101,7 +101,7 @@ public class RawMemory : IReadWriteMemoryDevice
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual uint Read(uint addr)
     {
-        CheckValidAddress(addr);
+        AssertValidAddress(addr);
         uint pageNumber = (addr & PAGE_NUMBER_MASK) >> PAGE_SIZE_BITS;
         uint pageOffset = addr & PAGE_OFFSET_MASK;
         if (_data[pageNumber] == null)
@@ -112,7 +112,7 @@ public class RawMemory : IReadWriteMemoryDevice
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private protected virtual void Write(uint addr, uint value)
     {
-        CheckValidAddress(addr);
+        AssertValidAddress(addr);
         uint pageNumber = (addr & PAGE_NUMBER_MASK) >> PAGE_SIZE_BITS;
         uint pageOffset = addr & PAGE_OFFSET_MASK;
         if (_data[pageNumber] == null)
@@ -164,7 +164,7 @@ public class RawMemory : IReadWriteMemoryDevice
 
     // Checks if address is below the amount of words. If not, an exception is thrown.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void CheckValidAddress(uint addr)
+    private void AssertValidAddress(uint addr)
     {
         if (addr > _numWords - 1)
             throw new ArgumentOutOfRangeException($"Error reading memory: Address 0x{addr:x8} above 0x{(_numWords - 1):x8}.");

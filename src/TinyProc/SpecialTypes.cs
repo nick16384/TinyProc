@@ -8,16 +8,23 @@ namespace TinyProc;
 /// <typeparam name="T2"></typeparam>
 /// <param name="a"></param>
 /// <param name="b"></param>
-public sealed class Either<T1, T2>(T1? a, T2? b)
+public sealed class Either<T1, T2>
 {
-    public T1? A { get; } = a;
-    public T2? B { get; } = b;
-    public Type Type { get; } = a != null ? typeof(T1) : typeof(T2);
+    public readonly T1? A;
+    public readonly T2? B;
+    public readonly Type Type;
+
+    private Either(T1? a, T2? b, Type type)
+    {
+        A = a;
+        B = b;
+        Type = type;
+    }
 
     public bool Is<TCompare>() => typeof(TCompare) == Type;
 
-    public static implicit operator Either<T1, T2>(T1 a) => new(a, default);
-    public static implicit operator Either<T1, T2>(T2 b) => new(default, b);
+    public static implicit operator Either<T1, T2>(T1 a) => new(a, default, typeof(T1));
+    public static implicit operator Either<T1, T2>(T2 b) => new(default, b, typeof(T2));
 
     public static implicit operator T1(Either<T1, T2> either)
     {

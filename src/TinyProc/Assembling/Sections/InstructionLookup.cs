@@ -3,7 +3,6 @@ using TinyProc.Processor;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
 using static TinyProc.Assembling.Assembler;
-using System.Text.RegularExpressions;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -75,7 +74,7 @@ public sealed class InstructionLookup
 	/// Returns true otherwise.</returns>
 	private static bool IsNthOperandNumber(Statement instruction, int n)
 	{
-		bool result = instruction.Length - 1 >= n && TryConvertStringToUInt(instruction.Tokens[n].Value, out _);
+		bool result = instruction.STLength - 1 >= n && TryConvertStringToUInt(instruction.Tokens[n].Value, out _);
 		Logging.LogDebug($"Operand {n}: {instruction.Tokens[n].Value}");
 		return result;
 	}
