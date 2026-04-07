@@ -1,6 +1,7 @@
 ; Test for all (or most) ASMv3.1 features
 ; Doesn't serve a distinct purpose except debugging
 #VERSION 3.1
+#ORG 10000000h
 
 #DEFINE REPEAT_TEST_TIMES 50
 #DEFINE REPEAT_TEST_DATA "word. "
@@ -35,14 +36,14 @@ _start:
     ;st gp1, [+$LD_DATA_ADDR]
 
     ; Calling / stack / interrupts
-    call func
+    call [func]
     int $VECTOR_RESET
 
 func:
     pop gp1
     mov gp2, gp1
     push gp1
-    call func_nested1
+    call [func_nested1]
     ret
 
 func_nested1:

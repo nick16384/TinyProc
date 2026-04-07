@@ -53,7 +53,7 @@ public readonly struct TextSection : IAssemblySection
         }
         else
         {
-            Logging.LogDebug($"Entry point seems to reference a label, resolving later.");
+            Logging.LogDebug($"Entry point {header.EntryPoint} seems to reference a label, resolving later.");
         }
         assemblyStatements.RemoveAt(0);
 
@@ -83,12 +83,12 @@ public readonly struct TextSection : IAssemblySection
         // Parse each line / statement separately
         for (int i = 0; i < assemblyStatements.Count; i++)
         {
-            Statement statement = assemblyStatements[i];
+            Statement instructionStatement = assemblyStatements[i];
             Logging.NewlineDebug();
-            Logging.LogDebug($"Parsing line: {statement}");
+            Logging.LogDebug($"Parsing line: {instructionStatement}");
             // Check for blatantly invalid instruction syntax:
-            if (statement.STLength < 1 || statement.Tokens[0].Type != TokenType.MNEMONIC)
-                throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {statement}");
+            if (instructionStatement.STLength < 1 || instructionStatement.Tokens[0].Type != TokenType.MNEMONIC)
+                throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {instructionStatement}");
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
             // The addressing mode specifies how an address is interpreted by the CPU.
@@ -98,12 +98,12 @@ public readonly struct TextSection : IAssemblySection
             // The instruction is relative, if if it references a label or pointer.
             // Otherwise, it is implicitly absolute.
             AddressingMode? adrMode = null;
-            if (InstructionLookup.IsJumpInstruction(statement) || InstructionLookup.IsLoadStoreInstruction(statement))
+            if (InstructionLookup.IsJumpInstruction(instructionStatement) || InstructionLookup.IsLoadStoreInstruction(instructionStatement))
                 adrMode = AddressingMode.Absolute;
 
-            foreach (Token token in statement.Tokens)
+            foreach (Token token in instructionStatement.Tokens)
             {
-                // Skip brackets, square brackets, mnemonics, etc.
+                // Skip brackets, square brackets, mnemonics, numeric values, etc.
                 // Only literal words are relevant here for potential replacement
                 if (token.Type != TokenType.LITERAL_WORD)
                     continue;
@@ -151,27 +151,27 @@ public readonly struct TextSection : IAssemblySection
                 // At this point, the token type should be a numeric value, so if no replacement was found
                 // this indicates the word doesn't map to anything useful for further assembling.
                 if (token.Type == TokenType.LITERAL_WORD)
-                    throw new Exception($"Unresolved reference {token.Value} in {statement}");
+                    throw new Exception($"Unresolved reference {token.Value} in {instructionStatement}");
             }
 
             // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
-            List<Statement> constantExpressions = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, statement);
+            List<Statement> constantExpressions = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, instructionStatement);
             foreach (Statement expression in constantExpressions)
             {
                 // Evaluate constant expression
                 uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expression.ToString(), null));
                 // TODO: This could be made more clean?
-                int expressionTokenIdx = Array.IndexOf(statement.Tokens, expression.Tokens[0]);
-                List<Token> statementTokensNew = [.. statement.Tokens];
-                statementTokensNew.RemoveAll(token => expression.Tokens.Contains(token));
-                statementTokensNew.Insert(expressionTokenIdx, new Token(TokenType.NUMERIC_VALUE, expressionValue.ToString()));
-                statement = new Statement([.. statementTokensNew]);
+                int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);
+                List<Token> instructionTokensNew = [.. instructionStatement.Tokens];
+                instructionTokensNew.RemoveAll(token => expression.Tokens.Contains(token));
+                instructionTokensNew.Insert(expressionTokenIdx, new Token(TokenType.NUMERIC_VALUE, expressionValue.ToString()));
+                instructionStatement = new Statement([.. instructionTokensNew]);
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[i]}\" -> \"{statement}\"");
+            Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[i]}\" -> \"{instructionStatement}\"");
 
             // Parse assembly line as instruction object
-            IInstruction instruction = InstructionLookup.ParseAsInstruction(statement, adrMode);
+            IInstruction instruction = InstructionLookup.ParseAsInstruction(instructionStatement, adrMode);
 
             // Note: Since the introduction of relative / absolute jumps, it is no longer necessary
             // to adjust any instructions pointing to memory, since they're either absolute in memory
@@ -205,7 +205,7 @@ public readonly struct TextSection : IAssemblySection
         {
             // Header contains attributes
             // Remove first word "#SECTION" and last word ".text"
-            header = new Statement(header.Tokens[1..^2]);
+            header = new Statement([.. header.Tokens[1..^2], Token.CreateEOS()]);
             // Split by brackets
             List<Statement> attributes = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, header);
 
@@ -257,33 +257,32 @@ public readonly struct TextSection : IAssemblySection
     /// <returns>A list of sub-statements enclosed in the delimiters</returns>
     private static List<Statement> GetEnclosedStatements(Token delimiterOpen, Token delimiterClose, Statement statement)
     {
-        List<Statement> enclosedStatements = [];
+        List<List<Token>> enclosedStatementTokens = [];
         bool isOpen = false;
         foreach (Token token in statement.Tokens)
         {
-            Console.WriteLine(token.Value);
             if (token == delimiterOpen)
             {
                 // Open in-bracket statement
                 if (isOpen)
                     Logging.LogWarn($"Warning: Double open delimiter \"{delimiterOpen.Value}\" in enclosed statement.");
                 isOpen = true;
-                enclosedStatements.Add(new Statement([]));
+                enclosedStatementTokens.Add([]);
                 continue;
             }
             else if (token == delimiterClose)
             {
                 // Close attribute with EOS
                 isOpen = false;
-                enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, Token.CreateEOS()]);
+                enclosedStatementTokens[^1].Add(Token.CreateEOS());
                 continue;
             }
             if (isOpen)
                 // Add attribute content
-                enclosedStatements[^1] = new Statement([.. enclosedStatements[^1].Tokens, token]);
+                enclosedStatementTokens[^1].Add(token);
         }
         if (isOpen)
             throw new Exception($"Unclosed delimiter in enclosed statement: missing \"{delimiterClose.Value}\"");
-        return enclosedStatements;
+        return [.. enclosedStatementTokens.Select(tokens => new Statement([.. tokens]))];
     }
 }

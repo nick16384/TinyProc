@@ -75,16 +75,40 @@ public sealed class InstructionLookup
 	private static bool IsNthOperandNumber(Statement instruction, int n)
 	{
 		bool result = instruction.STLength - 1 >= n && TryConvertStringToUInt(instruction.Tokens[n].Value, out _);
-		Logging.LogDebug($"Operand {n}: {instruction.Tokens[n].Value}");
+		Logging.LogDebug($"Operand {n}: {(instruction.STLength - 1 >= n ? instruction.Tokens[n].Value : "<empty>")}");
 		return result;
 	}
 
-	internal static Instructions.IInstruction ParseAsInstruction(Statement instruction, Instructions.AddressingMode? adrMode)
+	internal static Instructions.IInstruction ParseAsInstruction(Statement instructionStatement, Instructions.AddressingMode? adrMode)
 	{
+		// Check for valid memory reference syntax (square brackets around references)
+		if (IsJumpInstruction(instructionStatement) && (
+			instructionStatement.STLength < 4 ||
+			instructionStatement.Tokens[1].Type != TokenType.SQUARE_BRACKET_OPEN ||
+			instructionStatement.Tokens[3].Type != TokenType.SQUARE_BRACKET_CLOSE))
+				throw new Exception($"Invalid branch instruction: Must use square brackets around target (i.e. [target]): {instructionStatement}");
+		if (IsLoadStoreInstruction(instructionStatement) && (
+			instructionStatement.STLength < 5 ||
+			instructionStatement.Tokens[2].Type != TokenType.SQUARE_BRACKET_OPEN ||
+			instructionStatement.Tokens[4].Type != TokenType.SQUARE_BRACKET_CLOSE))
+				throw new Exception($"Invalid load/store instruction: Must use square brackets around memory reference (i.e. [target]): {instructionStatement}");
+		// Remove square brackets around memory references
+		List<Token> newTokens = [.. instructionStatement.Tokens];
+		if (IsJumpInstruction(instructionStatement))
+		{
+			newTokens.RemoveAt(3);
+			newTokens.RemoveAt(1);
+		}
+		if (IsLoadStoreInstruction(instructionStatement))
+		{
+			newTokens.RemoveAt(4);
+			newTokens.RemoveAt(2);
+		}
+		instructionStatement.Tokens = [.. newTokens];
+
 		// Set default addressing mode, even if the instruction doesn't need it
 		adrMode ??= Instructions.AddressingMode.Absolute;
-		
-		string mnemonic = instruction.Tokens[0].Value.ToUpper();
+		string mnemonic = instructionStatement.Tokens[0].Value.ToUpper();
 
 		Instructions.Condition conditional = Instructions.Condition.ALWAYS;
 		if (mnemonic.Length >= 3)
@@ -92,12 +116,11 @@ public sealed class InstructionLookup
 			string possibleConditionCode = mnemonic[^2..];
 			try
 			{
-				Logging.LogDebug($"Mnemonic: {mnemonic}, searching condition code: {possibleConditionCode}");
 				conditional = (Instructions.Condition)possibleConditionCode;
 				// Mnemonic has conditional at this point
 				Logging.LogDebug($"Mnemonic {mnemonic} has condition code {conditional}");
 				mnemonic = mnemonic[..^2];
-				instruction.Tokens[0].Value = mnemonic;
+				instructionStatement.Tokens[0].Value = mnemonic;
 			}
 			catch (KeyNotFoundException) { Logging.LogDebug($"Mnemonic {mnemonic} has no condition code."); }
 		}
@@ -106,8 +129,8 @@ public sealed class InstructionLookup
 
 		// Determine instruction type (R/I/J)
 		Instructions.InstructionType type;
-		bool isFirstOperandNumber = IsNthOperandNumber(instruction, 1);
-		bool isSecondOperandNumber = IsNthOperandNumber(instruction, 2);
+		bool isFirstOperandNumber = IsNthOperandNumber(instructionStatement, 1);
+		bool isSecondOperandNumber = IsNthOperandNumber(instructionStatement, 2);
 
 		if (mnemonic == "TST") { type = Instructions.InstructionType.Register; }
 		else if (mnemonic == "CLC") { type = Instructions.InstructionType.Register; }
@@ -149,10 +172,10 @@ public sealed class InstructionLookup
 		Logging.LogDebug($"Type: {type}");
 		return type switch
 		{
-			Instructions.InstructionType.Register => RegRegInstructionLookup(instruction, adrMode.Value, conditional),
-			Instructions.InstructionType.Immediate => RegImmInstructionLookup(instruction, adrMode.Value, conditional),
-			Instructions.InstructionType.Jump => JumpInstructionLookup(instruction, adrMode.Value, conditional),
-			_ => throw new ArgumentException($"Line {instruction} does not parse as an instruction.")
+			Instructions.InstructionType.Register => RegRegInstructionLookup(instructionStatement, adrMode.Value, conditional),
+			Instructions.InstructionType.Immediate => RegImmInstructionLookup(instructionStatement, adrMode.Value, conditional),
+			Instructions.InstructionType.Jump => JumpInstructionLookup(instructionStatement, adrMode.Value, conditional),
+			_ => throw new ArgumentException($"Line {instructionStatement} does not parse as an instruction.")
 		};
 	}
 

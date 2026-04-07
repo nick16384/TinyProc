@@ -38,4 +38,6 @@ public sealed class Either<T1, T2>
             throw new InvalidCastException($"Either is not type T2:{typeof(T2)}, but of T1:{typeof(T1)}. Cannot convert to T2.");
         return either.B!;
     }
+
+    public override string ToString() => Is<T1>() ? A!.ToString() ?? "" : B!.ToString() ?? "";
 }

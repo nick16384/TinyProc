@@ -30,11 +30,14 @@ public partial class Assembler
         {
             if (statement.Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
             {
-                if (statement.STLength < 3)
+                if (statement.STLength < 2)
                     throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {statement}");
                 string name = statement.Tokens[1].Value;
                 Token[] values = statement.Tokens[2..^1];
-                Logging.LogDebug($"Found macro: \"${name}\" = \"{new Statement(values)}\"");
+                if (values.Length >= 1)
+                    Logging.LogDebug($"Found macro: \"${name}\" = \"{new Statement([.. values, Token.CreateEOS()])}\"");
+                else
+                    Logging.LogWarn($"Warning: Found empty macro \"${name}\"");
                 // The define needs to be prepended with a "$" in code. This is for mere convenience.
                 // It no longer serves an actual purpose except being a clear syntactical difference from constants / pointers.
                 macros.Add("$" + name, values);

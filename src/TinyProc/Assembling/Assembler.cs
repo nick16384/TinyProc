@@ -7,17 +7,31 @@ namespace TinyProc.Assembling;
 
 // TODO: Find a better name for this class
 /// <summary>
-/// A meta class containing machine code from an assembled program, both the .data and .text section, and a load address.
+/// A meta class containing machine code from an assembled program, both the .data and .text section, and assembly header information.
 /// </summary>
-/// <param name="loadAddress"></param>
-/// <param name="dataSection"></param>
-/// <param name="textSection"></param>
-public class AssemblyOutput(uint loadAddress, DataSection dataSection, TextSection textSection)
+public class AssemblerOutput
 {
-    public readonly uint LoadAddress = loadAddress;
-    public readonly DataSection DataSection = dataSection;
-    public readonly TextSection TextSection = textSection;
-    public readonly uint[] MachineCodeBinary = [.. dataSection.BinaryRepresentation, .. textSection.BinaryRepresentation];
+    public readonly struct AssemblyHeader(uint versionEncoded, uint loadAddress, uint entryPoint, uint dataSize, uint textSize)
+    {
+        public readonly uint VersionEncoded = versionEncoded;
+        public readonly uint LoadAddress = loadAddress;
+        public readonly uint EntryPoint = entryPoint;
+        public readonly uint DataSegmentSize = dataSize;
+        public readonly uint TextSegmentSize = textSize;
+        // The last 0x0 words are padding reserved for future use:
+        public readonly uint[] MachineCodeBinary = [versionEncoded, loadAddress, entryPoint, dataSize, textSize, 0x0, 0x0, 0x0];
+    }
+    public readonly AssemblyHeader Header;
+    public readonly DataSection DataSection;
+    public readonly TextSection TextSection;
+    public readonly uint[] MachineCodeBinary;
+    public AssemblerOutput(uint loadAddress, DataSection dataSection, TextSection textSection)
+    {
+        DataSection = dataSection;
+        TextSection = textSection;
+        Header = new(Assembler.ASSEMBLER_VERSION_ENCODED, loadAddress, TextSection.EntryPoint, DataSection.Size, TextSection.Size);
+        MachineCodeBinary = [.. Header.MachineCodeBinary, .. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
+    }
 }
 
 /// <summary>
@@ -31,20 +45,23 @@ public partial class Assembler
     /// The machine code contains a .data section for data and a .text section for executable instructions in sequence.
     /// The .text section follows the .data section.
     /// </summary>
+    /// <remarks>
+    /// Note: The code of this function is <b>not</b> meant to be performant in any way (preferring code readability),
+    /// i.e. it may take some ages to assemble a lot of assembly code.
+    /// </remarks>
     /// <param name="assemblyCode"></param>
     /// <returns>A meta class containing machine code, both sections and the load address.</returns>
     /// <exception cref="Exception">If the assembler encounters an error.</exception>
-    public static AssemblyOutput Assemble(string assemblyCode)
+    public static AssemblerOutput Assemble(string assemblyCode)
     {
         // Assembling steps:
         // 1. Cleanup: Remove comments and excess whitespace
-        // 2. Tokenize: Parse code as a list of tokens for the assembler to work with
-        // 3. Pre-parse: Expand #DEFINE and "times N"
-        // 4. .data section
-        // 5. .text section
-
-        // TODO: Implement #ORG directive (in main Assembler.cs file)
-        // TODO: Finish .text section parser (with new #ORG and no custom load addresses for sections)
+        // 2. Check assembly version (first line)
+        // 3. Tokenize: Parse code as a list of tokens for the assembler to work with
+        // 4. Pre-parse: Expand #DEFINE and "times N"
+        // 5. Extract load address (#ORG)
+        // 6. .data section parser
+        // 7. .text section parser
 
         assemblyCode = FilterCommentsAndRemoveExcessWhitespace(assemblyCode);
         Logging.LogInfo(
@@ -65,9 +82,11 @@ public partial class Assembler
         List<Statement> assemblyStatements = TokensToStatements(assemblyTokens);
         assemblyStatements = PreParse(assemblyStatements);
 
+        uint loadAddress = FindLoadAddress(assemblyStatements);
+
         // ========== Process .data and .text sections ==========
 
-        // Search for .data section:
+        // Search for the .data section:
         int dataSectionStart = assemblyStatements.TakeWhile(statement =>
             statement.STLength < 2 ||
             statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
@@ -75,7 +94,7 @@ public partial class Assembler
         ).Count();
         if (dataSectionStart >= assemblyStatements.Count)
             throw new Exception("No .data section found.");
-        // Search for .text section:
+        // Search for the .text section:
         int textSectionStart = assemblyStatements.TakeWhile(statement =>
             statement.STLength < 2 ||
             statement.Tokens[0].Type != TokenType.DIRECTIVE_SECTION ||
@@ -94,8 +113,8 @@ public partial class Assembler
 
         // Assembly header metadata words:
         // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
-        // 2. Entry point (offset in .text section)
-        // 3. Global load address
+        // 2. Global load address
+        // 3. Entry point (offset in .text section)
         // 4. .data segment size in words
         // 5. .text segment size in words
         // 6. 0x0
@@ -104,17 +123,15 @@ public partial class Assembler
         Logging.LogDebug(
             "Assembly header:\n" +
             $"Version:.................{ASSEMBLER_VERSION_ENCODED:x8}\n" +
-            $"Global load address:.....{"Not implemented yet (#ORG)":x8}\n" +
+            $"Global load address:.....{loadAddress:x8}\n" +
             $"Entry point (rel):.......{textSection.EntryPoint:x8}\n" +
-            $".data size (dec, words):.{dataSection.Size}\n" +
-            $".text size (dec, words):.{textSection.Size}\n" +
+            $".data size (dec, words):.{dataSection.Size:x8}\n" +
+            $".text size (dec, words):.{textSection.Size:x8}\n" +
             $"Padding (1):.............{0:x8}\n" +
             $"Padding (2):.............{0:x8}\n" +
             $"Padding (3):.............{0:x8}");
         
-        return new AssemblyOutput(
-            0x0, dataSection, textSection
-        );
+        return new AssemblerOutput(loadAddress, dataSection, textSection);
     }
 
     /// <summary>
@@ -170,7 +187,34 @@ public partial class Assembler
         return string.Join("\n", lines);
     }
 
-    
+    private static bool CheckAssemblyVersion(string assemblyCode)
+    {
+        string firstLine = assemblyCode.Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+        bool isVersionValid = firstLine == $"{ASM_DIRECTIVE_VERSION} {ASSEMBLER_VERSION}";
+        if (!isVersionValid)
+            Logging.LogError($"Invalid assembly version. Missing {ASM_DIRECTIVE_VERSION} directive or wrong version.");
+        return isVersionValid;
+    }
+
+    private static uint FindLoadAddress(List<Statement> assemblyStatements)
+    {
+        foreach (Statement statement in assemblyStatements)
+        {
+            foreach (Token token in statement.Tokens)
+            {
+                if (token.Type == TokenType.DIRECTIVE_ORG)
+                {
+                    if (statement.STLength < 2 || statement.Tokens[1].Type != TokenType.NUMERIC_VALUE)
+                        throw new Exception($"Invalid load address specifier {ASM_DIRECTIVE_LOADADDRESS}: {statement}");
+                    return ConvertStringToUInt(statement.Tokens[1].Value);
+                }
+            }
+        }
+        throw new Exception($"Unable to find load address specifier {ASM_DIRECTIVE_LOADADDRESS}");
+    }
+
+    #region Token shit
+
     /// <summary>
     /// Receives full assembly code (without comments) and splits the code into
     /// tokens usable by the assembler.
@@ -224,7 +268,9 @@ public partial class Assembler
     private static Token StringToToken(string tokenString)
     {
         // Assembly directives
-        if      (tokenString == ASM_DIRECTIVE_LOADADDRESS)
+        if      (tokenString == ASM_DIRECTIVE_VERSION)
+            return new Token(TokenType.DIRECTIVE_VERSION, ASM_DIRECTIVE_VERSION);
+        else if (tokenString == ASM_DIRECTIVE_LOADADDRESS)
             return new Token(TokenType.DIRECTIVE_ORG, ASM_DIRECTIVE_LOADADDRESS);
         else if (tokenString == ASM_DIRECTIVE_DEFINE)
             return new Token(TokenType.DIRECTIVE_DEFINE, ASM_DIRECTIVE_DEFINE);
@@ -281,15 +327,6 @@ public partial class Assembler
             return new Token(TokenType.LITERAL_WORD, tokenString);
     }
 
-    private static bool CheckAssemblyVersion(string assemblyCode)
-    {
-        string firstLine = assemblyCode.Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
-        bool isVersionValid = firstLine == $"{ASM_DIRECTIVE_VERSION} {ASSEMBLER_VERSION}";
-        if (!isVersionValid)
-            Logging.LogError($"Invalid assembly version. Missing {ASM_DIRECTIVE_VERSION} directive or wrong version.");
-        return isVersionValid;
-    }
-
     /// <summary>
     /// Convert a list of tokens to a list of statements. Every statement must end with an EOS token to be recognized as such.
     /// </summary>
@@ -342,6 +379,7 @@ public partial class Assembler
 
     internal enum TokenType
     {
+        DIRECTIVE_VERSION, // Technically unnecessary, since version checking is done before tokenization, but still here for completeness.
         DIRECTIVE_ORG, // Load address directive
         DIRECTIVE_DEFINE, // Define (similar to C's #define)
         DIRECTIVE_SECTION,
@@ -407,20 +445,32 @@ public partial class Assembler
         /// <param name="t2"></param>
         /// <returns></returns>
         public static string operator +(Token t1, Token t2) => t1.Value + " " + t2.Value;
+        public static bool operator ==(Token t1, Token t2) => t1.Type == t2.Type && t1.Value == t2.Value;
+        public static bool operator !=(Token t1, Token t2) => !(t1 == t2);
+        public override bool Equals(object? obj) => base.Equals(obj);
+        public override int GetHashCode() => base.GetHashCode();
     }
     /// <summary>
     /// A statement is a logical group of tokens, usually representing a "single thing to be done".
     /// Most statements basically represent one line of code.
     /// </summary>
     /// <param name="statementTokens"></param>
-    internal class Statement(Token[] statementTokens)
+    internal class Statement
     {
-        public Token[] Tokens = statementTokens;
+        public Token[] Tokens;
         /// <summary>
         /// The number of tokens in this statement excluding EOS.
         /// The name STLength helps to make clear this is different from any normal List.Length or string.Length.
         /// </summary>
         public int STLength { get => Tokens.Length - 1; }
+        internal Statement(params Token[] statementTokens)
+        {
+            if (statementTokens.Length <= 0 || statementTokens[^1].Type != TokenType.EOS)
+                throw new ArgumentException("Cannot create statement from empty token array or without finishing in EOS token.");
+            Tokens = statementTokens;
+        }
         public override string ToString() => string.Join(" ", Tokens.SkipLast(1).Select(token => token.Value));
     }
+
+    #endregion Token shit
 }

@@ -69,14 +69,14 @@ public class ExecutionContainer
         Logging.LogDebug("Assembling Reset and Loader programs");
         string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
         string loaderProgramCode = File.ReadAllText(LOADER_ASM_PROGRAM_PATH);
-        AssemblyOutput resetProgram = Assembler.Assemble(resetProgramCode);
-        AssemblyOutput loaderProgram = Assembler.Assemble(loaderProgramCode);
+        AssemblerOutput resetProgram = Assembler.Assemble(resetProgramCode);
+        AssemblerOutput loaderProgram = Assembler.Assemble(loaderProgramCode);
         Logging.LogDebug("Saving Reset and Loader programs in ROM");
         uint[] resetExecutableProgram = resetProgram.MachineCodeBinary;
         uint[] loaderExecutableProgram = loaderProgram.MachineCodeBinary;
-        uint[] romData = new uint[loaderProgram.LoadAddress + loaderProgram.MachineCodeBinary.Length];
-        Array.Copy(resetExecutableProgram, 0, romData, resetProgram.LoadAddress, resetExecutableProgram.Length);
-        Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.LoadAddress, loaderExecutableProgram.Length);
+        uint[] romData = new uint[loaderProgram.Header.LoadAddress + loaderProgram.MachineCodeBinary.Length];
+        Array.Copy(resetExecutableProgram, 0, romData, resetProgram.Header.LoadAddress, resetExecutableProgram.Length);
+        Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.Header.LoadAddress, loaderExecutableProgram.Length);
         _rom1 = new ROM(ROM_SIZE, romData);
 
         Logging.LogDebug("Creating CPU object, loading main program");

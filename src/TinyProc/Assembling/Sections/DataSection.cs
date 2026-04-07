@@ -170,10 +170,18 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             if (dataToken.Type == TokenType.NUMERIC_VALUE)
             {
                 uint num = ConvertStringToUInt(dataToken.Value);
-                data.Add((byte)((num! & 0xFF000000) >> 24));
-                data.Add((byte)((num! & 0x00FF0000) >> 16));
-                data.Add((byte)((num! & 0x0000FF00) >> 8));
-                data.Add((byte)((num! & 0x000000FF) >> 0));
+                // Only add bytes after the first non-zero byte.
+                // I see this singular use of goto as justified. Suggest something better to convince me otherwise.
+                if      ((num & 0xFF000000) != 0u) goto label_byte4;
+                else if ((num & 0x00FF0000) != 0u) goto label_byte3;
+                else if ((num & 0x0000FF00) != 0u) goto label_byte2;
+                else if (true)                     goto label_byte1; // First byte is seen as data nonetheless
+
+                label_byte4: data.Add((byte)((num & 0xFF000000) >> 24));
+                label_byte3: data.Add((byte)((num & 0x00FF0000) >> 16));
+                label_byte2: data.Add((byte)((num & 0x0000FF00) >> 8));
+                label_byte1: data.Add((byte)((num & 0x000000FF) >> 0));
+                
                 continue;
             }
             // Parse as string
@@ -209,7 +217,10 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         {
             int uintArrayIdx = i / 4;
             int byteIdx = i % 4;
-            uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (4 * byteIdx));
+            // FIXME: strings are encoded sequentially, bytes from right to left: Conflict!
+            // This function cannot differentiate these two, since it treats them all the same.
+            // Pass a parameter that determines RTL(right to left) or LTR(left to right)?
+            uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
         }
         return [.. uintSequence];
     }
