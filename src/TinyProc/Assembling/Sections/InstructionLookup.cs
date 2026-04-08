@@ -51,6 +51,20 @@ public sealed class InstructionLookup
 		{ ("CLA",   Instructions.InstructionType.Register),  (Instructions.Opcode.CLA,   DEFAULT_EMPTY_ALU_OPCODE) }
     };
 
+	/// <summary>
+	/// Checks if the provided token string resembles a valid instruction mnemonic.
+	/// This functions also returns true for mnemonics with condition codes attached.
+	/// </summary>
+	/// <param name="tokenString"></param>
+	/// <returns></returns>
+	internal static bool IsValidMnemonic(string tokenString)
+	{
+		return MnemonicOpcodeMap.Keys.Any(mnemonicAndType => {
+				string checkMnemonic = mnemonicAndType.Item1;
+				return checkMnemonic.Equals(tokenString, StringComparison.OrdinalIgnoreCase) ||
+						(tokenString.Length >= 3 && checkMnemonic.Equals(tokenString[..^2], StringComparison.OrdinalIgnoreCase));
+			});
+	}
 	internal static bool IsJumpInstruction(Statement instruction)
 	{
 		return
@@ -82,11 +96,6 @@ public sealed class InstructionLookup
 	internal static Instructions.IInstruction ParseAsInstruction(Statement instructionStatement, Instructions.AddressingMode? adrMode)
 	{
 		// Check for valid memory reference syntax (square brackets around references)
-		if (IsJumpInstruction(instructionStatement) && (
-			instructionStatement.STLength < 4 ||
-			instructionStatement.Tokens[1].Type != TokenType.SQUARE_BRACKET_OPEN ||
-			instructionStatement.Tokens[3].Type != TokenType.SQUARE_BRACKET_CLOSE))
-				throw new Exception($"Invalid branch instruction: Must use square brackets around target (i.e. [target]): {instructionStatement}");
 		if (IsLoadStoreInstruction(instructionStatement) && (
 			instructionStatement.STLength < 5 ||
 			instructionStatement.Tokens[2].Type != TokenType.SQUARE_BRACKET_OPEN ||
@@ -94,11 +103,6 @@ public sealed class InstructionLookup
 				throw new Exception($"Invalid load/store instruction: Must use square brackets around memory reference (i.e. [target]): {instructionStatement}");
 		// Remove square brackets around memory references
 		List<Token> newTokens = [.. instructionStatement.Tokens];
-		if (IsJumpInstruction(instructionStatement))
-		{
-			newTokens.RemoveAt(3);
-			newTokens.RemoveAt(1);
-		}
 		if (IsLoadStoreInstruction(instructionStatement))
 		{
 			newTokens.RemoveAt(4);

@@ -15,7 +15,7 @@ l_imm1: dw imm1 0x39393939
 dw imm2 39393939h
 dw imm3 0b01010101
 dw imm4 39393939
-dw 0x39393939
+l_undef1: dw 0x39393939
 dw 39393939h
 dw 0b01010101
 dw 39393939
@@ -24,11 +24,11 @@ equ e2 39393939h
 equ e3 0b01010101
 equ e4 39393939
 ; Multi-words
-dw ptr1 $PTR_TEST_DATA
+l_ptr1: dw $PTR_TEST_DATA
 dw $PTR_TEST_DATA
 ; Length
-dw ptr1_l1 len: ptr1
-equ ptr1_l2 len: ptr1
+dw ptr1_l1 len: l_ptr1
+equ ptr1_l2 len: l_ptr1
 ; Times
 times 4 dw 0x0
 times 2 dw $PTR_TEST_DATA
@@ -37,21 +37,22 @@ times 4 dw 0
 #SECTION (__entry__ = _start) .text
 start_actual:
     ; Basic arithmetic
+    ; Some mnemonics are commented out, since they haven't been implemented yet
     ; Register-Immediate
     mov gp1, imm1
     add gp1, 25
     sub gp1, 55
-    xor gp1, 0b10101010_10101010_10101010_10101010
+    ;xor gp1, 0b10101010_10101010_10101010_10101010
     or  gp1, 0x70
     or  gp1, 70h
     and gp1, 70
     ; Register-Register
-    xor gp1, gp1 ; Zero out gp1
-    not gp1
+    ;or gp1, gp1 ; Zero out gp1
+    ;not gp1
     or  gp2, 125
     add gp1, gp2
     sub gp2, gp1
-    xor gp1, gp2
+    ;xor gp1, gp2
     and gp1, 70
     inc gp1
     inc gp1
@@ -67,7 +68,7 @@ start_actual:
     cmp gp1, 0
     cmp gp1, gp2
     ; Test without actually doing anything
-    nopz
+    nopzr
     nopnz
     nopng
     nopnn
@@ -82,7 +83,7 @@ start_actual:
     st gp1, [e1 + 5]
     st gp1, [l_imm1]
     st gp1, [l_imm1 + 1] ; *imm2
-    st gp1, [0x40000000]
+    st gp1, [0x40000000 * 2 - 50]
     st gp1, [+40000000h]
     st gp1, [-40000000h]
     st gp1, [$LD_DATA_ADDR] ; Absolute

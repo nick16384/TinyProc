@@ -50,7 +50,7 @@ ALU Opcodes for arithmetic instructions:
 000000 - AND
 010101 - OR
 To be implemented:
-MUL, XOR, LS, RS, SRS, ROL, ROR
+NOT, MUL, XOR, LS, RS, SRS, ROL, ROR
 
 Add documentation for which flags get set by instructions
 

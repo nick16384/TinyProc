@@ -10,20 +10,28 @@ public class Logging
         STDOUT,
         STDERR
     }
-    private static void PrintMessageToPipe(string message, Pipe pipe)
+    private static void PrintMessageToPipe(string message, Pipe pipe, ConsoleColor color)
     {
+        SetConsoleForegroundColor(color);
         switch (pipe)
         {
             case Pipe.STDOUT:
                 Console.Write(message);
                 break;
             case Pipe.STDERR:
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.Error.Write(message);
                 Console.ResetColor();
                 break;
         }
+        ResetConsoleForegroundColor();
     }
+    private const ConsoleColor CONSOLE_FG_COLOR_DEBUG = ConsoleColor.White;
+    private const ConsoleColor CONSOLE_FG_COLOR_INFO = ConsoleColor.Green;
+    private const ConsoleColor CONSOLE_FG_COLOR_WARN = ConsoleColor.Yellow;
+    private const ConsoleColor CONSOLE_FG_COLOR_ERROR = ConsoleColor.Red;
+    private static readonly ConsoleColor defaultConsoleColor = Console.ForegroundColor;
+    private static void SetConsoleForegroundColor(ConsoleColor color) => Console.ForegroundColor = color;
+    private static void ResetConsoleForegroundColor() => Console.ForegroundColor = defaultConsoleColor;
 
     /// <summary>
     /// Counts the time that has elapsed since the process has started.
@@ -45,70 +53,86 @@ public class Logging
 
     public static void PrintDebug(string message)
     {
-        if (!SuppressDebugMessages)
-            PrintMessageToPipe(message, Pipe.STDOUT);
+        if (SuppressDebugMessages)
+            return;
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogDebugWithoutNewline(string message)
     {
-        if (!SuppressDebugMessages)
-            PrintMessageToPipe($"[Debug, {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDOUT);
+        if (SuppressDebugMessages)
+            return;
+        PrintMessageToPipe($"[Debug, {MILLIS_SINCE_APPLICATION_START:0000000.000}] ", Pipe.STDOUT, CONSOLE_FG_COLOR_DEBUG);
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogDebug(string message) => LogDebugWithoutNewline(message + "\n");
 
     public static void PrintInfo(string message)
     {
-        if (!SuppressInfoMessages)
-            PrintMessageToPipe(message, Pipe.STDOUT);
+        if (SuppressInfoMessages)
+            return;
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogInfoWithoutNewline(string message)
     {
-        if (!SuppressInfoMessages)
-            PrintMessageToPipe($"[Info,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDOUT);
+        if (SuppressInfoMessages)
+            return;
+        PrintMessageToPipe($"[Info,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] ", Pipe.STDOUT, CONSOLE_FG_COLOR_INFO);
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogInfo(string message) => LogInfoWithoutNewline(message + "\n");
 
     public static void PrintWarn(string message)
     {
-        if (!SuppressWarningMessages)
-            PrintMessageToPipe(message, Pipe.STDOUT);
+        if (SuppressWarningMessages)
+            return;
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogWarnWithoutNewline(string message)
     {
-        if (!SuppressWarningMessages)
-            PrintMessageToPipe($"[Warn,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDERR);
+        if (SuppressWarningMessages)
+            return;
+        PrintMessageToPipe($"[Warn,  {MILLIS_SINCE_APPLICATION_START:0000000.000}] ", Pipe.STDERR, CONSOLE_FG_COLOR_WARN);
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogWarn(string message) => LogWarnWithoutNewline(message + "\n");
 
     public static void PrintError(string message)
     {
-        if (!SuppressErrorMessages)
-            PrintMessageToPipe(message, Pipe.STDOUT);
+        if (SuppressErrorMessages)
+            return;
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogErrorWithoutNewline(string message)
     {
-        if (!SuppressErrorMessages)
-            PrintMessageToPipe($"[Error, {MILLIS_SINCE_APPLICATION_START:0000000.000}] {message}", Pipe.STDERR);
+        if (SuppressErrorMessages)
+            return;
+        PrintMessageToPipe($"[Error, {MILLIS_SINCE_APPLICATION_START:0000000.000}] ", Pipe.STDERR, CONSOLE_FG_COLOR_ERROR);
+        PrintMessageToPipe(message, Pipe.STDOUT, defaultConsoleColor);
     }
     public static void LogError(string message) => LogErrorWithoutNewline(message + "\n");
 
     public static void NewlineDebug()
     {
-        if (!SuppressDebugMessages)
-            PrintMessageToPipe("\n", Pipe.STDOUT);
+        if (SuppressDebugMessages)
+            return;
+        PrintMessageToPipe("\n", Pipe.STDOUT, defaultConsoleColor);
     }
     public static void NewlineInfo()
     {
-        if (!SuppressInfoMessages)
-            PrintMessageToPipe("\n", Pipe.STDOUT);
+        if (SuppressInfoMessages)
+            return;
+        PrintMessageToPipe("\n", Pipe.STDOUT, defaultConsoleColor);
     }
     public static void NewlineWarning()
     {
-        if (!SuppressWarningMessages)
-            PrintMessageToPipe("\n", Pipe.STDERR);
+        if (SuppressWarningMessages)
+            return;
+        PrintMessageToPipe("\n", Pipe.STDERR, defaultConsoleColor);
     }
     public static void NewlineError()
     {
-        if (!SuppressErrorMessages)
-            PrintMessageToPipe("\n", Pipe.STDERR);
+        if (SuppressErrorMessages)
+            return;
+        PrintMessageToPipe("\n", Pipe.STDERR, defaultConsoleColor);
     }
 }

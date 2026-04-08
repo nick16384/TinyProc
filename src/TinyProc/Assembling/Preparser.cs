@@ -81,7 +81,6 @@ public partial class Assembler
                 int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[1].Value);
 
                 Logging.LogDebug($"Repeat >>{duplicateStatement}<< {repeatTimes} times");
-                Console.WriteLine($"Remove stmt {assemblyStatements[i]}");
                 assemblyStatements.RemoveAt(i--);
                 for (int insertCounter = 0; insertCounter < repeatTimes; insertCounter++)
                     assemblyStatements.Insert(++i, duplicateStatement);

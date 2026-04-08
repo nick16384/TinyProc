@@ -4,9 +4,10 @@ using TinyProc.Application;
 
 namespace TinyProc.Assembling.Sections;
 
-public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAssemblySection
+public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dictionary<string, uint> labelAddressMap) : IAssemblySection
 {
     public uint Size => (uint)immediateSequences.Sum(seq => seq.Data.Length);
+    public Dictionary<string, uint> LabelAddressMap { get; } = labelAddressMap;
     public List<uint> BinaryRepresentation
         => [..
             immediateSequences
@@ -51,7 +52,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         public override int GetHashCode() => base.GetHashCode();
     }
 
-    public static DataSection CreateEmpty() => new(immediateSequences: []);
+    public static DataSection CreateEmpty() => new(immediateSequences: [], labelAddressMap: []);
 
     /// <summary>
     /// Parses the data section of assembly code into a DataSection object.
@@ -75,14 +76,35 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
 
         // Main parser for .data section
         List<ImmediateSequence> data = ExtractImmediateSequences(assemblyStatements);
+        // Parser for labels
+        Dictionary<string, uint> labelAddressMap = ExtractLabelAddresses(assemblyStatements, data);
 
         // Log immediate values and pointers (summary)
         Logging.LogDebug($"Successfully parsed {data.Count} immediate sequences.");
 
-        DataSection resultDataSection = new([.. data]);
+        DataSection resultDataSection = new([.. data], labelAddressMap);
         Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
 
         return resultDataSection;
+    }
+
+    private static Dictionary<string, uint> ExtractLabelAddresses(List<Statement> statements, List<ImmediateSequence> immediateSequences)
+    {
+        Dictionary<string, uint> labelAddressMap = [];
+        foreach (Statement statement in statements)
+        {
+            if (statement.Tokens[0].Type != TokenType.LABEL)
+                continue;
+            // Statement contains label
+            Token labelToken = statement.Tokens[0];
+            string immediateSequenceName = statement.Tokens[2].Value;
+            uint? offset = immediateSequences.First(seq => seq.Alias == immediateSequenceName).Offset;
+            if (!offset.HasValue)
+                throw new Exception($"Cannot determine immediate sequence offset of \"{immediateSequenceName}\"");
+            Logging.LogDebug($"Label {labelToken.Value} offset {offset.Value:x8}");
+            labelAddressMap.Add(labelToken.Value, offset.Value);
+        }
+        return labelAddressMap;
     }
 
     private static List<ImmediateSequence> ExtractImmediateSequences(List<Statement> statements)
@@ -93,27 +115,35 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         foreach (Statement statement in statements)
         {
             Logging.LogDebug($"Decoding {statement}");
+            Token[] statementTokens = new Token[statement.Tokens.Length];
+            Array.Copy(statement.Tokens, statementTokens, statement.Tokens.Length); // Create a copy to prevent modification of the original statement
+            if (statementTokens[0].Type == TokenType.LABEL)
+                statementTokens = statementTokens[1..]; // Ignore labels for now (will be parsed in ExtractLabelAddresses later)
             // Pointers (word sequences)
             // Usage:
             // dw name* [sequence of values]
             // e.g.
             // dw ptr1 "Hello, world!", 0xA
             // *: Name is optional
-            if (statement.Tokens[0].Type == TokenType.KEYWORD_DEFINEWORD)
+            if (statementTokens[0].Type == TokenType.KEYWORD_DEFINEWORD)
             {
                 Logging.LogDebug($"DEFINEWORD");
                 if (statement.STLength < 2)
-                    throw new ArgumentException("Number of literal words in word sequence declaration is less than 2.");
+                    throw new ArgumentException("Number of tokens in word sequence declaration is less than 2.");
                 // Look if second word contains data immediately, or an alias comes first
-                bool hasAlias = statement.Tokens[1].Type == TokenType.LITERAL_WORD;
-                string? alias = hasAlias ? statement.Tokens[1].Value : null;
-                Token[] dataTokens = hasAlias ? statement.Tokens[2..^1] : statement.Tokens[1..^1];
+                bool hasAlias = statementTokens[1].Type == TokenType.LITERAL_WORD;
+                string? alias = hasAlias ? statementTokens[1].Value : null;
+                Token[] dataTokens = hasAlias ? statementTokens[2..^1] : statementTokens[1..^1];
                 List<uint> data;
                 Logging.LogDebug($"Alias: {(hasAlias ? alias : "<none>")}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                 {
                     Logging.LogDebug("Length specifier.");
                     // Automatically LE
+                    // FIXME: Must implement len: keyword again with label instead of alias
+                    //        How to do this, since labels are parsed after this step is done???
+                    throw new NotImplementedException("Implement len: keyword again (with label instead of alias).");
+                    uint referenceOffset = immediateSequences.First(seq => ).Offset;
                     uint length = (uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length;
                     Logging.LogDebug($"Target: {dataTokens[1].Value}, Size: {length}");
                     data = [length];
@@ -122,6 +152,21 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 {
                     Logging.LogDebug("Data.");
                     List<byte> dataBytes = ParseImmediateSequence(dataTokens);
+                    // TLDR: To prevent confusion, multi-word immediate sequences may not be named (i.e. have an alias) and must be referenced by a label.
+                    // Long explanation:
+                    // In the previous iteration of ASMv3.1, multi-word sequences (i.e. immediate sequences with more than one word)
+                    // were allowed to be named / aliased. This meant that e.g.
+                    // "dw name1 0xffffffff" would produce a singular word with name "name1", while
+                    // "dw name2 0xffffffff, 0xffffffff" would produce a multi-word with name "name2".
+                    // The problem arises in references to "name2" in the .text section: If name2 were to be a single word, its value
+                    // would be substituted into the instruction operand, whereas if name2 as a multi-word now only inserts its address into
+                    // the instruction operand.
+                    // Editing and debugging this assembly gimmick would have caused some nightmares, so the decision was made that multi-words
+                    // must not have an alias and instead the usage of explicit labels (which all are addresses / offsets) was enforced to clearly differentiate
+                    // between immediate values and pointers.
+                    // The len: keyword must, consequently, also reference the multi-word as a pointer instead of the name itself.
+                    if (hasAlias && dataBytes.Count > sizeof(uint))
+                        throw new Exception($"ASMv3.1 standard forbids named multi-word sequences: {statement}");
                     if (dataBytes.Count < sizeof(uint) && !dataTokens.Any(token => token.Type == TokenType.STRING))
                     {
                         data = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true);
@@ -133,8 +178,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                         Logging.LogDebug($"Encoded as BE, Size (words): {data.Count}");
                     }
                 }
-                currentOffset += (uint)data.Count * sizeof(uint);
                 immediateSequences.Add(new ImmediateSequence(alias, currentOffset, [.. data]));
+                currentOffset += (uint)data.Count;
             }
 
             // Constants (labeled single words)
@@ -143,13 +188,13 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // e.g.
             // equ const1 0xA
             // *: Name is required
-            else if (statement.Tokens[0].Type == TokenType.KEYWORD_EQUATE)
+            else if (statementTokens[0].Type == TokenType.KEYWORD_EQUATE)
             {
                 Logging.LogDebug($"EQUATE");
-                if (statement.STLength <= 3)
-                    throw new ArgumentException("Number of literal words in constant declaration is less than 3.");
-                string alias = statement.Tokens[1].Value;
-                Token[] dataTokens = statement.Tokens[2..^1];
+                if (statementTokens.Length <= 3)
+                    throw new ArgumentException("Number of tokens in constant declaration is less than 3.");
+                string alias = statementTokens[1].Value;
+                Token[] dataTokens = statementTokens[2..^1];
                 List<uint> data;
                 Logging.LogDebug($"Alias: {alias}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)

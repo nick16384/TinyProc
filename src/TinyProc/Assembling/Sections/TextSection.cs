@@ -65,6 +65,7 @@ public readonly struct TextSection : IAssemblySection
             Statement statement = assemblyStatements[i];
             if (statement.Tokens[0].Type == TokenType.LABEL)
             {
+                // TODO: Relies on the fact that a label is the only token in a statement, which may be wrong. Revise!
                 labelAddressMap.Add(statement.Tokens[0].Value, currentAddress);
                 Logging.LogDebug($"Found label declaration \"{statement.Tokens[0].Value}\" at address {currentAddress:x8}");
                 assemblyStatements.RemoveAt(i--);
@@ -81,14 +82,16 @@ public readonly struct TextSection : IAssemblySection
         currentAddress = 0;
 
         // Parse each line / statement separately
-        for (int i = 0; i < assemblyStatements.Count; i++)
+        for (int statementIdx = 0; statementIdx < assemblyStatements.Count; statementIdx++)
         {
-            Statement instructionStatement = assemblyStatements[i];
+            Statement instructionStatement = assemblyStatements[statementIdx];
             Logging.NewlineDebug();
             Logging.LogDebug($"Parsing line: {instructionStatement}");
             // Check for blatantly invalid instruction syntax:
-            if (instructionStatement.STLength < 1 || instructionStatement.Tokens[0].Type != TokenType.MNEMONIC)
-                throw new Exception($"Instruction has zero length (?) or invalid mnemonic: {instructionStatement}");
+            if (instructionStatement.STLength < 1)
+                throw new Exception($"Instruction has zero length: {instructionStatement}");
+            if (instructionStatement.Tokens[0].Type != TokenType.MNEMONIC)
+                throw new Exception($"Instruction has invalid mnemonic: {instructionStatement}");
 
             // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
             // The addressing mode specifies how an address is interpreted by the CPU.
@@ -107,21 +110,37 @@ public readonly struct TextSection : IAssemblySection
                 // Only literal words are relevant here for potential replacement
                 if (token.Type != TokenType.LITERAL_WORD)
                     continue;
-                    
-                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value) && labelAddressMap.ContainsKey(token.Value))
-                    // If both of the "dictionaries" contain the same word, the reference is ambiguous, since the source is indeterminable.
+
+                int tokenReferenceCount = 0;
+                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value)) tokenReferenceCount++;
+                if (dataSection.LabelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
+                if (labelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
+                // If this token refers to multiple destinations, the reference is ambiguous, since the source is indeterminable.
+                if (tokenReferenceCount >= 2)
                     throw new Exception($"Address label / .data section reference is ambiguous for \"{token.Value}\".");
                 
-                if (labelAddressMap.TryGetValue(token.Value, out uint labelAddress))
+                // .text label reference
+                if (labelAddressMap.TryGetValue(token.Value, out uint textLabelAddress))
                 {
                     // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                    uint labelRelAddress = labelAddress - currentAddress - 2;
-                    Logging.LogDebug($".text replace label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                    uint labelRelAddress = textLabelAddress - currentAddress - 2;
+                    Logging.LogDebug($".text replace .text label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
                     token.Type = TokenType.NUMERIC_VALUE;
                     token.Value = labelRelAddress.ToString();
                     adrMode = AddressingMode.PCRelative;
                 }
 
+                // .data label reference
+                if (dataSection.LabelAddressMap.TryGetValue(token.Value, out uint dataLabelAddress))
+                {
+                    uint labelRelAddress = dataLabelAddress - dataSection.Size - currentAddress - 2;
+                    Logging.LogDebug($".text replace .data label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelRelAddress.ToString();
+                    adrMode = AddressingMode.PCRelative;
+                }
+
+                // .data immediate sequence reference
                 // Although the data section loads at a predefined address, we'll use relative addressing
                 // for future proofing, since relative addresses are shorter and could therefore be encoded shorter.
                 if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value))
@@ -129,23 +148,15 @@ public readonly struct TextSection : IAssemblySection
                     ImmediateSequence immediateSequence = dataSection.ImmediateSequences.First(seq => seq.Alias == token.Value);
                     token.Type = TokenType.NUMERIC_VALUE;
                     adrMode = AddressingMode.PCRelative;
-                    
-                    // If the immediate sequence is a constant or a single value, do a replacement with the instruction operand
-                    if (immediateSequence.Data.Length == 1)
-                    {
-                        Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {immediateSequence.Data[0]:x8}h / {immediateSequence.Data[0]}");
-                        token.Value = immediateSequence.Data[0].ToString();
-                    }
-                    // If the immediate sequence is a multi-word, replace the operand with a relative address
-                    else if (immediateSequence.Data.Length > 1)
-                    {
-                        uint relAddr = immediateSequence.Offset!.Value - currentAddress - dataSection.Size - 1;
-                        Logging.LogDebug($".text replace multi-word (R) \"{token.Value}\" --> {relAddr:x8}h / {relAddr}");
-                        token.Value = relAddr.ToString();
-                    }
-                    // This should not be possible
-                    else
+
+                    if (immediateSequence.Data.Length < 1)
                         throw new Exception("Immediate sequence has length of zero. This is an internal error.");
+                    if (immediateSequence.Data.Length > 1)
+                        throw new Exception("Multi-word sequence is named. This is an internal error.");
+                    
+                    // Replace instruction operand with immediate value.
+                    Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {immediateSequence.Data[0]:x8}h / {immediateSequence.Data[0]}");
+                    token.Value = immediateSequence.Data[0].ToString();
                 }
 
                 // At this point, the token type should be a numeric value, so if no replacement was found
@@ -155,10 +166,30 @@ public readonly struct TextSection : IAssemblySection
             }
 
             // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
-            List<Statement> constantExpressions = GetEnclosedStatements(TOKEN_BRACKET_OPEN, TOKEN_BRACKET_CLOSE, instructionStatement);
+            List<Statement> constantExpressions = [];
+            // Search constant expressions:
+            // For every numeric value, search for arithmetic symbols after it, then merge an entire expression consisting of arithmetic and numbers.
+            List<List<Token>> expressionTokens = [];
+            for (int tokenIdx = 1; tokenIdx < instructionStatement.Tokens.Length - 1; tokenIdx++)
+            {
+                Token previous = instructionStatement.Tokens[tokenIdx - 1];
+                Token current = instructionStatement.Tokens[tokenIdx];
+                Token next = instructionStatement.Tokens[tokenIdx + 1];
+                if (previous.Type != TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE && next.Type == TokenType.SYMBOL_ARITHMETIC_OP)
+                    expressionTokens.Add([current]); // Open new expression
+                else if (previous.Type == TokenType.NUMERIC_VALUE && current.Type == TokenType.SYMBOL_ARITHMETIC_OP)
+                    expressionTokens[^1].Add(current);
+                else if (previous.Type == TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE)
+                    expressionTokens[^1].Add(current);
+            }
+            // Convert token lists to expressions
+            foreach (List<Token> expressionTokenList in expressionTokens)
+                constantExpressions.Add(new Statement([.. expressionTokenList, Token.CreateEOS()]));
+            // Evaluate constant expressions and substitute them
             foreach (Statement expression in constantExpressions)
             {
                 // Evaluate constant expression
+                Logging.LogDebug($"Evaluating constant expression {expression}");
                 uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expression.ToString(), null));
                 // TODO: This could be made more clean?
                 int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);
@@ -168,7 +199,7 @@ public readonly struct TextSection : IAssemblySection
                 instructionStatement = new Statement([.. instructionTokensNew]);
             }
 
-            Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[i]}\" -> \"{instructionStatement}\"");
+            Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[statementIdx]}\" -> \"{instructionStatement}\"");
 
             // Parse assembly line as instruction object
             IInstruction instruction = InstructionLookup.ParseAsInstruction(instructionStatement, adrMode);
