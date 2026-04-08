@@ -77,11 +77,14 @@ public partial class Assembler
                 if (statement.STLength < 3 || statement.Tokens[1].Type != TokenType.NUMERIC_VALUE)
                     throw new Exception($"Invalid {KEYWORD_TIMES} N: {statement}");
                 List<Token> duplicateTokens = [.. statement.Tokens[2..^1]];
+                Statement duplicateStatement = new([.. duplicateTokens, new Token(TokenType.EOS, "\n")]);
                 int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[1].Value);
 
+                Logging.LogDebug($"Repeat >>{duplicateStatement}<< {repeatTimes} times");
+                Console.WriteLine($"Remove stmt {assemblyStatements[i]}");
                 assemblyStatements.RemoveAt(i--);
-                for (int j = 0; j < repeatTimes; j++)
-                    assemblyStatements.Insert(i++, new Statement([.. duplicateTokens, new Token(TokenType.EOS, "\n")]));
+                for (int insertCounter = 0; insertCounter < repeatTimes; insertCounter++)
+                    assemblyStatements.Insert(++i, duplicateStatement);
             }
         }
         return assemblyStatements;

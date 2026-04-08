@@ -77,8 +77,8 @@ public partial class Assembler
             if (t.Type == TokenType.EOS) { Logging.NewlineDebug(); return; }
             Logging.PrintDebug($"{t.Type}({t.Value}) ");
         });
-        Logging.LogDebug(
-            "\n===== Tokenized end =====");
+        Logging.PrintDebug(
+            "===== Tokenized end =====\n");
         List<Statement> assemblyStatements = TokensToStatements(assemblyTokens);
         assemblyStatements = PreParse(assemblyStatements);
 
@@ -103,13 +103,13 @@ public partial class Assembler
         if (textSectionStart >= assemblyStatements.Count)
             throw new Exception("No .text section found.");
         
-        int dataSectionEnd = textSectionStart - 1;
-        int textSectionEnd = assemblyStatements.Count - 1;
+        int dataSectionEndExclusive = textSectionStart;
+        int textSectionEndExclusive = assemblyStatements.Count;
         
         // TODO: Add support for multiple .data and .text sections in arbitrary order
 
-        DataSection dataSection = DataSection.CreateFromAssemblyCode(assemblyStatements[dataSectionStart .. dataSectionEnd]);
-        TextSection textSection = TextSection.CreateFromAssemblyCode(assemblyStatements[textSectionStart .. textSectionEnd], dataSection);
+        DataSection dataSection = DataSection.CreateFromAssemblyCode(assemblyStatements[dataSectionStart .. dataSectionEndExclusive]);
+        TextSection textSection = TextSection.CreateFromAssemblyCode(assemblyStatements[textSectionStart .. textSectionEndExclusive], dataSection);
 
         // Assembly header metadata words:
         // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)

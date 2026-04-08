@@ -65,8 +65,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             throw new ArgumentException("Cannot parse assembly .data section: Incorrect header");
         // No need for attribute parsing - will maybe be necessary in future
         Logging.LogDebug("Successfully verified and parsed .data section header.");
-
-        assemblyStatements.RemoveAt(0);
+        assemblyStatements.Remove(header);
         if (assemblyStatements.Count <= 0)
         {
             // If no further statements exist, the .data section is empty.
@@ -93,7 +92,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
 
         foreach (Statement statement in statements)
         {
-            Logging.LogDebug(statement.ToString());
+            Logging.LogDebug($"Decoding {statement}");
             // Pointers (word sequences)
             // Usage:
             // dw name* [sequence of values]
@@ -102,6 +101,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // *: Name is optional
             if (statement.Tokens[0].Type == TokenType.KEYWORD_DEFINEWORD)
             {
+                Logging.LogDebug($"DEFINEWORD");
                 if (statement.STLength < 2)
                     throw new ArgumentException("Number of literal words in word sequence declaration is less than 2.");
                 // Look if second word contains data immediately, or an alias comes first
@@ -109,12 +109,29 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 string? alias = hasAlias ? statement.Tokens[1].Value : null;
                 Token[] dataTokens = hasAlias ? statement.Tokens[2..^1] : statement.Tokens[1..^1];
                 List<uint> data;
+                Logging.LogDebug($"Alias: {(hasAlias ? alias : "<none>")}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
-                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
+                {
+                    Logging.LogDebug("Length specifier.");
+                    // Automatically LE
+                    uint length = (uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length;
+                    Logging.LogDebug($"Target: {dataTokens[1].Value}, Size: {length}");
+                    data = [length];
+                }
                 else
                 {
+                    Logging.LogDebug("Data.");
                     List<byte> dataBytes = ParseImmediateSequence(dataTokens);
-                    data = ByteSequenceToUIntSequence(dataBytes);
+                    if (dataBytes.Count < sizeof(uint) && !dataTokens.Any(token => token.Type == TokenType.STRING))
+                    {
+                        data = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true);
+                        Logging.LogDebug($"Encoded as LE, Size (words): {data.Count}");
+                    }
+                    else
+                    {
+                        data = ByteSequenceToUIntSequence(dataBytes);
+                        Logging.LogDebug($"Encoded as BE, Size (words): {data.Count}");
+                    }
                 }
                 currentOffset += (uint)data.Count * sizeof(uint);
                 immediateSequences.Add(new ImmediateSequence(alias, currentOffset, [.. data]));
@@ -128,23 +145,42 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
             // *: Name is required
             else if (statement.Tokens[0].Type == TokenType.KEYWORD_EQUATE)
             {
+                Logging.LogDebug($"EQUATE");
                 if (statement.STLength <= 3)
                     throw new ArgumentException("Number of literal words in constant declaration is less than 3.");
                 string alias = statement.Tokens[1].Value;
                 Token[] dataTokens = statement.Tokens[2..^1];
                 List<uint> data;
+                Logging.LogDebug($"Alias: {alias}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
-                    data = [(uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length];
+                {
+                    Logging.LogDebug("Length specifier.");
+                    // Automatically LE
+                    uint length = (uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length;
+                    Logging.LogDebug($"Target: {dataTokens[1].Value}, Size: {length}");
+                    data = [length];
+                }
                 else
                 {
+                    Logging.LogDebug("Data.");
                     List<byte> dataBytes = ParseImmediateSequence(dataTokens);
-                    data = ByteSequenceToUIntSequence(dataBytes);
+                    if (dataBytes.Count < sizeof(uint) && !dataTokens.Any(token => token.Type == TokenType.STRING))
+                    {
+                        data = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true);
+                        Logging.LogDebug($"Encoded as LE, Size (words): {data.Count}");
+                    }
+                    else
+                    {
+                        data = ByteSequenceToUIntSequence(dataBytes);
+                        Logging.LogDebug($"Encoded as BE, Size (words): {data.Count}");
+                    }
                 }
                 immediateSequences.Add(new ImmediateSequence(alias, null, [.. data]));
             }
 
             else
             {
+                // First token not valid (DW or EQU)
                 throw new Exception($"Invalid statement {statement} found in .data section.");
             }
 
@@ -157,6 +193,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
                 ));
             if (sequencesWithSameNameButDifferentValues.Count() >= 2)
                 throw new Exception($"Multiple immediate sequences with the same alias: {sequencesWithSameNameButDifferentValues.First().Alias}");
+            Logging.NewlineDebug();
         }
         return immediateSequences;
     }
@@ -208,8 +245,9 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
     /// If the number of bytes doesn't fit evenly into the uints, padding bytes (0x00) are added.
     /// </summary>
     /// <param name="byteSequence"></param>
+    /// <param name="encodeAsLittleEndian">Specifies whether to fill uints in LE or BE order. Default is BE.</param>
     /// <returns></returns>
-    private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence)
+    private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence, bool encodeAsLittleEndian = false)
     {
         uint[] uintSequence = new uint[(int)Math.Ceiling((double)byteSequence.Count / 4)];
         Array.Fill(uintSequence, 0u); // Just to be sure, fill with zeroes (incl. padding bytes)
@@ -217,10 +255,13 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences) : IAs
         {
             int uintArrayIdx = i / 4;
             int byteIdx = i % 4;
-            // FIXME: strings are encoded sequentially, bytes from right to left: Conflict!
+            // The reason the "useLE" parameter is given comes from encoding issues:
+            // Strings are encoded sequentially (in BE order), raw data bytes from right to left (LE): This creates a conflict!
             // This function cannot differentiate these two, since it treats them all the same.
-            // Pass a parameter that determines RTL(right to left) or LTR(left to right)?
-            uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
+            if (encodeAsLittleEndian)
+                uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (8 * byteIdx);
+            else
+                uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
         }
         return [.. uintSequence];
     }

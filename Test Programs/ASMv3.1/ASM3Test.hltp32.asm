@@ -3,7 +3,7 @@
 #VERSION 3.1
 #ORG 10000000h
 
-#DEFINE REPEAT_TEST_TIMES 50
+#DEFINE REPEAT_TEST_TIMES 6
 #DEFINE REPEAT_TEST_DATA "word. "
 #DEFINE LD_DATA_ADDR 0x20202020
 #DEFINE SP_BASE 0x00020000
@@ -14,11 +14,11 @@ dw imm1 0x39393939
 dw imm2 39393939h
 dw imm3 0b01010101
 dw imm4 39393939
-dw ptr1 0x55, "This is a test string", 0xA, "Another test string"
+dw ptr1 0x56, "This is a test string", 0xA, "Another test string"
 dw "Empty data here lol"
 equ imm5 len: ptr1
 dw imm6 len: ptr1
-times 50 dw 0x0
+times 3 dw 0x0
 times $REPEAT_TEST_TIMES dw $REPEAT_TEST_DATA
 
 #SECTION (__entry__ = _start) .text
