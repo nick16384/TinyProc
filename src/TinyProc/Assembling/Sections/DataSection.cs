@@ -78,6 +78,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dicti
         List<ImmediateSequence> data = ExtractImmediateSequences(assemblyStatements);
         // Parser for labels
         Dictionary<string, uint> labelAddressMap = ExtractLabelAddresses(assemblyStatements, data);
+        // Parser for len: keyword, which relies on labels
+        data = ParseLenKeyword(assemblyStatements, data, labelAddressMap);
 
         // Log immediate values and pointers (summary)
         Logging.LogDebug($"Successfully parsed {data.Count} immediate sequences.");
@@ -86,25 +88,6 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dicti
         Logging.LogDebug($"Successfully parsed .data section into a total of {resultDataSection.Size} word(s).");
 
         return resultDataSection;
-    }
-
-    private static Dictionary<string, uint> ExtractLabelAddresses(List<Statement> statements, List<ImmediateSequence> immediateSequences)
-    {
-        Dictionary<string, uint> labelAddressMap = [];
-        foreach (Statement statement in statements)
-        {
-            if (statement.Tokens[0].Type != TokenType.LABEL)
-                continue;
-            // Statement contains label
-            Token labelToken = statement.Tokens[0];
-            string immediateSequenceName = statement.Tokens[2].Value;
-            uint? offset = immediateSequences.First(seq => seq.Alias == immediateSequenceName).Offset;
-            if (!offset.HasValue)
-                throw new Exception($"Cannot determine immediate sequence offset of \"{immediateSequenceName}\"");
-            Logging.LogDebug($"Label {labelToken.Value} offset {offset.Value:x8}");
-            labelAddressMap.Add(labelToken.Value, offset.Value);
-        }
-        return labelAddressMap;
     }
 
     private static List<ImmediateSequence> ExtractImmediateSequences(List<Statement> statements)
@@ -138,15 +121,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dicti
                 Logging.LogDebug($"Alias: {(hasAlias ? alias : "<none>")}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                 {
-                    Logging.LogDebug("Length specifier.");
-                    // Automatically LE
-                    // FIXME: Must implement len: keyword again with label instead of alias
-                    //        How to do this, since labels are parsed after this step is done???
-                    throw new NotImplementedException("Implement len: keyword again (with label instead of alias).");
-                    uint referenceOffset = immediateSequences.First(seq => ).Offset;
-                    uint length = (uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length;
-                    Logging.LogDebug($"Target: {dataTokens[1].Value}, Size: {length}");
-                    data = [length];
+                    Logging.LogDebug("Length specifier. Will parse after label resolving.");
+                    data = [];
                 }
                 else
                 {
@@ -199,11 +175,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dicti
                 Logging.LogDebug($"Alias: {alias}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                 {
-                    Logging.LogDebug("Length specifier.");
-                    // Automatically LE
-                    uint length = (uint)immediateSequences.First(seq => seq.Alias == dataTokens[1].Value).Data.Length;
-                    Logging.LogDebug($"Target: {dataTokens[1].Value}, Size: {length}");
-                    data = [length];
+                    Logging.LogDebug("Length specifier. Will parse after label resolving.");
+                    data = [];
                 }
                 else
                 {
@@ -309,5 +282,58 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Dicti
                 uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
         }
         return [.. uintSequence];
+    }
+
+    private static Dictionary<string, uint> ExtractLabelAddresses(List<Statement> statements, List<ImmediateSequence> immediateSequences)
+    {
+        Dictionary<string, uint> labelAddressMap = [];
+        foreach (Statement statement in statements)
+        {
+            if (statement.Tokens[0].Type != TokenType.LABEL)
+                continue;
+            // Statement contains label
+            Token labelToken = statement.Tokens[0];
+            string immediateSequenceName = statement.Tokens[2].Value;
+            uint? offset = immediateSequences.First(seq => seq.Alias == immediateSequenceName).Offset;
+            if (!offset.HasValue)
+                throw new Exception($"Cannot determine immediate sequence offset of \"{immediateSequenceName}\"");
+            Logging.LogDebug($"Label {labelToken.Value} offset {offset.Value:x8}");
+            labelAddressMap.Add(labelToken.Value, offset.Value);
+        }
+        return labelAddressMap;
+    }
+
+    private static List<ImmediateSequence> ParseLenKeyword(List<Statement> statements, List<ImmediateSequence> immediateSequences, Dictionary<string, uint> labelAddressMap)
+    {
+        foreach (Statement statement in statements)
+        {
+            if (!statement.Tokens.Any(token => token.Type == TokenType.KEYWORD_LENGTH))
+                continue;
+            Logging.LogDebug($"Actually parsing len: keyword in {statement}");
+            Token immediateNameToken = Token.CreateEOS(); // EOS is placeholder for invalid token
+            Token labelToken = Token.CreateEOS(); // EOS is placeholder for invalid token
+            for (int tokenIdx = 1; tokenIdx < statement.Tokens.Length - 1; tokenIdx++)
+                if (statement.Tokens[tokenIdx].Type == TokenType.KEYWORD_LENGTH)
+                {
+                    labelToken = statement.Tokens[tokenIdx + 1];
+                    
+                }
+            if (labelToken.Type == TokenType.EOS)
+                throw new Exception($"Invalid len: keyword: unable to find reference: {statement}");
+            if (labelToken.Type != TokenType.LITERAL_WORD)
+                throw new Exception($"Invalid len: keyword: wrong token type following: {statement}");
+            if (!labelAddressMap.TryGetValue(labelToken.Value, out uint labelOffset))
+                throw new Exception($"Invalid len: keyword: Label {labelToken.Value} doesn't exist: {statement}");
+            uint length = (uint)immediateSequences.First(seq => seq.Alias == labelToken.Value).Data.Length;
+            Logging.LogDebug($"Target: {labelToken.Value}, Offset: {labelOffset}, Size: {length}");
+            // Data is automatically LE
+            for (int seqIdx = 0; seqIdx < immediateSequences.Count; seqIdx++)
+            {
+                ImmediateSequence seq = immediateSequences[seqIdx];
+                if (seq.Alias == labelToken.Value)
+                    immediateSequences[seqIdx] = new ImmediateSequence(seq.Alias, seq.Offset, [length]);
+            }
+        }
+        return immediateSequences;
     }
 }
