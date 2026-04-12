@@ -81,6 +81,12 @@ public partial class Assembler
         List<Statement> assemblyStatements = TokensToStatements(assemblyTokens);
         assemblyStatements = PreParse(assemblyStatements);
 
+        Logging.LogDebug(
+            "\n===== Tokenized begin after pre-parser =====");
+        assemblyStatements.ForEach(stmt => Logging.LogDebug($"{stmt}"));
+        Logging.PrintDebug(
+            "===== Tokenized end after pre-parser =====\n");
+
         uint loadAddress = FindLoadAddress(assemblyStatements);
 
         // ========== Process .data and .text sections ==========

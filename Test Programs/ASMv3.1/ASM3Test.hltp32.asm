@@ -29,10 +29,12 @@ dw $PTR_TEST_DATA
 ; Length
 dw ptr1_l1 len: l_ptr1
 equ ptr1_l2 len: l_ptr1
+l_len_ptr1: dw ptr1_l3 len: l_ptr1
+l_len2_ptr1: dw len: l_ptr1
 ; Times
 times 4 dw 0x0
-times 2 dw $PTR_TEST_DATA
-times 4 dw 0
+l_ptrreptest: times 2 dw $PTR_TEST_DATA
+times 4 dw 1
 
 #SECTION (__entry__ = _start) .text
 start_actual:

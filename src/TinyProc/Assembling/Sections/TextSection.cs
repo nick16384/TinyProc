@@ -182,14 +182,20 @@ public readonly struct TextSection : IAssemblySection
                 else if (previous.Type == TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE)
                     expressionTokens[^1].Add(current);
             }
-            // Convert token lists to expressions
+            // Convert token lists to expressions and ensure all numeric values are in "flat" base-10
             foreach (List<Token> expressionTokenList in expressionTokens)
+            {
+                foreach (Token token in expressionTokenList)
+                    if (token.Type == TokenType.NUMERIC_VALUE)
+                        token.Value = ConvertStringToUInt(token.Value).ToString();
                 constantExpressions.Add(new Statement([.. expressionTokenList, Token.CreateEOS()]));
+            }
             // Evaluate constant expressions and substitute them
             foreach (Statement expression in constantExpressions)
             {
                 // Evaluate constant expression
                 Logging.LogDebug($"Evaluating constant expression {expression}");
+                // FIXME: Fix overflow error for Int32, we want UInt32!
                 uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expression.ToString(), null));
                 // TODO: This could be made more clean?
                 int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);

@@ -59,6 +59,7 @@ public partial class Assembler
                     List<Token> newTokens = [.. statement.Tokens];
                     newTokens.RemoveAt(tokenIdx);
                     newTokens.InsertRange(tokenIdx, replacement);
+                    Logging.LogDebug($"Expanded macro: {statement} -> {new Statement([.. newTokens])}");
                     statement.Tokens = [.. newTokens];
                     tokenIdx += replacement.Length;
                 }
@@ -69,22 +70,30 @@ public partial class Assembler
 
     private static List<Statement> PreParse_TimesN(List<Statement> assemblyStatements)
     {
-        for (int i = 0; i < assemblyStatements.Count; i++)
+        for (int statementIdx = 0; statementIdx < assemblyStatements.Count; statementIdx++)
         {
-            Statement statement = assemblyStatements[i];
-            if (statement.Tokens[0].Type == TokenType.KEYWORD_TIMES)
-            {
-                if (statement.STLength < 3 || statement.Tokens[1].Type != TokenType.NUMERIC_VALUE)
-                    throw new Exception($"Invalid {KEYWORD_TIMES} N: {statement}");
-                List<Token> duplicateTokens = [.. statement.Tokens[2..^1]];
-                Statement duplicateStatement = new([.. duplicateTokens, new Token(TokenType.EOS, "\n")]);
-                int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[1].Value);
+            Statement statement = assemblyStatements[statementIdx];
+            if (!statement.Tokens.Any(token => token.Type == TokenType.KEYWORD_TIMES))
+                continue;
 
-                Logging.LogDebug($"Repeat >>{duplicateStatement}<< {repeatTimes} times");
-                assemblyStatements.RemoveAt(i--);
-                for (int insertCounter = 0; insertCounter < repeatTimes; insertCounter++)
-                    assemblyStatements.Insert(++i, duplicateStatement);
-            }
+            int timesTokenIdx = statement.Tokens
+                .Select((token, idx) => (token, idx))
+                .Where(pair => pair.token.Type == TokenType.KEYWORD_TIMES)
+                .Select(t => t.idx)
+                .First();
+            if (statement.STLength < timesTokenIdx + 3 || statement.Tokens[timesTokenIdx + 1].Type != TokenType.NUMERIC_VALUE)
+                throw new Exception($"Invalid {KEYWORD_TIMES} in: {statement}");
+            List<Token> beforeDuplicateTokens = [.. statement.Tokens[.. timesTokenIdx]];
+            List<Token> duplicateTokens = [.. statement.Tokens[(timesTokenIdx + 2)..]];
+            Statement duplicateStatement = new([.. duplicateTokens]);
+            int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[timesTokenIdx + 1].Value);
+
+            Logging.LogDebug($"Repeat >>{duplicateStatement}<< {repeatTimes} times");
+            assemblyStatements.RemoveAt(statementIdx--);
+            assemblyStatements.Insert(++statementIdx, new Statement([.. beforeDuplicateTokens, .. duplicateTokens]));
+            repeatTimes--;
+            for (int insertCounter = 0; insertCounter < repeatTimes; insertCounter++)
+                assemblyStatements.Insert(++statementIdx, new Statement([.. duplicateTokens]));
         }
         return assemblyStatements;
     }
