@@ -98,8 +98,8 @@ public sealed class InstructionLookup
 		// Check for valid memory reference syntax (square brackets around references)
 		if (IsLoadStoreInstruction(instructionStatement) && (
 			instructionStatement.STLength < 5 ||
-			instructionStatement.Tokens[2].Type != TokenType.SQUARE_BRACKET_OPEN ||
-			instructionStatement.Tokens[4].Type != TokenType.SQUARE_BRACKET_CLOSE))
+			instructionStatement.Tokens[2].Value != "[" ||
+			instructionStatement.Tokens[4].Value != "]"))
 				throw new Exception($"Invalid load/store instruction: Must use square brackets around memory reference (i.e. [target]): {instructionStatement}");
 		// Remove square brackets around memory references
 		List<Token> newTokens = [.. instructionStatement.Tokens];

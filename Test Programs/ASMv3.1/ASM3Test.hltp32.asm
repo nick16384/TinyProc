@@ -86,6 +86,8 @@ start_actual:
     st gp1, [l_imm1]
     st gp1, [l_imm1 + 1] ; *imm2
     st gp1, [0x40000000 * 2 - 50]
+    st gp1, [0x40000000 * 4 + 0x50000000] ; Check overflow handling
+    st gp1, [0 - 0x80000000] ; Check overflow handling 2
     st gp1, [+40000000h]
     st gp1, [-40000000h]
     st gp1, [$LD_DATA_ADDR] ; Absolute

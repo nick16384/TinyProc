@@ -1,6 +1,5 @@
 ﻿using TinyProc.Assembling;
 using TinyProc.Application;
-using TinyProc.Processor.CPU;
 
 class Program
 {

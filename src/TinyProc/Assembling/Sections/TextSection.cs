@@ -8,8 +8,8 @@ namespace TinyProc.Assembling.Sections;
 
 public readonly struct TextSection : IAssemblySection
 {
-    private static readonly Token TOKEN_BRACKET_OPEN = new(TokenType.BRACKET_OPEN, "(");
-    private static readonly Token TOKEN_BRACKET_CLOSE = new(TokenType.BRACKET_CLOSE, ")");
+    private static readonly Token TOKEN_BRACKET_OPEN = new(TokenType.BRACKET, "(");
+    private static readonly Token TOKEN_BRACKET_CLOSE = new(TokenType.BRACKET, ")");
     public uint Size { get; }
     public uint EntryPoint { get; }
 
@@ -195,8 +195,11 @@ public readonly struct TextSection : IAssemblySection
             {
                 // Evaluate constant expression
                 Logging.LogDebug($"Evaluating constant expression {expression}");
-                // FIXME: Fix overflow error for Int32, we want UInt32!
-                uint expressionValue = Convert.ToUInt32(new DataTable().Compute(expression.ToString(), null));
+                ArithmeticExpression<UInt32> arithmeticExpression = new(expression);
+                uint expressionValue = arithmeticExpression.Evaluate(throwExceptionOnOverflow: false);
+                Logging.LogDebug($"= {expressionValue}");
+                if (arithmeticExpression.HasOverflown)
+                    Logging.LogWarn("Warning: Expression has overflown. This might be intended behavior.");
                 // TODO: This could be made more clean?
                 int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);
                 List<Token> instructionTokensNew = [.. instructionStatement.Tokens];

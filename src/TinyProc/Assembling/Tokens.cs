@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TinyProc.Application;
 using TinyProc.Assembling.Sections;
 using TinyProc.Processor;
 
@@ -10,11 +11,13 @@ public partial class Assembler
     /// Receives full assembly code (without comments) and splits the code into
     /// tokens usable by the assembler.
     /// </summary>
-    /// <param name="assemblyCode"></param>
+    /// <param name="code"></param>
     /// <returns>A list of tokens in assembly with every statement ending in an EOL token.</returns>
-    private static Token[] TokenizeAssembly(string assemblyCode)
+    internal static Token[] Tokenize(string code)
     {
-        string[] assemblyLines = assemblyCode.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code is null or whitespace only. Cannot tokenize.");
+        string[] assemblyLines = code.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         List<Token> tokens = [];
         foreach (string line in assemblyLines)
         {
@@ -82,14 +85,10 @@ public partial class Assembler
             return new Token(TokenType.KEYWORD_TIMES, KEYWORD_TIMES);
         // "Normal" tokens
         // Single letters
-        else if (tokenString == "[")
-            return new Token(TokenType.SQUARE_BRACKET_OPEN, "[");
-        else if (tokenString == "]")
-            return new Token(TokenType.SQUARE_BRACKET_CLOSE, "]");
-        else if (tokenString == "(")
-            return new Token(TokenType.BRACKET_OPEN, "(");
-        else if (tokenString == ")")
-            return new Token(TokenType.BRACKET_CLOSE, ")");
+        else if (tokenString == "(" || tokenString == ")")
+            return new Token(TokenType.BRACKET, tokenString);
+        else if (tokenString == "[" || tokenString == "]")
+            return new Token(TokenType.SQUARE_BRACKET, tokenString);
         else if (tokenString == "+" || tokenString == "-" || tokenString == "*")
             return new Token(TokenType.SYMBOL_ARITHMETIC_OP, tokenString);
         else if (tokenString == "=")
@@ -175,10 +174,8 @@ public partial class Assembler
         KEYWORD_EQUATE,
         KEYWORD_LENGTH,
         KEYWORD_TIMES,
-        SQUARE_BRACKET_OPEN,
-        SQUARE_BRACKET_CLOSE,
-        BRACKET_OPEN,
-        BRACKET_CLOSE,
+        BRACKET, // Either open bracket or close bracket
+        SQUARE_BRACKET, // Either open square bracket or close square bracket
         SYMBOL_ARITHMETIC_OP, // Arithmetic operator symbol (e.g. +, -, *)
         SYMBOL_EQUALS,
         MNEMONIC, // Instruction mnemonic
@@ -249,8 +246,13 @@ public partial class Assembler
         public int STLength { get => Tokens.Length - 1; }
         internal Statement(params Token[] statementTokens)
         {
-            if (statementTokens.Length <= 0 || statementTokens[^1].Type != TokenType.EOS)
+            if (statementTokens.Length <= 0)
                 throw new ArgumentException("Cannot create statement from empty token array or without finishing in EOS token.");
+            if (statementTokens[^1].Type != TokenType.EOS)
+            {
+                Logging.LogWarn($"Creating statement from possibly unfinished token sequence (without EOS). Appending EOS.");
+                statementTokens = [.. statementTokens, Token.CreateEOS()];
+            }
             Tokens = statementTokens;
         }
         public override string ToString() => string.Join(" ", Tokens.SkipLast(1).Select(token => token.Value));

@@ -57,7 +57,7 @@ public partial class Assembler
         // 1. Cleanup: Remove comments and excess whitespace
         // 2. Check assembly version (first line)
         // 3. Tokenize: Parse code as a list of tokens for the assembler to work with
-        // 4. Pre-parse: Expand #DEFINE and "times N"
+        // 4. Pre-parse: Expand macros and "times N"
         // 5. Extract load address (#ORG)
         // 6. .data section parser
         // 7. .text section parser
@@ -69,7 +69,7 @@ public partial class Assembler
             "\n=====  Assembly end  =====");
         if (!CheckAssemblyVersion(assemblyCode))
             throw new Exception("Invalid assembly version.");
-        Token[] assemblyTokens = TokenizeAssembly(assemblyCode);
+        Token[] assemblyTokens = Tokenize(assemblyCode);
         Logging.LogDebug(
             "\n===== Tokenized begin =====");
         assemblyTokens.ToList().ForEach(t => {
