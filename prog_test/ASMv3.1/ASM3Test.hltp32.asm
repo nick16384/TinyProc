@@ -36,7 +36,7 @@ times 4 dw 0x0
 l_ptrreptest: times 2 dw $PTR_TEST_DATA
 times 4 dw 1
 
-#SECTION (__entry__ = _start) .text
+#SECTION (__entry__ = _start) (__adrmodeimplicit__ = absolute) .text
 start_actual:
     ; Basic arithmetic
     ; Some mnemonics are commented out, since they haven't been implemented yet
@@ -88,22 +88,22 @@ start_actual:
     st gp1, [0x40000000 * 2 - 50]
     st gp1, [0x40000000 * 4 + 0x50000000] ; Check overflow handling
     st gp1, [0 - 0x80000000] ; Check overflow handling 2
-    st gp1, [+40000000h]
-    st gp1, [-40000000h]
-    st gp1, [$LD_DATA_ADDR] ; Absolute
-    st gp1, [+$LD_DATA_ADDR] ; Relative
-    st gp1, [-$LD_DATA_ADDR] ; Relative
+    st gp1, [rel +40000000h]
+    st gp1, [rel -40000000h]
+    st gp1, [$LD_DATA_ADDR]
+    st gp1, [rel +$LD_DATA_ADDR]
+    st gp1, [rel -$LD_DATA_ADDR]
     ; Load
     ld gp1, [imm1 + 1]
     ld gp2, [e1 + 5]
     ld gp3, [l_imm1]
     ld gp4, [l_imm1 + 1]
     ld gp5, [0x40000000]
-    ld gp6, [+40000000h]
-    ld gp7, [-40000000h]
+    ld gp6, [rel +40000000h]
+    ld gp7, [rel -40000000h]
     ld gp8, [$LD_DATA_ADDR]
-    ld gp1, [+$LD_DATA_ADDR]
-    ld gp2, [-$LD_DATA_ADDR]
+    ld gp1, [rel +$LD_DATA_ADDR]
+    ld gp2, [rel -$LD_DATA_ADDR]
     ; Stack
     push gp1
     push gp2

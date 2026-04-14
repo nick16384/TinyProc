@@ -17,9 +17,10 @@ public readonly struct TextSection : IAssemblySection
     public Dictionary<string, uint> LabelAddressMap { get; }
     public List<uint> BinaryRepresentation { get; }
 
-    private readonly struct TextSectionHeader(Either<uint, string> entryPoint)
+    private readonly struct TextSectionHeader(Either<uint, string> entryPoint, AddressingMode? implicitAddressingMode)
     {
         public readonly Either<uint, string> EntryPoint = entryPoint;
+        public readonly AddressingMode ImplicitAddressingMode = implicitAddressingMode ?? AddressingMode.PCRelative;
     }
 
     public TextSection(List<IInstruction> instructions, Dictionary<string, uint> labelAddressMap)
@@ -100,9 +101,10 @@ public readonly struct TextSection : IAssemblySection
             // 2. R (PC-relative): The address is treated as an offset relative to the address of the next instruction (PC)
             // The instruction is relative, if if it references a label or pointer.
             // Otherwise, it is implicitly absolute.
+            // FIXME: Implement proper implicit addressing mode
             AddressingMode? adrMode = null;
             if (InstructionLookup.IsJumpInstruction(instructionStatement) || InstructionLookup.IsLoadStoreInstruction(instructionStatement))
-                adrMode = AddressingMode.Absolute;
+                adrMode = header.ImplicitAddressingMode;
 
             foreach (Token token in instructionStatement.Tokens)
             {
@@ -235,6 +237,7 @@ public readonly struct TextSection : IAssemblySection
     /// <exception cref="Exception"></exception>
     private static TextSectionHeader ParseHeader(Statement header)
     {
+        AddressingMode? implicitAddressingMode = null;
         // By default, the entry point (offset into .text section) is zero
         Either<uint, string> entryPoint = 0x00000000;
         // Parse section header
@@ -269,6 +272,17 @@ public readonly struct TextSection : IAssemblySection
                         else
                             throw new Exception($"Invalid entry point {valueToken.Value}: Unrecognized type");
                         break;
+                    case ASM_ATTRIBUTE_ADRMODE_IMPLICIT:
+                        if (valueToken.Type != TokenType.LITERAL_WORD)
+                            throw new Exception($"Invalid implicit addressing mode token (type) {valueToken.Value}");
+                        if (valueToken.Value == ASM_ATTRIBUTE_ADRMODE_IMPLICIT_ABSOLUTE)
+                            implicitAddressingMode = AddressingMode.Absolute;
+                        else if (valueToken.Value == ASM_ATTRIBUTE_ADRMODE_IMPLICIT_RELATIVE)
+                            implicitAddressingMode = AddressingMode.PCRelative;
+                        else
+                            throw new Exception($"Invalid implicit addressing mode {valueToken.Value}");
+                        Logging.LogDebug($"Using implicit addressing mode {implicitAddressingMode}");
+                        break;
                     default:
                         throw new ArgumentException($"Invalid attribute identifier \"{identifier}\"");
                 }
@@ -279,7 +293,7 @@ public readonly struct TextSection : IAssemblySection
         }
         Logging.LogDebug("Successfully verified and parsed .text section header.");
 
-        return new TextSectionHeader(entryPoint);
+        return new TextSectionHeader(entryPoint, implicitAddressingMode);
     }
 
     /// <summary>

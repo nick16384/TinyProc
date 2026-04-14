@@ -34,10 +34,14 @@ public partial class Assembler
 
     // Attributes
     internal const string ASM_ATTRIBUTE_TEXT_ENTRYPOINT = "__entry__";
+    internal const string ASM_ATTRIBUTE_ADRMODE_IMPLICIT = "__adrmodeimplicit__";
+    internal const string ASM_ATTRIBUTE_ADRMODE_IMPLICIT_ABSOLUTE = "absolute";
+    internal const string ASM_ATTRIBUTE_ADRMODE_IMPLICIT_RELATIVE = "relative";
 
     // Keywords
     internal const string KEYWORD_DEFINEWORD = "dw";
     internal const string KEYWORD_EQUATE = "equ";
     internal const string KEYWORD_LENGTH = "len:";
     internal const string KEYWORD_TIMES = "times";
+    internal const string KEYWORD_ADDRESSING_RELATIVE = "rel";
 }
