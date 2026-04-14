@@ -35,7 +35,7 @@ public partial class Assembler
                 string name = statement.Tokens[1].Value;
                 Token[] values = statement.Tokens[2..^1];
                 if (values.Length >= 1)
-                    Logging.LogDebug($"Found macro: \"${name}\" = \"{new Statement([.. values, Token.CreateEOS()])}\"");
+                    Logging.LogDebug($"Found macro definition: \"${name}\" = \"{new Statement([.. values, Token.CreateEOS()])}\"");
                 else
                     Logging.LogWarn($"Warning: Found empty macro \"${name}\"");
                 // The define needs to be prepended with a "$" in code. This is for mere convenience.

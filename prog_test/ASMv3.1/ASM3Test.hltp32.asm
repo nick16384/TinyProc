@@ -11,11 +11,7 @@
 
 #SECTION .data
 ; Single words
-l_imm1: dw imm1 0x39393939
-dw imm2 39393939h
-dw imm3 0b01010101
-dw imm4 39393939
-l_undef1: dw 0x39393939
+imm1: dw 0x39393939
 dw 39393939h
 dw 0b01010101
 dw 39393939
@@ -24,16 +20,15 @@ equ e2 39393939h
 equ e3 0b01010101
 equ e4 39393939
 ; Multi-words
-l_ptr1: dw $PTR_TEST_DATA
+ptr1: dw $PTR_TEST_DATA
 dw $PTR_TEST_DATA
 ; Length
-dw ptr1_l1 len: l_ptr1
-equ ptr1_l2 len: l_ptr1
-l_len_ptr1: dw ptr1_l3 len: l_ptr1
-l_len2_ptr1: dw len: l_ptr1
+dw len: ptr1
+equ ptr1_l2 len: ptr1
+len_ptr1: dw len: ptr1
 ; Times
 times 4 dw 0x0
-l_ptrreptest: times 2 dw $PTR_TEST_DATA
+ptrreptest: times 2 dw $PTR_TEST_DATA
 times 4 dw 1
 
 #SECTION (__entry__ = _start) (__adrmodeimplicit__ = absolute) .text
@@ -81,23 +76,22 @@ start_actual:
     ; Memory operations
     mov gp1, 90
     ; Store
-    st gp1, [imm1 + 1]
     st gp1, [e1 + 5]
-    st gp1, [l_imm1]
-    st gp1, [l_imm1 + 1] ; *imm2
+    st gp1, [imm1]
+    st gp1, [imm1 + 1] ; *imm2
     st gp1, [0x40000000 * 2 - 50]
     st gp1, [0x40000000 * 4 + 0x50000000] ; Check overflow handling
     st gp1, [0 - 0x80000000] ; Check overflow handling 2
+    st gp1, [abs 40000000h]
     st gp1, [rel +40000000h]
     st gp1, [rel -40000000h]
     st gp1, [$LD_DATA_ADDR]
     st gp1, [rel +$LD_DATA_ADDR]
     st gp1, [rel -$LD_DATA_ADDR]
     ; Load
-    ld gp1, [imm1 + 1]
     ld gp2, [e1 + 5]
-    ld gp3, [l_imm1]
-    ld gp4, [l_imm1 + 1]
+    ld gp3, [imm1]
+    ld gp4, [imm1 + 1]
     ld gp5, [0x40000000]
     ld gp6, [rel +40000000h]
     ld gp7, [rel -40000000h]

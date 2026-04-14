@@ -114,7 +114,7 @@ public partial class Assembler
         // TODO: Add support for multiple .data and .text sections in arbitrary order
 
         DataSection dataSection = DataSection.CreateFromAssemblyCode(assemblyStatements[dataSectionStart .. dataSectionEndExclusive]);
-        TextSection textSection = TextSection.CreateFromAssemblyCode(assemblyStatements[textSectionStart .. textSectionEndExclusive], dataSection);
+        TextSection textSection = TextSection.CreateFromAssemblyCode(assemblyStatements[textSectionStart .. textSectionEndExclusive], loadAddress, dataSection);
 
         // Assembly header metadata words:
         // 1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)

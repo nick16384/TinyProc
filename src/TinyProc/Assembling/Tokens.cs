@@ -83,6 +83,10 @@ public partial class Assembler
             return new Token(TokenType.KEYWORD_LENGTH, KEYWORD_LENGTH);
         else if (tokenString == KEYWORD_TIMES)
             return new Token(TokenType.KEYWORD_TIMES, KEYWORD_TIMES);
+        else if (tokenString == KEYWORD_ADDRESSING_ABSOLUTE)
+            return new Token(TokenType.KEYWORD_ADDRESSING_ABSOLUTE, KEYWORD_ADDRESSING_ABSOLUTE);
+        else if (tokenString == KEYWORD_ADDRESSING_RELATIVE)
+            return new Token(TokenType.KEYWORD_ADDRESSING_RELATIVE, KEYWORD_ADDRESSING_RELATIVE);
         // "Normal" tokens
         // Single letters
         else if (tokenString == "(" || tokenString == ")")
@@ -174,6 +178,8 @@ public partial class Assembler
         KEYWORD_EQUATE,
         KEYWORD_LENGTH,
         KEYWORD_TIMES,
+        KEYWORD_ADDRESSING_ABSOLUTE,
+        KEYWORD_ADDRESSING_RELATIVE,
         BRACKET, // Either open bracket or close bracket
         SQUARE_BRACKET, // Either open square bracket or close square bracket
         SYMBOL_ARITHMETIC_OP, // Arithmetic operator symbol (e.g. +, -, *)

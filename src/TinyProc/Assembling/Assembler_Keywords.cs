@@ -44,4 +44,5 @@ public partial class Assembler
     internal const string KEYWORD_LENGTH = "len:";
     internal const string KEYWORD_TIMES = "times";
     internal const string KEYWORD_ADDRESSING_RELATIVE = "rel";
+    internal const string KEYWORD_ADDRESSING_ABSOLUTE = "abs";
 }

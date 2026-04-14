@@ -23,9 +23,10 @@ public readonly struct TextSection : IAssemblySection
         public readonly AddressingMode ImplicitAddressingMode = implicitAddressingMode ?? AddressingMode.PCRelative;
     }
 
-    public TextSection(List<IInstruction> instructions, Dictionary<string, uint> labelAddressMap)
+    public TextSection(List<IInstruction> instructions, Dictionary<string, uint> labelAddressMap, uint entryPoint)
     {
         Size = (uint)instructions.Count * 2;
+        EntryPoint = entryPoint;
         Instructions = instructions;
         LabelAddressMap = labelAddressMap;
 
@@ -39,9 +40,9 @@ public readonly struct TextSection : IAssemblySection
     /// </summary>
     /// <param name="assemblyCodeTextSection"></param>
     /// <returns></returns>
-    internal static TextSection CreateFromAssemblyCode(List<Statement> assemblyStatements, DataSection dataSection)
+    internal static TextSection CreateFromAssemblyCode(List<Statement> assemblyStatements, uint globalLoadAddress, DataSection dataSection)
     {
-        uint entryPoint;
+        uint entryPoint = default; // Will be overridden anyways, compiler just doesn't see that
         List<IInstruction> instructions = [];
         Dictionary<string, uint> labelAddressMap = [];
 
@@ -82,6 +83,7 @@ public readonly struct TextSection : IAssemblySection
                 throw new Exception($"Cannot infer entry point {header.EntryPoint.B}");
         currentAddress = 0;
 
+        // .text section main parser:
         // Parse each line / statement separately
         for (int statementIdx = 0; statementIdx < assemblyStatements.Count; statementIdx++)
         {
@@ -94,121 +96,17 @@ public readonly struct TextSection : IAssemblySection
             if (instructionStatement.Tokens[0].Type != TokenType.MNEMONIC)
                 throw new Exception($"Instruction has invalid mnemonic: {instructionStatement}");
 
-            // Step 1: Replace occurrences of labels / .data section references with their corresponding addresses / values
-            // The addressing mode specifies how an address is interpreted by the CPU.
-            // There are (currently) two addressing modes:
-            // 1. A (Absolute): An absolute address in the entire memory space
-            // 2. R (PC-relative): The address is treated as an offset relative to the address of the next instruction (PC)
-            // The instruction is relative, if if it references a label or pointer.
-            // Otherwise, it is implicitly absolute.
-            // FIXME: Implement proper implicit addressing mode
-            AddressingMode? adrMode = null;
-            if (InstructionLookup.IsJumpInstruction(instructionStatement) || InstructionLookup.IsLoadStoreInstruction(instructionStatement))
-                adrMode = header.ImplicitAddressingMode;
+            AddressingMode adrMode = DetermineAddressingMode(instructionStatement, header.ImplicitAddressingMode);
 
-            foreach (Token token in instructionStatement.Tokens)
-            {
-                // Skip brackets, square brackets, mnemonics, numeric values, etc.
-                // Only literal words are relevant here for potential replacement
-                if (token.Type != TokenType.LITERAL_WORD)
-                    continue;
-
-                int tokenReferenceCount = 0;
-                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value)) tokenReferenceCount++;
-                if (dataSection.LabelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
-                if (labelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
-                // If this token refers to multiple destinations, the reference is ambiguous, since the source is indeterminable.
-                if (tokenReferenceCount >= 2)
-                    throw new Exception($"Address label / .data section reference is ambiguous for \"{token.Value}\".");
-                
-                // .text label reference
-                if (labelAddressMap.TryGetValue(token.Value, out uint textLabelAddress))
-                {
-                    // Subtract two to account for PC-relative instructions always using the address from the next instruction.
-                    uint labelRelAddress = textLabelAddress - currentAddress - 2;
-                    Logging.LogDebug($".text replace .text label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
-                    token.Type = TokenType.NUMERIC_VALUE;
-                    token.Value = labelRelAddress.ToString();
-                    adrMode = AddressingMode.PCRelative;
-                }
-
-                // .data label reference
-                if (dataSection.LabelAddressMap.TryGetValue(token.Value, out uint dataLabelAddress))
-                {
-                    uint labelRelAddress = dataLabelAddress - dataSection.Size - currentAddress - 2;
-                    Logging.LogDebug($".text replace .data label \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
-                    token.Type = TokenType.NUMERIC_VALUE;
-                    token.Value = labelRelAddress.ToString();
-                    adrMode = AddressingMode.PCRelative;
-                }
-
-                // .data immediate sequence reference
-                // Although the data section loads at a predefined address, we'll use relative addressing
-                // for future proofing, since relative addresses are shorter and could therefore be encoded shorter.
-                if (dataSection.ImmediateSequences.Any(seq => seq.Alias == token.Value))
-                {
-                    ImmediateSequence immediateSequence = dataSection.ImmediateSequences.First(seq => seq.Alias == token.Value);
-                    token.Type = TokenType.NUMERIC_VALUE;
-                    adrMode = AddressingMode.PCRelative;
-
-                    if (immediateSequence.Data.Length < 1)
-                        throw new Exception("Immediate sequence has length of zero. This is an internal error.");
-                    if (immediateSequence.Data.Length > 1)
-                        throw new Exception("Multi-word sequence is named. This is an internal error.");
-                    
-                    // Replace instruction operand with immediate value.
-                    Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {immediateSequence.Data[0]:x8}h / {immediateSequence.Data[0]}");
-                    token.Value = immediateSequence.Data[0].ToString();
-                }
-
-                // At this point, the token type should be a numeric value, so if no replacement was found
-                // this indicates the word doesn't map to anything useful for further assembling.
-                if (token.Type == TokenType.LITERAL_WORD)
-                    throw new Exception($"Unresolved reference {token.Value} in {instructionStatement}");
-            }
-
-            // Step 2: Evaluate and substitute constant value expressions (e.g. "mov gp1, (pointer + 2)")
-            List<Statement> constantExpressions = [];
-            // Search constant expressions:
-            // For every numeric value, search for arithmetic symbols after it, then merge an entire expression consisting of arithmetic and numbers.
-            List<List<Token>> expressionTokens = [];
-            for (int tokenIdx = 1; tokenIdx < instructionStatement.Tokens.Length - 1; tokenIdx++)
-            {
-                Token previous = instructionStatement.Tokens[tokenIdx - 1];
-                Token current = instructionStatement.Tokens[tokenIdx];
-                Token next = instructionStatement.Tokens[tokenIdx + 1];
-                if (previous.Type != TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE && next.Type == TokenType.SYMBOL_ARITHMETIC_OP)
-                    expressionTokens.Add([current]); // Open new expression
-                else if (previous.Type == TokenType.NUMERIC_VALUE && current.Type == TokenType.SYMBOL_ARITHMETIC_OP)
-                    expressionTokens[^1].Add(current);
-                else if (previous.Type == TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE)
-                    expressionTokens[^1].Add(current);
-            }
-            // Convert token lists to expressions and ensure all numeric values are in "flat" base-10
-            foreach (List<Token> expressionTokenList in expressionTokens)
-            {
-                foreach (Token token in expressionTokenList)
-                    if (token.Type == TokenType.NUMERIC_VALUE)
-                        token.Value = ConvertStringToUInt(token.Value).ToString();
-                constantExpressions.Add(new Statement([.. expressionTokenList, Token.CreateEOS()]));
-            }
-            // Evaluate constant expressions and substitute them
-            foreach (Statement expression in constantExpressions)
-            {
-                // Evaluate constant expression
-                Logging.LogDebug($"Evaluating constant expression {expression}");
-                ArithmeticExpression<UInt32> arithmeticExpression = new(expression);
-                uint expressionValue = arithmeticExpression.Evaluate(throwExceptionOnOverflow: false);
-                Logging.LogDebug($"= {expressionValue}");
-                if (arithmeticExpression.HasOverflown)
-                    Logging.LogWarn("Warning: Expression has overflown. This might be intended behavior.");
-                // TODO: This could be made more clean?
-                int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);
-                List<Token> instructionTokensNew = [.. instructionStatement.Tokens];
-                instructionTokensNew.RemoveAll(token => expression.Tokens.Contains(token));
-                instructionTokensNew.Insert(expressionTokenIdx, new Token(TokenType.NUMERIC_VALUE, expressionValue.ToString()));
-                instructionStatement = new Statement([.. instructionTokensNew]);
-            }
+            instructionStatement = ResolveReferences(
+                instructionStatement,
+                globalLoadAddress,
+                currentAddress,
+                adrMode,
+                labelAddressMap,
+                dataSection
+            );
+            instructionStatement = EvaluateConstantExpressions(instructionStatement);
 
             Logging.LogDebug($"[{currentAddress:x8}] \"{assemblyStatements[statementIdx]}\" -> \"{instructionStatement}\"");
 
@@ -225,7 +123,7 @@ public readonly struct TextSection : IAssemblySection
 
         Logging.NewlineDebug();
         Logging.LogDebug($".text section successfully parsed into a total of {instructions.Count * 2} word(s).");
-        return new TextSection(instructions, labelAddressMap);
+        return new TextSection(instructions, labelAddressMap, entryPoint);
     }
 
     /// <summary>
@@ -338,5 +236,213 @@ public readonly struct TextSection : IAssemblySection
         if (isOpen)
             throw new Exception($"Unclosed delimiter in enclosed statement: missing \"{delimiterClose.Value}\"");
         return [.. enclosedStatementTokens.Select(tokens => new Statement([.. tokens]))];
+    }
+
+    /// <summary>
+    /// Determines the addressing mode of this instruction.<br></br>
+    /// The returned value will be AddressingMode.Absolute for non-memory instructions.<br></br>
+    /// The implicit addressing mode will be used when the instruction does a memory operation, but no explicit mode is specified.
+    /// </summary>
+    /// <param name="instructionStatement"></param>
+    /// <returns></returns>
+    private static AddressingMode DetermineAddressingMode(Statement instructionStatement, AddressingMode implicitAddressingMode)
+    {
+        // The addressing mode specifies how an address is interpreted by the CPU.
+        // There are (currently) two addressing modes:
+        // 1. A (Absolute): An absolute address in the entire memory space
+        // 2. R (PC-relative): The address is treated as an offset relative to the address of the next instruction (PC)
+        // The instruction is relative, if if it references a label or pointer.
+        // Otherwise, it is implicitly absolute.
+
+        // If the instruction doesn't contain a memory reference, use the default addressing mode (Absolute).
+        if (!InstructionLookup.IsJumpInstruction(instructionStatement) && !InstructionLookup.IsLoadStoreInstruction(instructionStatement))
+            return AddressingMode.Absolute;
+        
+        AddressingMode adrMode = implicitAddressingMode;
+        List<Token> tokens = [.. instructionStatement.Tokens];
+        for (int tokenIdx = 0; tokenIdx < tokens.Count - 4; tokenIdx++)
+        {
+            Token token = tokens[tokenIdx];
+            Token next = tokens[tokenIdx + 1];
+            if (token.Value != "[")
+                continue;
+            
+            if (next.Type == TokenType.KEYWORD_ADDRESSING_ABSOLUTE)
+            {
+                adrMode = AddressingMode.Absolute;
+                Token address = tokens[tokenIdx + 2];
+                tokens.RemoveAt(tokenIdx + 1); // Remove addressing mode token
+                Logging.LogDebug($"Explicit addressing mode override: Absolute; Address: {address.Value}");
+            }
+            else if (next.Type == TokenType.KEYWORD_ADDRESSING_RELATIVE)
+            {
+                adrMode = AddressingMode.PCRelative;
+                Token sign = tokens[tokenIdx + 2];
+                Token offset = tokens[tokenIdx + 3];
+                tokens.RemoveAt(tokenIdx + 3); // Remove offset token (replaced with unified token below)
+                tokens.RemoveAt(tokenIdx + 2); // Remove sign token
+                tokens.RemoveAt(tokenIdx + 1); // Remove addressing mode token
+                // Merge sign and offset token (e.g. ["-", "400"] becomes ["-400"])
+                if (sign.Value != "-" && sign.Value != "+")
+                    throw new Exception("Explicit addressing mode override in relative mode expects sign (e.g. [rel +400] or [rel -400])");
+                // "+" "offset" --> "offset"
+                // "-" "offset" --> "0" "-" "offset"
+                Token[] offsetTokensReformatted = [];
+                if (sign.Value == "+")
+                    offsetTokensReformatted = [new(TokenType.NUMERIC_VALUE, offset.Value)];
+                else if (sign.Value == "-")
+                    offsetTokensReformatted = [new(TokenType.NUMERIC_VALUE, "0"), new(TokenType.SYMBOL_ARITHMETIC_OP, "-"), offset];
+                tokens.InsertRange(tokenIdx + 1, offsetTokensReformatted);
+                Logging.LogDebug($"Explicit addressing mode override: Relative; Offset: {sign.Value}{offset.Value}");
+            }
+        }
+        instructionStatement.Tokens = [.. tokens];
+
+        return adrMode;
+    }
+
+    /// <summary>
+    /// Parses an instruction statement, replacing references to data with the data itself.<br></br>
+    /// This data includes address labels and immediate constants.
+    /// </summary>
+    /// <param name="instructionStatement"></param>
+    /// <param name="globalLoadAddress"></param>
+    /// <param name="instructionOffset">The offset in the .text section of this instruction</param>
+    /// <param name="adrMode">The preferred addressing mode to use</param>
+    /// <param name="textLabelAddressMap"></param>
+    /// <param name="dataSection"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    private static Statement ResolveReferences(
+        Statement instructionStatement,
+        uint globalLoadAddress,
+        uint instructionOffset,
+        AddressingMode adrMode,
+        Dictionary<string, uint> textLabelAddressMap,
+        DataSection dataSection)
+    {
+        foreach (Token token in instructionStatement.Tokens)
+        {
+            // Skip brackets, square brackets, mnemonics, numeric values, etc.
+            // Only literal words are relevant here for potential replacement
+            if (token.Type != TokenType.LITERAL_WORD)
+                continue;
+
+            int tokenReferenceCount = 0;
+            if (dataSection.ImmediateConstants.Any(constant => constant.Name == token.Value)) tokenReferenceCount++;
+            if (dataSection.LabelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
+            if (textLabelAddressMap.ContainsKey(token.Value)) tokenReferenceCount++;
+            // If this token refers to multiple destinations, the reference is ambiguous, since the source is indeterminable.
+            if (tokenReferenceCount >= 2)
+                throw new Exception($"Address label / .data section reference is ambiguous for \"{token.Value}\".");
+            
+            // .text label reference
+            if (textLabelAddressMap.TryGetValue(token.Value, out uint textLabelOffset))
+            {
+                if (adrMode == AddressingMode.PCRelative)
+                {
+                    // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                    uint labelRelAddress = textLabelOffset - instructionOffset - 2;
+                    Logging.LogDebug($".text replace .text label (R) \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelRelAddress.ToString();
+                }
+                else if (adrMode == AddressingMode.Absolute)
+                {
+                    uint labelAbsAddress = globalLoadAddress + dataSection.Size + textLabelOffset;
+                    Logging.LogDebug($".text replace .text label (A) \"{token.Value}\" --> {labelAbsAddress:x8}h / {labelAbsAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelAbsAddress.ToString();
+                }
+            }
+
+            // .data label reference
+            if (dataSection.LabelAddressMap.TryGetValue(token.Value, out uint dataLabelOffset))
+            {
+                if (adrMode == AddressingMode.PCRelative)
+                {
+                    // Subtract two to account for PC-relative instructions always using the address from the next instruction.
+                    uint labelRelAddress = dataLabelOffset - dataSection.Size - instructionOffset - 2;
+                    Logging.LogDebug($".text replace .data label (R) \"{token.Value}\" --> {labelRelAddress:x8}h / {labelRelAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelRelAddress.ToString();
+                }
+                else if (adrMode == AddressingMode.Absolute)
+                {
+                    uint labelAbsAddress = globalLoadAddress + dataLabelOffset;
+                    Logging.LogDebug($".text replace .data label (A) \"{token.Value}\" --> {labelAbsAddress:x8}h / {labelAbsAddress}");
+                    token.Type = TokenType.NUMERIC_VALUE;
+                    token.Value = labelAbsAddress.ToString();
+                }
+            }
+
+            // .data constant reference
+            if (dataSection.ImmediateConstants.Any(constant => constant.Name == token.Value))
+            {
+                ImmediateConstant constant = dataSection.ImmediateConstants.First(constant => constant.Name == token.Value);
+                // Replace instruction operand with immediate value.
+                Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {constant.Value:x8}h / {constant.Value}");
+                token.Type = TokenType.NUMERIC_VALUE;
+                token.Value = constant.Value.ToString();
+            }
+
+            // At this point, the token type should be a numeric value, so if no replacement was found
+            // this indicates the word doesn't map to anything useful for further assembling.
+            if (token.Type == TokenType.LITERAL_WORD)
+                throw new Exception($"Unresolved reference {token.Value} in {instructionStatement}");
+        }
+        return instructionStatement;
+    }
+
+    /// <summary>
+    /// If the instruction contains arithmetic constant expressions (e.g. 5 + 3), evaluate those
+    /// to reduce them to their values.
+    /// </summary>
+    /// <param name="instructionStatement"></param>
+    /// <returns></returns>
+    private static Statement EvaluateConstantExpressions(Statement instructionStatement)
+    {
+        List<Statement> constantExpressions = [];
+        // Search constant expressions:
+        // For every numeric value, search for arithmetic symbols after it, then merge an entire expression consisting of arithmetic and numbers.
+        List<List<Token>> expressionTokens = [];
+        for (int tokenIdx = 1; tokenIdx < instructionStatement.Tokens.Length - 1; tokenIdx++)
+        {
+            Token previous = instructionStatement.Tokens[tokenIdx - 1];
+            Token current = instructionStatement.Tokens[tokenIdx];
+            Token next = instructionStatement.Tokens[tokenIdx + 1];
+            if (previous.Type != TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE && next.Type == TokenType.SYMBOL_ARITHMETIC_OP)
+                expressionTokens.Add([current]); // Open new expression
+            else if (previous.Type == TokenType.NUMERIC_VALUE && current.Type == TokenType.SYMBOL_ARITHMETIC_OP)
+                expressionTokens[^1].Add(current);
+            else if (previous.Type == TokenType.SYMBOL_ARITHMETIC_OP && current.Type == TokenType.NUMERIC_VALUE)
+                expressionTokens[^1].Add(current);
+        }
+        // Convert token lists to expressions and ensure all numeric values are in "flat" base-10
+        foreach (List<Token> expressionTokenList in expressionTokens)
+        {
+            foreach (Token token in expressionTokenList)
+                if (token.Type == TokenType.NUMERIC_VALUE)
+                    token.Value = ConvertStringToUInt(token.Value).ToString();
+            constantExpressions.Add(new Statement([.. expressionTokenList, Token.CreateEOS()]));
+        }
+        // Evaluate constant expressions and substitute them
+        foreach (Statement expression in constantExpressions)
+        {
+            // Evaluate constant expression
+            Logging.LogDebug($"Evaluating constant expression {expression}");
+            ArithmeticExpression<UInt32> arithmeticExpression = new(expression);
+            uint expressionValue = arithmeticExpression.Evaluate(throwExceptionOnOverflow: false);
+            Logging.LogDebug($"= {expressionValue}");
+            if (arithmeticExpression.HasOverflown)
+                Logging.LogWarn("Warning: Expression has overflown. This might be intended behavior.");
+            // TODO: This could be made more clean?
+            int expressionTokenIdx = Array.IndexOf(instructionStatement.Tokens, expression.Tokens[0]);
+            List<Token> instructionTokensNew = [.. instructionStatement.Tokens];
+            instructionTokensNew.RemoveAll(token => expression.Tokens.Contains(token));
+            instructionTokensNew.Insert(expressionTokenIdx, new Token(TokenType.NUMERIC_VALUE, expressionValue.ToString()));
+            instructionStatement = new Statement([.. instructionTokensNew]);
+        }
+        return instructionStatement;
     }
 }

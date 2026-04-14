@@ -92,6 +92,10 @@ In-progress ToDo's:
 - Logging: Always prepend 0x... for hex values! Don't make it the default!
 - Reimplement disassembler: Only for .text section i.e. executable code
 
+// FIXME: Implement proper implicit addressing mode
+// FIXME: Implement relative/absolute addressing in code (override via [rel/abs +-val])
+// FIXME: Fix reset / loader so program works again (change paths in ExecutionContainer, naming: "ROMImage")
+
 Changes for CPU 0.3-indev:
 - Added stack and SP
 - Moved IRB to Bus 2 (makes PC+IRB possible)
