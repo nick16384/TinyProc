@@ -78,6 +78,8 @@ public class ExecutionContainer
         Array.Copy(resetExecutableProgram, 0, romData, resetProgram.Header.LoadAddress, resetExecutableProgram.Length);
         Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.Header.LoadAddress, loaderExecutableProgram.Length);
         _rom1 = new ROM(ROM_SIZE, romData);
+        // ROM image created
+        // TODO: Funny idea: Copy this image to a physical floppy and boot from it or something
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(
