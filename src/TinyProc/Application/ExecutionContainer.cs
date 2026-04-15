@@ -2,7 +2,6 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using TinyProc.Assembling;
-using TinyProc.Assembling.Sections;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
@@ -11,13 +10,13 @@ namespace TinyProc.Application;
 
 public class ExecutionContainer
 {
-    // The first (and almost always only) instance of an ExecutionContainer, which is
+    // The first (and only) instance of an ExecutionContainer, which is
     // exposed externally to be used by e.g. GUIs.
-    private static ExecutionContainer _instance0 = Initialize();
-    public static ExecutionContainer INSTANCE0 { get => _instance0 ?? Initialize(); }
+    private static ExecutionContainer? _instance0;
+    public static ExecutionContainer INSTANCE0 { get => _instance0 ?? throw new Exception("Execution container INSTANCE0 not initialized yet."); }
 
-    private const string RESET_ASM_PROGRAM_PATH = "System Programs/00000000_Reset.hltp32.asm";
-    private const string LOADER_ASM_PROGRAM_PATH = "System Programs/00000100_Loader.hltp32.asm";
+    private const string RESET_ASM_PROGRAM_PATH = "prog_sys/00000000_Reset.hltp32.asm";
+    private const string LOADER_ASM_PROGRAM_PATH = "prog_sys/00000100_Loader.hltp32.asm";
 
     private const uint ROM_SIZE = 0x00010000;
     private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
@@ -54,10 +53,11 @@ public class ExecutionContainer
         }
     }
 
-    public static ExecutionContainer Initialize()
+    public static void Initialize()
     {
+        if (_instance0 != null)
+            throw new Exception("Cannot initialize multiple execution containers. Please use ExecutionContainer.INSTANCE0.");
         _instance0 = new ExecutionContainer();
-        return _instance0;
     }
 
     private ExecutionContainer()
@@ -74,7 +74,7 @@ public class ExecutionContainer
         Logging.LogDebug("Saving Reset and Loader programs in ROM");
         uint[] resetExecutableProgram = resetProgram.MachineCodeBinary;
         uint[] loaderExecutableProgram = loaderProgram.MachineCodeBinary;
-        uint[] romData = new uint[loaderProgram.Header.LoadAddress + loaderProgram.MachineCodeBinary.Length];
+        uint[] romData = new uint[loaderProgram.Header.LoadAddress + loaderProgram.MachineCodeBinaryWithHeader.Length];
         Array.Copy(resetExecutableProgram, 0, romData, resetProgram.Header.LoadAddress, resetExecutableProgram.Length);
         Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.Header.LoadAddress, loaderExecutableProgram.Length);
         _rom1 = new ROM(ROM_SIZE, romData);
@@ -83,9 +83,9 @@ public class ExecutionContainer
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(
-            _rom1,
-            new Dictionary<uint, RawMemory>
+            new Dictionary<uint, IMemoryDevice>
             {
+                { 0x00000000u, _rom1 },
                 { _rom1._size, _mem1 }
             }
         );
@@ -96,8 +96,6 @@ public class ExecutionContainer
         else
             Logging.LogDebug("Memory object too large to dump.");
         Logging.LogDebug("Done.");
-
-        _instance0 ??= this;
     }
 
     public void ResetCPU() => _cpu.Reset();

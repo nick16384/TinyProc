@@ -42,7 +42,7 @@ public class Logging
     {
         get => processTimer.Elapsed.TotalSeconds * 1000.0;
     }
-    public static bool SuppressDebugMessages { get; set; } = false;
+    public static bool SuppressDebugMessages { get; set; } = true;
     public static bool SuppressInfoMessages { get; set; } = false;
     public static bool SuppressWarningMessages { get; set; } = false;
     public static bool SuppressErrorMessages { get; set; } = false;

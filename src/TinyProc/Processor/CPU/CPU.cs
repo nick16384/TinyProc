@@ -86,7 +86,7 @@ public partial class CPU
     private readonly CPUDebugPort _debugPort;
     public CPUDebugPort DebugPort { get => _debugPort; }
 
-    public CPU(ROM rom, Dictionary<uint, RawMemory> rams)
+    public CPU(Dictionary<uint, IMemoryDevice> memDevices)
     {
         GP1 = new Register();
         GP2 = new Register();
@@ -98,7 +98,7 @@ public partial class CPU
         GP8 = new Register();
 
         _ALU = new ALU();
-        _MMU = new MMU(this, rom, rams);
+        _MMU = new MMU(this, memDevices);
         _CU = new ControlUnit(this, _ALU, _MMU);
         _debugPort = new CPUDebugPort(this);
     }

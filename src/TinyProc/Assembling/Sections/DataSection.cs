@@ -78,11 +78,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
         List<ImmediateConstant> constants = sectionDataAll.Constants;
         Dictionary<string, uint> labelAddressMap = sectionDataAll.LabelAddressMap;
 
-        // Log immediate values and pointers (summary)
-        Logging.LogDebug($"Successfully parsed {data.Count} immediate sequences.");
-
         DataSection resultDataSection = new([.. data], [.. constants], labelAddressMap);
-        Logging.LogDebug(
+        Logging.LogDebug("\n" +
             $"Successfully parsed .data section.\n" +
             $"Total size:..........{resultDataSection.Size} words\n" +
             $"Immediate sequences:.{data.Count}\n" +
@@ -194,7 +191,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                 string name = statementTokens[1].Value;
                 Token[] dataTokens = statementTokens[2..];
                 uint constantValue;
-                Logging.LogDebug($"Name: {label}, Data tokens: {dataTokens.Length}");
+                Logging.LogDebug($"Name: {name}, Data tokens: {dataTokens.Length}");
                 if (dataTokens[0].Type == TokenType.KEYWORD_LENGTH)
                 {
                     Logging.LogDebug("Length specifier.");
@@ -213,12 +210,12 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                     if (dataTokens[0].Type != TokenType.STRING)
                     {
                         constantValue = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true)[0];
-                        Logging.LogDebug("Encoded as LE");
+                        Logging.LogDebug($"Encoded as LE: {constantValue:x8}");
                     }
                     else
                     {
                         constantValue = ByteSequenceToUIntSequence(dataBytes)[0];
-                        Logging.LogDebug("Encoded as BE");
+                        Logging.LogDebug($"Encoded as BE: {constantValue:x8}");
                     }
                 }
                 constants.Add(new ImmediateConstant(name, constantValue));
@@ -256,6 +253,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                 // FIXME: When the code contains something like "0x00000000", we want all those bytes to appear in the final binary.
                 // The current solution only appends a single byte of those four specified.
                 uint num = ConvertStringToUInt(dataToken.Value);
+                // FIXME: Words such as 0x00000100 are encoded as 0x00000010. Why?
                 // Only add bytes after the first non-zero byte.
                 // I see this singular use of goto as justified. Suggest something better to convince me otherwise.
                 if      ((num & 0xFF000000) != 0u) goto label_byte4;

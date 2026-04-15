@@ -24,12 +24,14 @@ public class AssemblerOutput
     public readonly DataSection DataSection;
     public readonly TextSection TextSection;
     public readonly uint[] MachineCodeBinary;
+    public readonly uint[] MachineCodeBinaryWithHeader;
     public AssemblerOutput(uint loadAddress, DataSection dataSection, TextSection textSection)
     {
         DataSection = dataSection;
         TextSection = textSection;
         Header = new(Assembler.ASSEMBLER_VERSION_ENCODED, loadAddress, TextSection.EntryPoint, DataSection.Size, TextSection.Size);
-        MachineCodeBinary = [.. Header.MachineCodeBinary, .. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
+        MachineCodeBinaryWithHeader = [.. Header.MachineCodeBinary, .. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
+        MachineCodeBinary = [.. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
     }
 }
 
@@ -63,7 +65,7 @@ public partial class Assembler
         // 7. .text section parser
 
         assemblyCode = FilterCommentsAndRemoveExcessWhitespace(assemblyCode);
-        Logging.LogInfo(
+        Logging.LogDebug(
             "\n===== Assembly begin =====\n" +
             assemblyCode +
             "\n=====  Assembly end  =====");
@@ -135,6 +137,7 @@ public partial class Assembler
             $"Padding (1):.............{0:x8}\n" +
             $"Padding (2):.............{0:x8}\n" +
             $"Padding (3):.............{0:x8}");
+        Logging.LogInfo($"Successfully assembled {assemblyCode.Split('\n').Length} lines of assembly code into {dataSection.Size + textSection.Size} words.");
         
         return new AssemblerOutput(loadAddress, dataSection, textSection);
     }

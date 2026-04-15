@@ -83,8 +83,11 @@ start_actual:
     st gp1, [0x40000000 * 4 + 0x50000000] ; Check overflow handling
     st gp1, [0 - 0x80000000] ; Check overflow handling 2
     st gp1, [abs 40000000h]
+    st gp1, [abs 40000000h + 1]
     st gp1, [rel +40000000h]
     st gp1, [rel -40000000h]
+    st gp1, [rel +40000000h + 2]
+    st gp1, [rel -40000000h + 2]
     st gp1, [$LD_DATA_ADDR]
     st gp1, [rel +$LD_DATA_ADDR]
     st gp1, [rel -$LD_DATA_ADDR]

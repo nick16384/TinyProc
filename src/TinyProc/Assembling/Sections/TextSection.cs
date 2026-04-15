@@ -289,7 +289,7 @@ public readonly struct TextSection : IAssemblySection
                 // "-" "offset" --> "0" "-" "offset"
                 Token[] offsetTokensReformatted = [];
                 if (sign.Value == "+")
-                    offsetTokensReformatted = [new(TokenType.NUMERIC_VALUE, offset.Value)];
+                    offsetTokensReformatted = [offset];
                 else if (sign.Value == "-")
                     offsetTokensReformatted = [new(TokenType.NUMERIC_VALUE, "0"), new(TokenType.SYMBOL_ARITHMETIC_OP, "-"), offset];
                 tokens.InsertRange(tokenIdx + 1, offsetTokensReformatted);

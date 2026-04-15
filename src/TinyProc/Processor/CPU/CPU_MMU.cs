@@ -105,24 +105,21 @@ public partial class CPU
 
         // Facilitates and encapsulates mechanisms to read from and write to arbitrary memory.
         // Combines attached memory objects' address spaces into one continuous address space.
-        public MMU(CPU cpu, ROM rom, Dictionary<uint, RawMemory> rams)
+        public MMU(CPU cpu, Dictionary<uint, IMemoryDevice> rams)
         {
             _cpu = cpu;
             _MemorySpaces = [];
-            _MemorySpaces.Add(rom, (0, rom._size - 1));
-            foreach ((uint ramStart, RawMemory ram) in rams)
+            foreach ((uint memStart, IMemoryDevice memDevice) in rams)
             {
-                Logging.LogDebug($"ROM until:{rom._size - 1:x8}; RAM start:{ramStart:x8}");
-                if (rom._size - 1 > ramStart)
-                    throw new Exception($"RAM starts before ROM ends!");
-                _MemorySpaces.Add(ram, (ramStart, ram._numWords - 1));
+                Logging.LogDebug($"Mem HW start:{memStart:x8}");
+                _MemorySpaces.Add(memDevice, (memStart, memDevice.Size - 1));
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
             SP = new StackPointer(this);
 
-            MemoryAddressBus = new Bus(Register.SYSTEM_WORD_SIZE, UBID_MEMADDRESSBUS, [rom, .. rams.Values]);
-            MemoryDataBus = new Bus(Register.SYSTEM_WORD_SIZE, UBID_MEMDATABUS, [rom, .. rams.Values]);
+            MemoryAddressBus = new Bus(Register.SYSTEM_WORD_SIZE, UBID_MEMADDRESSBUS, [.. rams.Values]);
+            MemoryDataBus = new Bus(Register.SYSTEM_WORD_SIZE, UBID_MEMDATABUS, [.. rams.Values]);
         }
 
         private IMemoryDevice GetMemAtVirtualAddress(uint addr)

@@ -33,11 +33,11 @@ class Program
         {
             string sourceFilePath = args[1];
             Logging.LogInfo($"Assembling source file {sourceFilePath}");
-            if (sourceFilePath.Trim().EndsWith(".hltp32.asm"))
+            if (!sourceFilePath.Trim().EndsWith(".hltp32.asm"))
                 Logging.LogWarn("Warning: Source file name does not end with standard suffix \".hltp32.asm\".");
 
             string assemblyCode = File.ReadAllText(sourceFilePath);
-            uint[] MAIN_PROGRAM = Assembler.Assemble(assemblyCode).MachineCodeBinary;
+            uint[] MAIN_PROGRAM = Assembler.Assemble(assemblyCode).MachineCodeBinaryWithHeader;
 
             ExecutableWrapper programWrapper = new(MAIN_PROGRAM);
 

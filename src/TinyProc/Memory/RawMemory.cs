@@ -17,6 +17,7 @@ public class RawMemory : IReadWriteMemoryDevice
 
     public readonly uint _numWords;
     public ulong TotalSizeBits { get => (ulong)_numWords * (ulong)Register.SYSTEM_WORD_SIZE; }
+    public uint Size { get => _numWords; }
     private readonly uint _numPages;
     private readonly uint[]?[] _data;
 
