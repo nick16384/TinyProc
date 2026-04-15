@@ -381,7 +381,7 @@ public readonly struct TextSection : IAssemblySection
             {
                 ImmediateConstant constant = dataSection.ImmediateConstants.First(constant => constant.Name == token.Value);
                 // Replace instruction operand with immediate value.
-                Logging.LogDebug($".text replace single word / constant (R) \"{token.Value}\" --> {constant.Value:x8}h / {constant.Value}");
+                Logging.LogDebug($".text replace constant \"{token.Value}\" --> {constant.Value:x8}h / {constant.Value}");
                 token.Type = TokenType.NUMERIC_VALUE;
                 token.Value = constant.Value.ToString();
             }

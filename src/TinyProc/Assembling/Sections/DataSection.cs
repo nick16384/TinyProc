@@ -107,6 +107,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
 
         foreach (Statement statement in statements)
         {
+            Logging.NewlineDebug();
             Logging.LogDebug($"Decoding {statement}");
             Token[] statementTokens = new Token[statement.STLength];
             // Create a copy to prevent modification of the original statement.
@@ -159,17 +160,8 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                 else
                 {
                     Logging.LogDebug("Data.");
-                    List<byte> dataBytes = ParseImmediateSequenceData(dataTokens);
-                    if (dataBytes.Count < sizeof(uint) && !dataTokens.Any(token => token.Type == TokenType.STRING))
-                    {
-                        data = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true);
-                        Logging.LogDebug($"Encoded as LE, Size (words): {data.Count}");
-                    }
-                    else
-                    {
-                        data = ByteSequenceToUIntSequence(dataBytes);
-                        Logging.LogDebug($"Encoded as BE, Size (words): {data.Count}");
-                    }
+                    data = ParseDataFromTokens(dataTokens);
+                    Logging.LogDebug($"Data as uints: {string.Join(", ", data.Select(word => word.ToString()))}");
                 }
                 immediateSequences.Add(new ImmediateSequence(label, currentOffset, [.. data]));
                 currentOffset += (uint)data.Count;
@@ -204,19 +196,10 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                 else
                 {
                     Logging.LogDebug("Data.");
-                    List<byte> dataBytes = ParseImmediateSequenceData(dataTokens);
+                    constantValue = ParseDataFromTokens(dataTokens)[0];
+                    Logging.LogDebug($"As uint: {constantValue:x8}");
                     if (dataTokens.Length > 1)
                         throw new Exception("Constants cannot have more than one word of data.");
-                    if (dataTokens[0].Type != TokenType.STRING)
-                    {
-                        constantValue = ByteSequenceToUIntSequence(dataBytes, encodeAsLittleEndian: true)[0];
-                        Logging.LogDebug($"Encoded as LE: {constantValue:x8}");
-                    }
-                    else
-                    {
-                        constantValue = ByteSequenceToUIntSequence(dataBytes)[0];
-                        Logging.LogDebug($"Encoded as BE: {constantValue:x8}");
-                    }
                 }
                 constants.Add(new ImmediateConstant(name, constantValue));
             }
@@ -237,34 +220,42 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
     }
 
     /// <summary>
-    /// Parses the data of a single immediate sequence and returns a list of data bytes.
+    /// Parses the data of a list of data tokens and returns a list of data bytes.
     /// </summary>
     /// <param name="dataTokens"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private static List<byte> ParseImmediateSequenceData(Token[] dataTokens)
+    private static List<uint> ParseDataFromTokens(Token[] dataTokens)
     {
-        List<byte> data = [];
+        List<byte> dataBytes = [];
         foreach (Token dataToken in dataTokens)
         {
             // Parse as numeric value
             if (dataToken.Type == TokenType.NUMERIC_VALUE)
             {
-                // FIXME: When the code contains something like "0x00000000", we want all those bytes to appear in the final binary.
-                // The current solution only appends a single byte of those four specified.
                 uint num = ConvertStringToUInt(dataToken.Value);
-                // FIXME: Words such as 0x00000100 are encoded as 0x00000010. Why?
-                // Only add bytes after the first non-zero byte.
-                // I see this singular use of goto as justified. Suggest something better to convince me otherwise.
-                if      ((num & 0xFF000000) != 0u) goto label_byte4;
-                else if ((num & 0x00FF0000) != 0u) goto label_byte3;
-                else if ((num & 0x0000FF00) != 0u) goto label_byte2;
-                else if (true)                     goto label_byte1; // First byte is seen as data nonetheless
-
-                label_byte4: data.Add((byte)((num & 0xFF000000) >> 24));
-                label_byte3: data.Add((byte)((num & 0x00FF0000) >> 16));
-                label_byte2: data.Add((byte)((num & 0x0000FF00) >> 8));
-                label_byte1: data.Add((byte)((num & 0x000000FF) >> 0));
+                // This logic is to keep track of how many bytes the number string will be stored as given the assembly code.
+                // Some examples:
+                // 0x4040: 2 bytes
+                // 0b10101010: 1 byte
+                // 0x005555: 3 bytes
+                // 0x00000000: 4 bytes
+                // 68: 4 bytes (always 4 bytes for decimals)
+                int keepBytesCount = 0;
+                if (dataToken.Value.StartsWith("0x")) // Hex
+                    keepBytesCount = dataToken.Value[2..].Length / 2;
+                else if (dataToken.Value.EndsWith('h')) // Hex
+                    keepBytesCount = dataToken.Value[..^1].Length / 2;
+                else if (dataToken.Value.StartsWith("0b")) // Binary
+                    keepBytesCount = dataToken.Value[2..].Length / 8;
+                else // Decimal (keep 4 bytes regardless)
+                    keepBytesCount = 4;
+                
+                Logging.LogDebug($"Numeric data: keeping {keepBytesCount} byte(s) from value {dataToken.Value}");
+                if (keepBytesCount >= 4) dataBytes.Add((byte)((num & 0xFF000000) >> 24));
+                if (keepBytesCount >= 3) dataBytes.Add((byte)((num & 0x00FF0000) >> 16));
+                if (keepBytesCount >= 2) dataBytes.Add((byte)((num & 0x0000FF00) >> 8));
+                if (keepBytesCount >= 1) dataBytes.Add((byte)((num & 0x000000FF) >> 0));
                 
                 continue;
             }
@@ -272,7 +263,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
             if (dataToken.Type == TokenType.STRING)
             {
                 // Convert string literals to uint sequences
-                data.AddRange(dataToken.AsByteArray());
+                dataBytes.AddRange(dataToken.AsByteArray());
                 continue;
             }
             if (dataToken.Type == TokenType.EOS)
@@ -283,8 +274,14 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
             // Unable to parse
             throw new Exception($"Invalid token type {dataToken.Type} for immediate sequence data.");
         }
-        // Everything parsed successfully
-        return data;
+        // Data parsed successfully
+        // FIXME: Okay so now a little bit of magic must happen for LE / BE data:
+        // Strings are stored LTR
+        // Bytes following strings are also stored LTR
+        // Numbers are stored RTL
+        // Welp
+        throw new NotImplementedException("welp (see fixme above)");
+        return ByteSequenceToUIntSequence(dataBytes);
     }
 
     /// <summary>
@@ -298,6 +295,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
     {
         uint[] uintSequence = new uint[(int)Math.Ceiling((double)byteSequence.Count / 4)];
         Array.Fill(uintSequence, 0u); // Just to be sure, fill with zeroes (incl. padding bytes)
+        Logging.LogDebug($"Data is {byteSequence.Count} byte(s) long, adding {uintSequence.Length * sizeof(uint) - byteSequence.Count} padding byte(s)");
         for (int i = 0; i < byteSequence.Count; i++)
         {
             int uintArrayIdx = i / 4;
