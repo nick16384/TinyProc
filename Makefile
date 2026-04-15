@@ -12,7 +12,7 @@ else
 endif
 
 # SOURCE_FILE_ASM must be user provided
-TARGET_FILE_BIN = $(SOURCE_FILE_ASM:.asm=.bin)
+TARGET_FILE_BIN ?= $(SOURCE_FILE_ASM:.asm=.bin)
 
 .PHONY: assemble emu-run emu-build emu-run-aot gui-run gui-build gui-run-aot
 
@@ -22,7 +22,7 @@ assemble:
 ifndef SOURCE_FILE_ASM
 	$(error SOURCE_FILE_ASM not provided. Please re-run using 'make <target> SOURCE_FILE_ASM=<sourceFilePath>' to provide a source assembly file.)
 endif
-	$(DOTNET) run --project $(SRC_CODE_DIR) --assemble $(SOURCE_FILE_ASM)
+	$(DOTNET) run --project $(SRC_CODE_DIR) --assemble $(SOURCE_FILE_ASM) $(TARGET_FILE_BIN)
 
 run: emu-run
 emu-run: assemble

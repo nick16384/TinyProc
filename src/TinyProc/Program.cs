@@ -19,7 +19,7 @@ class Program
 
         Logging.LogDebug($"Arguments: {args.Length}");
 
-        if (args.Length != 2
+        if (args.Length < 2
             || (!args[0].Equals("--assemble") && !args[0].Equals("--run")))
         {
             Logging.LogError(
@@ -32,6 +32,7 @@ class Program
         if (args[0].Equals("--assemble"))
         {
             string sourceFilePath = args[1];
+            string? targetFilePath = args.Length >= 3 ? args[2] : null;
             Logging.LogInfo($"Assembling source file {sourceFilePath}");
             if (!sourceFilePath.Trim().EndsWith(".hltp32.asm"))
                 Logging.LogWarn("Warning: Source file name does not end with standard suffix \".hltp32.asm\".");
@@ -41,8 +42,8 @@ class Program
 
             ExecutableWrapper programWrapper = new(MAIN_PROGRAM);
 
-            string outputBinaryFilePath = sourceFilePath + ".bin";
-            if (sourceFilePath.EndsWith(".asm"))
+            string outputBinaryFilePath = targetFilePath ?? sourceFilePath + ".bin";
+            if (targetFilePath == null && sourceFilePath.EndsWith(".asm"))
                 outputBinaryFilePath = sourceFilePath[..^4] + ".bin";
             programWrapper.WriteExecutableBinaryToFile(outputBinaryFilePath);
 
