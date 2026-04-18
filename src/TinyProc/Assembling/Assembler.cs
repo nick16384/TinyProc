@@ -136,7 +136,9 @@ public partial class Assembler
             $".text size (dec, words):.{textSection.Size:x8}\n" +
             $"Padding (1):.............{0:x8}\n" +
             $"Padding (2):.............{0:x8}\n" +
-            $"Padding (3):.............{0:x8}");
+            $"Padding (3):.............{0:x8}\n");
+        Logging.LogDebug($"DS Hexdump:\n" + Hexdump.CreateTextHexdump([.. dataSection.BinaryRepresentation]));
+        Logging.LogDebug($"TS Hexdump:\n" + Hexdump.CreateTextHexdump([.. textSection.BinaryRepresentation]));
         Logging.LogInfo($"Successfully assembled {assemblyCode.Split('\n').Length} lines of assembly code into {dataSection.Size + textSection.Size} words.");
         
         return new AssemblerOutput(loadAddress, dataSection, textSection);

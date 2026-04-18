@@ -89,12 +89,6 @@ public class ExecutionContainer
                 { _rom1._size, _mem1 }
             }
         );
-
-        Logging.LogDebug("Reading loaded program.");
-        if (_mem1._numWords < 4096)
-            _mem1.Debug_DumpAll();
-        else
-            Logging.LogDebug("Memory object too large to dump.");
         Logging.LogDebug("Done.");
     }
 

@@ -243,11 +243,11 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                 // 68: 4 bytes (always 4 bytes for decimals)
                 int keepBytesCount = 0;
                 if (dataToken.Value.StartsWith("0x")) // Hex
-                    keepBytesCount = dataToken.Value[2..].Length / 2;
+                    keepBytesCount = (int)Math.Ceiling((double)dataToken.Value[2..].Length / 2);
                 else if (dataToken.Value.EndsWith('h')) // Hex
-                    keepBytesCount = dataToken.Value[..^1].Length / 2;
+                    keepBytesCount = (int)Math.Ceiling((double)dataToken.Value[..^1].Length / 2);
                 else if (dataToken.Value.StartsWith("0b")) // Binary
-                    keepBytesCount = dataToken.Value[2..].Length / 8;
+                    keepBytesCount = (int)Math.Ceiling((double)dataToken.Value[2..].Length / 8);
                 else // Decimal (keep 4 bytes regardless)
                     keepBytesCount = 4;
                 
@@ -274,24 +274,20 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
             // Unable to parse
             throw new Exception($"Invalid token type {dataToken.Type} for immediate sequence data.");
         }
+        // After data has been converted to bytes, the byte array may be padded to fit it into a uint array (i.e. the byte array size must be divisible by 4).
+        // To ensure correct padding, just add zero bytes.
+
         // Data parsed successfully
-        // FIXME: Okay so now a little bit of magic must happen for LE / BE data:
-        // Strings are stored LTR
-        // Bytes following strings are also stored LTR
-        // Numbers are stored RTL
-        // Welp
-        throw new NotImplementedException("welp (see fixme above)");
         return ByteSequenceToUIntSequence(dataBytes);
     }
 
     /// <summary>
     /// Converts a list of bytes to a list of uints in big endian.
-    /// If the number of bytes doesn't fit evenly into the uints, padding bytes (0x00) are added.
+    /// If the number of bytes doesn't fit evenly into the uints, padding bytes (0x00) are added to the end.
     /// </summary>
     /// <param name="byteSequence"></param>
-    /// <param name="encodeAsLittleEndian">Specifies whether to fill uints in LE or BE order. Default is BE.</param>
     /// <returns></returns>
-    private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence, bool encodeAsLittleEndian = false)
+    private static List<uint> ByteSequenceToUIntSequence(List<byte> byteSequence)
     {
         uint[] uintSequence = new uint[(int)Math.Ceiling((double)byteSequence.Count / 4)];
         Array.Fill(uintSequence, 0u); // Just to be sure, fill with zeroes (incl. padding bytes)
@@ -300,13 +296,7 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
         {
             int uintArrayIdx = i / 4;
             int byteIdx = i % 4;
-            // The reason the "useLE" parameter is given comes from encoding issues:
-            // Strings are encoded sequentially (in BE order), raw data bytes from right to left (LE): This creates a conflict!
-            // This function cannot differentiate these two, since it treats them all the same.
-            if (encodeAsLittleEndian)
-                uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (8 * byteIdx);
-            else
-                uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
+            uintSequence[uintArrayIdx] |= (uint)byteSequence[i] << (24 - (8 * byteIdx));
         }
         return [.. uintSequence];
     }

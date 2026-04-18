@@ -2,6 +2,7 @@ namespace TinyProc.Memory;
 
 using System.Runtime.CompilerServices;
 using TinyProc.Application;
+using TinyProc.Assembling;
 using TinyProc.Processor;
 
 public class RawMemory : IReadWriteMemoryDevice
@@ -129,38 +130,6 @@ public class RawMemory : IReadWriteMemoryDevice
     public Span<byte> ReadAllAsBytes()
     {
         throw new NotImplementedException();
-    }
-
-    public void Debug_DumpAll()
-    {
-        Logging.LogDebug("[Mem] Dumping full memory contents (Big endian)");
-        int addressesPerLine = 4;
-        for (uint baseAddr = 0; baseAddr < _numWords; baseAddr += 4)
-        {
-            Logging.PrintDebug($"{baseAddr:x8}:");
-            // Print address values as hexadecimal
-            for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
-            {
-                uint addr = baseAddr + subAddr;
-                Logging.PrintDebug($" {Read(addr):x8}");
-            }
-            Logging.PrintDebug("   ");
-            // Print address values decoded as ASCII
-            for (uint subAddr = 0; subAddr < addressesPerLine; subAddr++)
-            {
-                uint addr = baseAddr + subAddr;
-                uint data = Read(addr);
-                char c1 = (char)((data & 0xFF000000) >> 24);
-                char c2 = (char)((data & 0x00FF0000) >> 16);
-                char c3 = (char)((data & 0x0000FF00) >> 8);
-                char c4 = (char)((data & 0x000000FF) >> 0);
-                if (c1 >= 0x20 && c1 <= 0x7E) { Logging.PrintDebug($" {c1} "); } else { Logging.PrintDebug(" . "); }
-                if (c2 >= 0x20 && c2 <= 0x7E) { Logging.PrintDebug($" {c2} "); } else { Logging.PrintDebug(" . "); }
-                if (c3 >= 0x20 && c3 <= 0x7E) { Logging.PrintDebug($" {c3} "); } else { Logging.PrintDebug(" . "); }
-                if (c4 >= 0x20 && c4 <= 0x7E) { Logging.PrintDebug($" {c4} "); } else { Logging.PrintDebug(" . "); }
-            }
-            Logging.NewlineDebug();
-        }
     }
 
     // Checks if address is below the amount of words. If not, an exception is thrown.
