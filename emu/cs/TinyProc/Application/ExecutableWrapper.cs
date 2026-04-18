@@ -46,9 +46,12 @@ public class ExecutableWrapper
         Logging.LogDebug("Assembly version check successful!");
     }
 
-    public void WriteExecutableBinaryToFile(string filePath)
+    public void WriteExecutableBinaryToFile(string filePath, bool includeHeader = true)
     {
-        WriteBytesToFile(UIntArrayToByteArray(Program), filePath);
+        if (includeHeader)
+            WriteBytesToFile(UIntArrayToByteArray(Program), filePath);
+        else
+            WriteBytesToFile(UIntArrayToByteArray(Program[8..]), filePath);
         Logging.LogInfo($"Binary executable file written at {filePath}");
     }
 
