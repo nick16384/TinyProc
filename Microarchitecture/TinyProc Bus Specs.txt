@@ -6,6 +6,7 @@ Connected to B1:
 - A in port of the ALU
 - PC out
 - MAR out
+- SP out
 - IRA out
 - IRB out
 - GP1-8 out
@@ -27,6 +28,7 @@ Connected to B3:
 - GP1-8 in
 - PC in
 - MAR in
+- SP in
 - IRA in
 - IRB in
 - MDR in
@@ -38,13 +40,14 @@ the other registers already specified in the microarch specifications.
 There should not be any overlap so the codes are usable interchangeably.
 Format: [Register] [32 bit Code]
 - MAR 0x70000000
-- MDR 0x70000001
-- IRA 0x70000002
-- IRB 0x70000003
-- CONST_PLUSONE 0x70000004
-- CONST_MINUSONE 0x70000005
-- CONST_PLUSTWO 0x70000006
-- CONST_ZERO / CONST_VOID 0x70000007
+- SP 0x70000001
+- MDR 0x70000002
+- IRA 0x70000003
+- IRB 0x70000004
+- CONST_PLUSONE 0x70000005
+- CONST_MINUSONE 0x70000006
+- CONST_PLUSTWO 0x70000007
+- CONST_ZERO / CONST_VOID 0x70000008
 - <RESERVED DEFAULT TARGET> 0xFFFFFFFF
 
 TODO:

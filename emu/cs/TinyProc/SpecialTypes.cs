@@ -1,0 +1,43 @@
+namespace TinyProc;
+
+/// <summary>
+/// An Either type instance contains either one instance of T1 or an instance of T2.
+/// The either class wraps them up to be used in contexts where both types may appear.
+/// </summary>
+/// <typeparam name="T1"></typeparam>
+/// <typeparam name="T2"></typeparam>
+/// <param name="a"></param>
+/// <param name="b"></param>
+public sealed class Either<T1, T2>
+{
+    public readonly T1? A;
+    public readonly T2? B;
+    public readonly Type Type;
+
+    private Either(T1? a, T2? b, Type type)
+    {
+        A = a;
+        B = b;
+        Type = type;
+    }
+
+    public bool Is<TCompare>() => typeof(TCompare) == Type;
+
+    public static implicit operator Either<T1, T2>(T1 a) => new(a, default, typeof(T1));
+    public static implicit operator Either<T1, T2>(T2 b) => new(default, b, typeof(T2));
+
+    public static implicit operator T1(Either<T1, T2> either)
+    {
+        if (!either.Is<T1>())
+            throw new InvalidCastException($"Either is not type T1:{typeof(T1)}, but of T2:{typeof(T2)}. Cannot convert to T1.");
+        return either.A!;
+    }
+    public static implicit operator T2(Either<T1, T2> either)
+    {
+        if (!either.Is<T2>())
+            throw new InvalidCastException($"Either is not type T2:{typeof(T2)}, but of T1:{typeof(T1)}. Cannot convert to T2.");
+        return either.B!;
+    }
+
+    public override string ToString() => Is<T1>() ? A!.ToString() ?? "" : B!.ToString() ?? "";
+}

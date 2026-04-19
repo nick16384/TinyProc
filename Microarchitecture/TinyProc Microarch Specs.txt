@@ -1,5 +1,8 @@
 Arch name: x25_32 (Year 2025, 32 bit word size)
 
+- Most of this is obsolete by CPU revision 0.3-indev
+- Do not rely on this as documentation
+
 Endianness: Big endian
 Max. instruction mnemonic letters: 5
 Single universal addressing mode: absolute
@@ -18,19 +21,28 @@ Instruction set:
 
 Branching:
 01 - JMP [Target address] : Jump to address
-02 - B? [Target address] : Branch(=jump) on condition
+02 - JMP [Register] : Jump to address in register
+03 - CALL [Target address] : Call a subroutine (same as jmp, but current state is pushed to stack)
+04 - CALLR [Register] : Call subroutine at address in register
+05 - RET : Returns from subroutine (restores previous state by popping data on the stack)
+06 - INT [Interrupt vector] : Trigger software interrupt (mostly similar to CALL, see Wikipedia for more info)
+07 - IRET : Special instruction to return from interrupt subroutine
 
 Inter-register non-arithmetic operations:
-05 - TST : Test command; Sets all flags
+0A - TST : Test command; Sets all flags
 
 Flags:
-07 - CLZ : Clear zero flag
-08 - CLOF : Clear overflow flag
-09 - CLNG : Clear negative flag
+0B - CLC : Clear carry flag
+0C - CLZ : Clear zero flag
+0D - CLOF : Clear overflow flag
+0E - CLNG : Clear negative flag
+0F - CLA : Clear all flags
 
 Arithmetic operations:
 10 - AOPR [Destination register] [Source register] : Arithmetic operation between registers
-11 - AOPI [Destination register] [Immediate] : Arithmetic operation between
+11 - AOPI [Destination register] [Immediate] : Arithmetic operation between register and immediate
+12 - CMPR [Source Register] [Destination register] : "SUB Src, Dst", discard result, set flags
+13 - CMP [Source Register] [Immediate value] : "SUB Src, Imm", discard result, set flags
 
 ALU Opcodes for arithmetic instructions:
 001100 - MOV
@@ -41,22 +53,24 @@ ALU Opcodes for arithmetic instructions:
 000000 - AND
 010101 - OR
 To be implemented:
-MUL, XOR, LS, RS, SRS, ROL, ROR
+NOT, MUL, XOR, LS, RS, SRS, ROL, ROR
 
 Add documentation for which flags get set by instructions
 
 Memory:
-30 - LOAD [Destination register] [Memory address] : Load memory at address to register
-31 - LOADR [Destination register] [Memory address from register]
-32 - STORE [Source register] [Memory address] : Store register at memory address
-33 - STORR [Source register] [Memory address from register]
+30 - LD [Destination register] [Memory address] : Load memory at address to register
+31 - LDR [Destination register] [Memory address from register] : Load memory from address in register
+32 - ST [Source register] [Memory address] : Store register at memory address
+33 - STR [Source register] [Memory address from register] : Store register at memory address contained in register
+34 - PUSH [Source register]
+35 - POP  [Destination register]
 
 3F - <Highest possible value for opcode>
 
 Pseudo instructions (to be implemented):
 Instructions, that get mapped to (multiple) other instructions when compiling from assembly to ML
 - NOT (XOR X 0xffffffff)
-- COMP / COMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
+- CMP / CMPR (SUB / SUBR X Y -> Use zero flag as comparison register)
 
 Conditional codes:
 [Conditional code] - [Description] - [Instruction suffix]
@@ -73,18 +87,21 @@ F - <Highest possible value for conditional>
 
 Instruction bit structure:
 R-Type (Register type)
-[ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 5 Reserved* | 1 Word Extension** ] [ 32 Zero* ]
+[ 6 OpCode | 4 Conditional | 5 RD | 5 RS | 6 ALU OpCode | 4 Reserved* | 1 Addressing mode (AM) | 1 Word Extension** ] [ 32 Zero* ]
 RD: Destination register
 RS: Source register
 ALU: A(RD) [Op] B(RS) --> R(RD)
+AM: 0: Absolute // 1: PC-relative (Only relevant for load / store)
 
 I-Type (Immediate type):
-[ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 10 Reserved* | 1 Word Extension** ] [ 32 Immediate value ]
+[ 6 OpCode | 4 Conditional | 5 RD | 6 ALU OpCode | 9 Reserved* | 1 Addressing mode (AM) | 1 Word Extension** ] [ 32 Immediate value ]
 ALU: A(I) [Op] B(RD) --> R(RD)
+AM: 0: Absolute // 1: PC-relative (Only relevant for load / store)
 
 J-Type (Jump type):
-[ 6 OpCode | 4 Conditional | 21 Reserved* | 1 Word extension** ] [ 32 Address ]
+[ 6 OpCode | 4 Conditional | 20 Reserved* | 1 Addressing mode (AM) | 1 Word extension** ] [ 32 Address ]
 Address: Absolute memory address to jump to
+AM: 0: Absolute // 1: PC-relative (Relevant for branching instructions)
 
 * Reserved & Zero region: Zeroed out / Filled with 0x0 bytes
 ** Word Extension: Extend to 64 bit instruction (To be implemented later, currently always in use -> Always set to 1)
@@ -99,6 +116,8 @@ although only part of it is relevant to instructions that are affected by flag v
 3. Zero
 4. Negative
 5. Carry
+6. Interrupted
+7. Interrupts enabled
 
 Globally addressable Registers
 Format: [Register name] [Register code in instruction]
@@ -111,7 +130,8 @@ Format: [Register name] [Register code in instruction]
 - General purpose 6 0x06
 - General purpose 7 0x07
 - General purpose 8 0x08
-- Status register (SR) 0x10
+- Status register (SR) 0x0A
+- Stack pointer (SP) 0x0B
 - <max. possible value> 0x1F
 
 Internal registers (Not addressable):
@@ -119,12 +139,29 @@ Internal registers (Not addressable):
 - IRA / IRB
 - MAR / MDR
 
+=== Create separate documentation for HLTP32 Assembler ===
+
 Assembly binary file, First 8 words:
-1. Assembler version (byte 1: Major; byte 2: Minor)
-2. Absolute start address of RAM region
-3. Absolute end address of RAM region
-4. Absolute start address of CON region (0xFFFFFFFF if none)
-5. Absolute end address of CON region (0xFFFFFFFE if none, E is not a typo)
-6. Entry point (Absolute address)
+1. Assembler version (byte 1: Major; byte 2: Minor, bytes 3 & 4: zero)
+2. Entry point (offset in .text section)
+3. .data section fixed load address (or 0x0 if relocatable)
+4. .data segment size in words
+5. .text section fixed load address (ox 0x0 if relocatable)
+6. .text segment size in words
 7. 0x0
 8. 0x0
+
+Stack (documentation):
+/// Haha you fool expected some code here, but instead, you are greeted with a giant wall of text
+/// explaining how the stack in the HLTP32 architecture works.<br></br>
+/// The stack is similar to any other read/write memory, the only key difference being that
+/// the stack can not be read from / written to in any random order, but instead in
+/// a LIFO manner (last in, first out).
+/// Since the stack is just a hypothetical construct in memory from external view,
+/// the CPU must implement stack functionality itself, which is the reason no separate class exists
+/// for the stack logic.
+/// The CPU internally holds a register called the stack pointer (SP), which points to the uppermost
+/// stack element (the element with the highest address, since the stack grows from lower to higher addresses).
+/// If an element is added ("push"), the stack pointer is incremented and the element stored at the new SP address.
+/// If an element is removed ("pop"), the data at the current SP is zeroed out and the stack pointer decremented,
+/// returning the element that was removed.

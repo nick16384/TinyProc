@@ -1,0 +1,100 @@
+using TinyProc.Application;
+
+namespace TinyProc.Assembling;
+
+public partial class Assembler
+{
+    /// <summary>
+    /// Receives full assembly code (e.g. read directly from a source file),
+    /// splits it into code lines, and does some work (see below for more details) to make the code usable for
+    /// the rest of the assembler.<br></br>
+    /// Currently, the pre-parser does the following:<br></br>
+    /// 1. Expands macros (i.e. #defines).<br></br>
+    /// 2. Parses "times N": Duplicates the following statement N times
+    /// </summary>
+    /// <param name="assemblyCode">The raw assembly source code</param>
+    /// <returns>The lines of the assembly code after pre-parsing</returns>
+    private static List<Statement> PreParse(List<Statement> assemblyStatements)
+    {
+        assemblyStatements = PreParse_ExpandMacros(assemblyStatements);
+        assemblyStatements = PreParse_TimesN(assemblyStatements);
+        return assemblyStatements;
+    }
+
+    private static List<Statement> PreParse_ExpandMacros(List<Statement> assemblyStatements)
+    {
+        // Stores define names associated with their values
+        Dictionary<string, Token[]> macros = [];
+        // Build dictionary
+        foreach (Statement statement in assemblyStatements)
+        {
+            if (statement.Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
+            {
+                if (statement.STLength < 2)
+                    throw new Exception($"Incorrect {ASM_DIRECTIVE_DEFINE} directive: {statement}");
+                string name = statement.Tokens[1].Value;
+                Token[] values = statement.Tokens[2..^1];
+                if (values.Length >= 1)
+                    Logging.LogDebug($"Found macro definition: \"${name}\" = \"{new Statement([.. values, Token.CreateEOS()])}\"");
+                else
+                    Logging.LogWarn($"Warning: Found empty macro \"${name}\"");
+                // The define needs to be prepended with a "$" in code. This is for mere convenience.
+                // It no longer serves an actual purpose except being a clear syntactical difference from constants / pointers.
+                macros.Add("$" + name, values);
+            }
+        }
+        // Remove all #define statements
+        for (int i = 0; i < assemblyStatements.Count; i++)
+            if (assemblyStatements[i].Tokens[0].Type == TokenType.DIRECTIVE_DEFINE)
+                assemblyStatements.RemoveAt(i--);
+
+        foreach (Statement statement in assemblyStatements)
+        {
+            for (int tokenIdx = 0; tokenIdx < statement.Tokens.Length; tokenIdx++)
+            {
+                Token token = statement.Tokens[tokenIdx];
+                if (token.Type == TokenType.LITERAL_WORD && macros.Keys.Any(name => name == token.Value))
+                {
+                    Token[] replacement = macros[token.Value];
+                    List<Token> newTokens = [.. statement.Tokens];
+                    newTokens.RemoveAt(tokenIdx);
+                    newTokens.InsertRange(tokenIdx, replacement);
+                    Logging.LogDebug($"Expanded macro: {statement} -> {new Statement([.. newTokens])}");
+                    statement.Tokens = [.. newTokens];
+                    tokenIdx += replacement.Length;
+                }
+            }
+        }
+        return assemblyStatements;
+    }
+
+    private static List<Statement> PreParse_TimesN(List<Statement> assemblyStatements)
+    {
+        for (int statementIdx = 0; statementIdx < assemblyStatements.Count; statementIdx++)
+        {
+            Statement statement = assemblyStatements[statementIdx];
+            if (!statement.Tokens.Any(token => token.Type == TokenType.KEYWORD_TIMES))
+                continue;
+
+            int timesTokenIdx = statement.Tokens
+                .Select((token, idx) => (token, idx))
+                .Where(pair => pair.token.Type == TokenType.KEYWORD_TIMES)
+                .Select(t => t.idx)
+                .First();
+            if (statement.STLength < timesTokenIdx + 3 || statement.Tokens[timesTokenIdx + 1].Type != TokenType.NUMERIC_VALUE)
+                throw new Exception($"Invalid {KEYWORD_TIMES} in: {statement}");
+            List<Token> beforeDuplicateTokens = [.. statement.Tokens[.. timesTokenIdx]];
+            List<Token> duplicateTokens = [.. statement.Tokens[(timesTokenIdx + 2)..]];
+            Statement duplicateStatement = new([.. duplicateTokens]);
+            int repeatTimes = (int)ConvertStringToUInt(statement.Tokens[timesTokenIdx + 1].Value);
+
+            Logging.LogDebug($"Repeat >>{duplicateStatement}<< {repeatTimes} times");
+            assemblyStatements.RemoveAt(statementIdx--);
+            assemblyStatements.Insert(++statementIdx, new Statement([.. beforeDuplicateTokens, .. duplicateTokens]));
+            repeatTimes--;
+            for (int insertCounter = 0; insertCounter < repeatTimes; insertCounter++)
+                assemblyStatements.Insert(++statementIdx, new Statement([.. duplicateTokens]));
+        }
+        return assemblyStatements;
+    }
+}
