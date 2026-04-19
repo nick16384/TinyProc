@@ -5,6 +5,18 @@ using TinyProc.Processor;
 
 namespace TinyProc.Assembling;
 
+// TODO: Add (non-static, overloaded methods):
+// Token.Assert(TokenType expectedType, string errorMessage)
+// Token.AssertNot(TokenType wrongType, string errorMessage)
+// Token.Assert(string expectedValue, string errorMessage)
+// Token.AssertNot(string wrongValue, string errorMessage)
+// Token.Assert(TokenType expectedType, string expectedValue, string errorMessage)
+// Token.AssertNot(TokenType wrongType, string wrongValue, string errorMessage)
+// TODO: Add token subtype / kind:
+// e.g. "(" -> Type=Punctuation, Kind=BracketOpen
+// TODO: Store token sequence as IEnumerable in Statement and use .Next() and .Skip(condition)
+// ==> Only if it makes the code shorter and more readable!
+
 public partial class Assembler
 {
     /// <summary>
