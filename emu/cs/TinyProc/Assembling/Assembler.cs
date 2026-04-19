@@ -182,6 +182,39 @@ public partial class Assembler
         catch (Exception) { throw new Exception($"Unable to parse \"{numStr}\" as uint."); }
     }
 
+    public static uint[] ByteArrayToUIntArray(byte[] byteArray)
+    {
+        if (byteArray.Length % 4 != 0)
+            throw new ArgumentException("Byte array length not divisible by 4.");
+
+        uint[] uintArray = new uint[byteArray.Length / 4];
+        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
+        {
+            uint currentUInt = 0;
+            int byteIdx = uintIdx * 4;
+            currentUInt |= ((uint)byteArray[byteIdx + 0]) << 24;
+            currentUInt |= ((uint)byteArray[byteIdx + 1]) << 16;
+            currentUInt |= ((uint)byteArray[byteIdx + 2]) << 8;
+            currentUInt |= ((uint)byteArray[byteIdx + 3]) << 0;
+            uintArray[uintIdx] = currentUInt;
+        }
+        return uintArray;
+    }
+    public static byte[] UIntArrayToByteArray(uint[] uintArray)
+    {
+        // TODO: Fix potential errors with very large programs exceeding C# array size limits.
+        byte[] byteArray = new byte[uintArray.Length * 4];
+        for (int uintIdx = 0; uintIdx < uintArray.Length; uintIdx++)
+        {
+            int byteIdx = uintIdx * 4;
+            byteArray[byteIdx + 0] = (byte)((uintArray[uintIdx] & 0xFF000000) >> 24);
+            byteArray[byteIdx + 1] = (byte)((uintArray[uintIdx] & 0x00FF0000) >> 16);
+            byteArray[byteIdx + 2] = (byte)((uintArray[uintIdx] & 0x0000FF00) >> 8);
+            byteArray[byteIdx + 3] = (byte)((uintArray[uintIdx] & 0x000000FF) >> 0);
+        }
+        return byteArray;
+    }
+
     /// <summary>
     /// Removes assembly comments (starting with a semicolon) and excess whitespace
     /// (this includes leading / trailing whitespace in lines and replacing e.g. multi-spaces or tabs with single spaces)

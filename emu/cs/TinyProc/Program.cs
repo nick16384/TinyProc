@@ -8,7 +8,7 @@ class Program
     {
         // Enable full logging when running from CLI mode
         // TODO: Make this configurable via command-line arguments
-        Logging.SuppressDebugMessages = false;
+        Logging.SuppressDebugMessages = true;
         Logging.SuppressInfoMessages = false;
         Logging.SuppressWarningMessages = false;
         Logging.SuppressErrorMessages = false;

@@ -1,10 +1,10 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using TinyProc.Assembling;
 using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
+using static TinyProc.Assembling.Assembler;
 
 namespace TinyProc.Application;
 
@@ -15,8 +15,7 @@ public class ExecutionContainer
     private static ExecutionContainer? _instance0;
     public static ExecutionContainer INSTANCE0 { get => _instance0 ?? throw new Exception("Execution container INSTANCE0 not initialized yet."); }
 
-    private const string RESET_ASM_PROGRAM_PATH = "prog_sys/00000000_Reset.hltp32.asm";
-    private const string LOADER_ASM_PROGRAM_PATH = "prog_sys/00000100_Loader.hltp32.asm";
+    private const string ROM_BOOT_IMAGE_PATH = "sys/rom/rom_boot.bin";
 
     private const uint ROM_SIZE = 0x00010000;
     private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
@@ -66,17 +65,9 @@ public class ExecutionContainer
         Logging.LogDebug("Creating working memory & console memory objects");
         _mem1 = new RawMemory(RawMemory.FULL_SIZE);
 
-        Logging.LogDebug("Assembling Reset and Loader programs");
-        string resetProgramCode = File.ReadAllText(RESET_ASM_PROGRAM_PATH);
-        string loaderProgramCode = File.ReadAllText(LOADER_ASM_PROGRAM_PATH);
-        AssemblerOutput resetProgram = Assembler.Assemble(resetProgramCode);
-        AssemblerOutput loaderProgram = Assembler.Assemble(loaderProgramCode);
-        Logging.LogDebug("Saving Reset and Loader programs in ROM");
-        uint[] resetExecutableProgram = resetProgram.MachineCodeBinary;
-        uint[] loaderExecutableProgram = loaderProgram.MachineCodeBinary;
-        uint[] romData = new uint[loaderProgram.Header.LoadAddress + loaderProgram.MachineCodeBinaryWithHeader.Length];
-        Array.Copy(resetExecutableProgram, 0, romData, resetProgram.Header.LoadAddress, resetExecutableProgram.Length);
-        Array.Copy(loaderExecutableProgram, 0, romData, loaderProgram.Header.LoadAddress, loaderExecutableProgram.Length);
+        Logging.LogDebug($"Reading ROM image at {ROM_BOOT_IMAGE_PATH}");
+        byte[] romDataBytes = File.ReadAllBytes(ROM_BOOT_IMAGE_PATH);
+        uint[] romData = ByteArrayToUIntArray(romDataBytes);
         _rom1 = new ROM(ROM_SIZE, romData);
         // ROM image created
         // TODO: Funny idea: Copy this image to a physical floppy and boot from it or something
