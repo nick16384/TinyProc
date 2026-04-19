@@ -16,5 +16,6 @@ main_loop:
     ld gp1, [x] ; Get value at address of x
     add gp1, 1  ; Increment by 1
     st gp1, [x] ; Store value back to address of x
+    jmp main_loop
 
 ; Implicit end of the .text section

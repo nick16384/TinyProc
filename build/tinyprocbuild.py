@@ -6,20 +6,40 @@ from pathlib import Path
 import os
 import subprocess
 import atexit
+import platform
+import sys
 
+# Variables similar to Make's environment variables
+PLATFORM = platform.system()
 ROOT = os.path.dirname(Path(__file__).resolve().parents[0])
-DOTNET = "dotnet"
+DOTNET = "dotnet.exe" if PLATFORM == "Windows" else "dotnet"
 DOTNET_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/cs/TinyProc"]
-DD = "dd"
 
-buildtargets = []
-shutdownactions = []
+buildTargets = [] # A list of all targets to run
+targetTrace = [] # Keeps track of the past and currently running target
+shutdownHooks = [] # After an error or successful completion, run these hooks before exiting
+
+class Target:
+    name = ""
+    target = lambda: ()
+    def __init__(self, name, target):
+        self.name = name
+        self.target = target
+    def run(self):
+        self.target()
+
+# Note:
+# Functions declared with a prepending underscore are internal use only
+
+# Logging
 
 def log(message):
-    print(f"BUILD || INFO || {message}")
+    print(f"{_get_current_target_name()} || INFO || {message}")
 
 def log_err(message):
-    print(f"BUILD || ERROR || {message}")
+    print(f"{_get_current_target_name()} || ERROR || {message}")
+
+# Commands & targets
 
 def cmd_run(command):
     command = _list_flatten(command)
@@ -29,16 +49,32 @@ def cmd_run(command):
     if (status.returncode != 0):
         builderror(status.returncode, f"Build exited with status {status.returncode}. Aborting.")
 
-def enqueueTarget(targetFunction):
-    buildtargets.append(targetFunction)
+def enqueueTarget(targetname, targetfunction):
+    buildTargets.append(Target(targetname, targetfunction))
 
-def targetFinish(name):
-    log(f"Target {name} finished successfully.")
+def targetFinish():
+    log(f"Target {_get_current_target_name()} finished successfully.")
     # Do nothing
 
+# Cleanup
+
+def addShutdownHook(hook):
+    shutdownHooks.append(hook)
+
+def rmfile(file):
+    if (os.path.isfile(file)):
+        os.remove(file)
+
+# Internals & helper functions
+
 def _run_build():
-    for target in buildtargets:
-        target()
+    for i in range(0, len(buildTargets)):
+        targetTrace.append(buildTargets[i])
+        buildTargets[i].run()
+    buildexit(0)
+
+def _get_current_target_name():
+    return targetTrace[-1].name if len(targetTrace) > 0 else "TPBUILD"
 
 def builderror(exitcode, errormessage = ""):
     if (len(errormessage) > 0):
@@ -48,16 +84,11 @@ def builderror(exitcode, errormessage = ""):
     buildexit(exitcode)
 
 def buildexit(exitcode):
-    for action in shutdownactions:
-        action()
+    for hook in shutdownHooks:
+        hook()
+    if (exitcode == 0):
+        return exitcode
     exit(exitcode)
-
-def addShutdownHook(hook):
-    shutdownactions.append(hook)
-
-def rmfile(file):
-    if (os.path.isfile(file)):
-        os.remove(file)
 
 def _list_flatten(inputlist):
     resultlist = []
@@ -66,6 +97,10 @@ def _list_flatten(inputlist):
         else: resultlist.append(elem)
     return resultlist
 
+
+# Annoying __pycache__ stuff:
+# https://stackoverflow.com/questions/50752302/python3-pycache-generating-even-if-pythondontwritebytecode-1
+sys.dont_write_bytecode = True
 atexit.register(_run_build)
 
 if __name__ == "__main__":

@@ -3,9 +3,9 @@ using TinyProc.Processor;
 using TinyProc.Processor.CPU;
 using static TinyProc.Assembling.Sections.InstructionLookup;
 
-namespace TinyProc.Assembling;
+namespace TinyProc.Assembling.Disassembler;
 
-public partial class Assembler
+public partial class Disassembler
 {
     private static string StringFromSingleInstruction((uint, uint) instruction)
     {

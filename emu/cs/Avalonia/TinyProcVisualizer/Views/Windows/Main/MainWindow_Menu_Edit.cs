@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         string binaryFilePathToDisassemble = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
         try
         {
-            ExecutableWrapper programWrapper = new(binaryFilePathToDisassemble);
+            HLTPExecutable programWrapper = new(binaryFilePathToDisassemble);
             string disassembledProgram = TinyProc.Assembling.Assembler.DisassembleFromProgramWithHeader(programWrapper);
             await Dispatcher.UIThread.InvokeAsync(() => TextBox_SourceAssemblyCodeEditor.Text = disassembledProgram);
         }
@@ -74,7 +74,7 @@ public partial class MainWindow : Window
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        TinyProc.Application.ExecutableWrapper programWrapper = new(assembledBinary);
+        TinyProc.Application.HLTPExecutable programWrapper = new(assembledBinary);
 
         // Select destination binary file, which stores the output of the assembler.
         var files = await OpenSingleFileSelectionDialog("Open executable target file...");

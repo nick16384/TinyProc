@@ -183,7 +183,7 @@ public partial class MainWindow : Window
 
         var files = await OpenSingleFileSelectionDialog("Select binary executable file...");
         string executableBinaryPath = HttpUtility.UrlDecode(files[0].Path.AbsolutePath);
-        ExecutableWrapper initialProgram = new(executableBinaryPath);
+        HLTPExecutable initialProgram = new(executableBinaryPath);
         TinyProc.Application.ExecutionContainer.INSTANCE0.LoadInitialProgram(initialProgram);
         Button_LoadInitialProgram.IsEnabled = false;
     }

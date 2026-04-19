@@ -1,6 +1,7 @@
 using static TinyProc.Assembling.Sections.DataSection;
 using static TinyProc.Assembling.Assembler;
 using TinyProc.Application;
+using System.Buffers.Binary;
 
 namespace TinyProc.Assembling.Sections;
 
@@ -252,10 +253,20 @@ public readonly struct DataSection(ImmediateSequence[] immediateSequences, Immed
                     keepBytesCount = 4;
                 
                 Logging.LogDebug($"Numeric data: keeping {keepBytesCount} byte(s) from value {dataToken.Value}");
-                if (keepBytesCount >= 4) dataBytes.Add((byte)((num & 0xFF000000) >> 24));
-                if (keepBytesCount >= 3) dataBytes.Add((byte)((num & 0x00FF0000) >> 16));
-                if (keepBytesCount >= 2) dataBytes.Add((byte)((num & 0x0000FF00) >> 8));
-                if (keepBytesCount >= 1) dataBytes.Add((byte)((num & 0x000000FF) >> 0));
+                List<byte> bytes = [];
+                if (keepBytesCount >= 4) bytes.Add((byte)((num & 0xFF000000) >> 24));
+                if (keepBytesCount >= 3) bytes.Add((byte)((num & 0x00FF0000) >> 16));
+                if (keepBytesCount >= 2) bytes.Add((byte)((num & 0x0000FF00) >> 8));
+                if (keepBytesCount >= 1) bytes.Add((byte)((num & 0x000000FF) >> 0));
+                // In one special case, the number encoding must be explicitly prepended with zeroes:
+                // That is, if keepBytesCount < 4 and dataTokens.Length == 1
+                // I.e. the encoded value is smaller than the minimum uint size and this is the only token.
+                // The reason is that e.g.
+                // equ VAL 0x20
+                // should be encoded, such that 0x20 is padded resulting in 0x00000020 and not 0x20000000, so the value is retained.
+                if (keepBytesCount < 4 && dataTokens.Length == 1)
+                    bytes.InsertRange(0, new byte[] {0x00, 0x00, 0x00, 0x00}[..(sizeof(uint) - keepBytesCount)]);
+                dataBytes.AddRange(bytes);
                 
                 continue;
             }

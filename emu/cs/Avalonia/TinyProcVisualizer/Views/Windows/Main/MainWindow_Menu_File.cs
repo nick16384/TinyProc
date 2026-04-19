@@ -67,7 +67,7 @@ public partial class MainWindow : Window
                 ButtonEnum.Ok).ShowAsync();
             return;
         }
-        TinyProc.Application.ExecutableWrapper programWrapper = new(assembledBinary);
+        TinyProc.Application.HLTPExecutable programWrapper = new(assembledBinary);
         string outputBinaryFilePath = sourceFilePath + ".bin";
         if (sourceFilePath.EndsWith(".asm"))
             outputBinaryFilePath = sourceFilePath[..^4] + ".bin";

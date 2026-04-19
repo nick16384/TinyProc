@@ -1,5 +1,8 @@
 Arch name: x25_32 (Year 2025, 32 bit word size)
 
+- Most of this is obsolete by CPU revision 0.3-indev
+- Do not rely on this as documentation
+
 Endianness: Big endian
 Max. instruction mnemonic letters: 5
 Single universal addressing mode: absolute

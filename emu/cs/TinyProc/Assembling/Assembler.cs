@@ -4,37 +4,6 @@ using TinyProc.Assembling.Sections;
 
 namespace TinyProc.Assembling;
 
-// TODO: Find a better name for this class
-/// <summary>
-/// A meta class containing machine code from an assembled program, both the .data and .text section, and assembly header information.
-/// </summary>
-public class AssemblerOutput
-{
-    public readonly struct AssemblyHeader(uint versionEncoded, uint loadAddress, uint entryPoint, uint dataSize, uint textSize)
-    {
-        public readonly uint VersionEncoded = versionEncoded;
-        public readonly uint LoadAddress = loadAddress;
-        public readonly uint EntryPoint = entryPoint;
-        public readonly uint DataSegmentSize = dataSize;
-        public readonly uint TextSegmentSize = textSize;
-        // The last 0x0 words are padding reserved for future use:
-        public readonly uint[] MachineCodeBinary = [versionEncoded, loadAddress, entryPoint, dataSize, textSize, 0x0, 0x0, 0x0];
-    }
-    public readonly AssemblyHeader Header;
-    public readonly DataSection DataSection;
-    public readonly TextSection TextSection;
-    public readonly uint[] MachineCodeBinary;
-    public readonly uint[] MachineCodeBinaryWithHeader;
-    public AssemblerOutput(uint loadAddress, DataSection dataSection, TextSection textSection)
-    {
-        DataSection = dataSection;
-        TextSection = textSection;
-        Header = new(Assembler.ASSEMBLER_VERSION_ENCODED, loadAddress, TextSection.EntryPoint, DataSection.Size, TextSection.Size);
-        MachineCodeBinaryWithHeader = [.. Header.MachineCodeBinary, .. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
-        MachineCodeBinary = [.. DataSection.BinaryRepresentation, .. TextSection.BinaryRepresentation];
-    }
-}
-
 /// <summary>
 /// The assembler reads assembly program code (as a string) and assembles (converts) it into a machine code.
 /// It is crucial to note that this is the only step this class is supposed to do.
@@ -53,7 +22,7 @@ public partial class Assembler
     /// <param name="assemblyCode"></param>
     /// <returns>A meta class containing machine code, both sections and the load address.</returns>
     /// <exception cref="Exception">If the assembler encounters an error.</exception>
-    public static AssemblerOutput Assemble(string assemblyCode)
+    public static HLTPExecutable Assemble(string assemblyCode)
     {
         // Assembling steps:
         // 1. Cleanup: Remove comments and excess whitespace
@@ -141,7 +110,7 @@ public partial class Assembler
         Logging.LogDebug($"TS Hexdump:\n" + Hexdump.CreateTextHexdump([.. textSection.BinaryRepresentation]));
         Logging.LogInfo($"Successfully assembled {assemblyCode.Split('\n').Length} lines of assembly code into {dataSection.Size + textSection.Size} words.");
         
-        return new AssemblerOutput(loadAddress, dataSection, textSection);
+        return new HLTPExecutable(loadAddress, dataSection, textSection);
     }
 
     /// <summary>

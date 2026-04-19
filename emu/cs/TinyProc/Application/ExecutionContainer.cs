@@ -5,6 +5,7 @@ using TinyProc.Memory;
 using TinyProc.Processor.CPU;
 using static TinyProc.Processor.CPU.CPU;
 using static TinyProc.Assembling.Assembler;
+using TinyProc.Assembling;
 
 namespace TinyProc.Application;
 
@@ -14,8 +15,6 @@ public class ExecutionContainer
     // exposed externally to be used by e.g. GUIs.
     private static ExecutionContainer? _instance0;
     public static ExecutionContainer INSTANCE0 { get => _instance0 ?? throw new Exception("Execution container INSTANCE0 not initialized yet."); }
-
-    private const string ROM_BOOT_IMAGE_PATH = "sys/rom/rom_boot.bin";
 
     private const uint ROM_SIZE = 0x00010000;
     private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
@@ -52,21 +51,21 @@ public class ExecutionContainer
         }
     }
 
-    public static void Initialize()
+    public static void Initialize(string firmwareImagePath)
     {
         if (_instance0 != null)
             throw new Exception("Cannot initialize multiple execution containers. Please use ExecutionContainer.INSTANCE0.");
-        _instance0 = new ExecutionContainer();
+        _instance0 = new ExecutionContainer(firmwareImagePath);
     }
 
-    private ExecutionContainer()
+    private ExecutionContainer(string firmwareImagePath)
     {
         Logging.LogDebug("Creating virtual hardware");
         Logging.LogDebug("Creating working memory & console memory objects");
         _mem1 = new RawMemory(RawMemory.FULL_SIZE);
 
-        Logging.LogDebug($"Reading ROM image at {ROM_BOOT_IMAGE_PATH}");
-        byte[] romDataBytes = File.ReadAllBytes(ROM_BOOT_IMAGE_PATH);
+        Logging.LogDebug($"Reading ROM image at {firmwareImagePath}");
+        byte[] romDataBytes = File.ReadAllBytes(firmwareImagePath);
         uint[] romData = ByteArrayToUIntArray(romDataBytes);
         _rom1 = new ROM(ROM_SIZE, romData);
         // ROM image created
@@ -85,11 +84,11 @@ public class ExecutionContainer
 
     public void ResetCPU() => _cpu.Reset();
 
-    public void LoadInitialProgram(ExecutableWrapper executable)
+    public void LoadInitialProgram(HLTPExecutable executable)
     {
-        for (uint i = 0; i < executable.Program.Length; i++)
+        for (uint i = 0; i < executable.MachineCodeWithHeader.Length; i++)
         {
-            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.Program[i]);
+            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.MachineCodeWithHeader[i]);
         }
     }
 
