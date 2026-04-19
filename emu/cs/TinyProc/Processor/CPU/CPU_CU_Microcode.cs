@@ -202,7 +202,7 @@ public partial class CPU
         {
             Logging.LogDebugWithoutNewline(
                 "Arithmetic immediate operation: " +
-                $"Dst:{_currentInstruction.I_DestRegCode}" +
+                $"Dst:{RegisterNameAndValueFormatted(_currentInstruction.I_DestRegCode)}" +
                 $" <{_currentInstruction.I_ALUOpcode}> " +
                 $"#{_currentInstruction.I_ImmediateValue:x8}");
             _alu.Status_EnableFlags = true;

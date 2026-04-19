@@ -124,6 +124,11 @@ class Program
                 {
                     // Print part of memory
                     input = input[1..];
+                    if (!input.Contains('-'))
+                    {
+                        Logging.LogDebug("No start and/or end provided.");
+                        continue;
+                    }
                     Assembler.TryConvertStringToUInt(input.Split('-')[0], out uint? start);
                     Assembler.TryConvertStringToUInt(input.Split('-')[1], out uint? end);
                     if (!start.HasValue || !end.HasValue)
@@ -175,10 +180,15 @@ class Program
             Logging.LogDebug("Nothing to print.");
             return;
         }
-        for (uint addr = startInclusive; addr <= endInclusive; addr++)
+        for (uint addr = startInclusive; addr <= endInclusive; /* Increment is done separately below */)
         {
             Logging.LogDebug($"{addr:x8}: {executionContainer.ReadVirtualMemDirect(addr):x8}" +
                 $"{(addr == executionContainer.CPUDebugPort.SPValue ? " <-- SP" : "")}");
+            if (++addr == 0x00000000u)
+            {
+                Logging.LogDebug("Address increment resulted in overflow, aborting.");
+                break;
+            }
         }
     }
 

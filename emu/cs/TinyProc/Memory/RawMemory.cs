@@ -2,12 +2,11 @@ namespace TinyProc.Memory;
 
 using System.Runtime.CompilerServices;
 using TinyProc.Application;
-using TinyProc.Assembling;
 using TinyProc.Processor;
 
 public class RawMemory : IReadWriteMemoryDevice
 {
-    public const uint FULL_SIZE = 0xFFFFFFFFu;
+    public const ulong FULL_SIZE = 0x100000000u - 0x00010000u;
     // The memory is internally managed via a paged address space. This is not exposed to
     // the outside, but necessary to allocate pages dynamically, since allocating a 32-bit flat array
     // would consume around 4GiB of host memory and would therefore be unfeasable.
@@ -16,9 +15,9 @@ public class RawMemory : IReadWriteMemoryDevice
     private const uint PAGE_OFFSET_MASK = PAGE_SIZE - 1u; // 
     private const uint PAGE_NUMBER_MASK = ~PAGE_OFFSET_MASK;
 
-    public readonly uint _numWords;
-    public ulong TotalSizeBits { get => (ulong)_numWords * (ulong)Register.SYSTEM_WORD_SIZE; }
-    public uint Size { get => _numWords; }
+    public readonly ulong _numWords;
+    public ulong TotalSizeBits { get => _numWords * (ulong)Register.SYSTEM_WORD_SIZE; }
+    public ulong Size { get => _numWords; }
     private readonly uint _numPages;
     private readonly uint[]?[] _data;
 
@@ -67,7 +66,7 @@ public class RawMemory : IReadWriteMemoryDevice
     private Bus? MemoryAddressBus;
     private Bus? MemoryDataBus;
 
-    public RawMemory(uint numWords = FULL_SIZE) : this(numWords, []) {}
+    public RawMemory(ulong numWords = FULL_SIZE) : this(numWords, []) {}
 
     /// <summary>
     /// Creates a virtual memory device.
@@ -75,7 +74,7 @@ public class RawMemory : IReadWriteMemoryDevice
     /// <param name="numWords">The number of words that should be addressable via the bus.</param>
     /// <param name="initialData">Data inside the memory device starting from the lowest address.</param>
     /// <exception cref="ArgumentException"></exception>
-    public RawMemory(uint numWords, IEnumerable<uint> initialData)
+    public RawMemory(ulong numWords, IEnumerable<uint> initialData)
     {
         if (numWords <= 0)
             throw new ArgumentException("Word count 0 disallowed");
@@ -83,11 +82,11 @@ public class RawMemory : IReadWriteMemoryDevice
         Logging.LogWarn("Warning: Word count is currently ignored for memory creation. Assuming FULL_SIZE.");
 
         // Precondition checks
-        if (initialData.Count() > _numWords)
+        if ((ulong)initialData.Count() > _numWords)
             throw new ArgumentException("Cannot initialize memory: Initial data is larger than memory size.");
         
         // Always add another page to ensure enough memory is addressable
-        _numPages = (numWords / PAGE_SIZE) + 1;
+        _numPages = (uint)(numWords / PAGE_SIZE) + 1;
         Logging.LogDebug($"Memory: {_numPages} pages ({PAGE_SIZE} words / page)");
 
         _data = new uint[]?[_numPages];

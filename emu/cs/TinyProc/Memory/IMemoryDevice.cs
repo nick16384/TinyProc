@@ -4,7 +4,7 @@ namespace TinyProc.Memory;
 
 public interface IMemoryDevice : IBusAttachable
 {
-    public uint Size { get; }
+    public ulong Size { get; }
     public uint ReadDirect(uint addr);
     public bool ReadEnable { get; set; }
 }

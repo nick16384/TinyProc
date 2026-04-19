@@ -10,7 +10,7 @@ public class ROM : IMemoryDevice
     public ulong TotalSizeBits { get => (ulong)_size * (ulong)Register.SYSTEM_WORD_SIZE; }
     private readonly uint[] _fixedData;
     public uint[] FixedData { get => _fixedData; }
-    public uint Size { get => _size; }
+    public ulong Size { get => _size; }
 
     private bool _readEnable;
     public bool ReadEnable

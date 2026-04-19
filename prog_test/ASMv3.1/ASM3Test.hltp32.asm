@@ -9,6 +9,10 @@
 #DEFINE SP_BASE 0x00020000
 #DEFINE VECTOR_RESET 0x00000000
 
+; Random address that stores 0 until the test is done, then it is changed to a nonzero value.
+; This is to ensure a reset interrupt test doesn't end in an infinite reset loop, but comes to an end after one reset.
+#DEFINE ADDR_TESTCOMPLETE 10345824h
+
 #SECTION .data
 ; Single words
 imm1: dw 0x39393939
@@ -71,7 +75,6 @@ start_actual:
     nopnn
     nopof
     nopno
-    jmp 0 ; Continue
 
     ; Memory operations
     mov gp1, 90
@@ -126,6 +129,7 @@ start_actual:
 
     ; Calling / stack / interrupts
     call func
+    call enter_loop_if_test_complete
     int $VECTOR_RESET
 
 _start:
@@ -135,7 +139,7 @@ _start:
 func:
     ; Test stack inside function
     pop gp1
-    mov gp1, gp2
+    mov gp2, gp1
     push gp2
     call func_nested1
     ret
@@ -143,3 +147,14 @@ func:
 func_nested1:
     st gp2, [40000000h]
     ret
+
+enter_loop_if_test_complete:
+    ld  gp1, [abs $ADDR_TESTCOMPLETE]
+    cmp gp1, 0
+    jmpnz loop
+    mov gp1, 0x1
+    st  gp1, [abs $ADDR_TESTCOMPLETE]
+    ret
+
+loop:
+    jmp loop

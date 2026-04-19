@@ -79,7 +79,7 @@ public partial class CPU
             }
         }
 
-        private readonly Dictionary<IMemoryDevice, (uint, uint)> _MemorySpaces;
+        private readonly Dictionary<IMemoryDevice, (uint StartInclusive, uint EndInclusive)> _MemorySpaces;
         // Memory address register: Sets an address to read from / write to in memory logic.
         public readonly MemoryAddressRegister MAR;
         // Memory data register:
@@ -112,7 +112,7 @@ public partial class CPU
             foreach ((uint memStart, IMemoryDevice memDevice) in rams)
             {
                 Logging.LogDebug($"Mem HW start:{memStart:x8}");
-                _MemorySpaces.Add(memDevice, (memStart, memDevice.Size - 1));
+                _MemorySpaces.Add(memDevice, (memStart, (uint)(memStart + memDevice.Size - 1)));
             }
             MAR = new MemoryAddressRegister(this);
             MDR = new MemoryDataRegister(this);
@@ -124,16 +124,16 @@ public partial class CPU
 
         private IMemoryDevice GetMemAtVirtualAddress(uint addr)
         {
-            foreach ((IMemoryDevice ram, (uint, uint) ramSpace) in _MemorySpaces)
+            foreach ((IMemoryDevice ram, (uint StartInclusive, uint EndInclusive) ramSpace) in _MemorySpaces)
             {
                 // Not the correct RAM, if the address is above the the max. address of the current RAM
-                if (addr >= ramSpace.Item2)
+                if (addr > ramSpace.EndInclusive)
                     continue;
                 return ram;
             }
             // If the foreach loop runs through before the return statement was called, then the address is out of range.
             throw new ArgumentOutOfRangeException(
-                $"Cannot determine memory from absolute address {addr:x8}. Max. address is {_MemorySpaces.Values.Last().Item2:x8}");
+                $"Cannot determine memory from absolute address {addr:x8}. Max. address is {_MemorySpaces.Values.Last().EndInclusive:x8}");
         }
 
         private IMemoryDevice RAM
@@ -143,7 +143,7 @@ public partial class CPU
 
         private uint GetRelativeAddress(uint absoluteAddr, IMemoryDevice ram)
         {
-            return absoluteAddr - _MemorySpaces[ram].Item1;
+            return absoluteAddr - _MemorySpaces[ram].StartInclusive;
         }
 
         public void AttachToBus(uint ubid, Bus bus) { /* Do nothing. MMU already is the bus master. */ }
