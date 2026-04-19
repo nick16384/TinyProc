@@ -4,13 +4,12 @@ A virtual CPU emulator with a full featured custom architecture and instruction 
 ## Project status: <span style="color: lime;">Active</span>
 
 ## What is this about?
-This project is an attempt at learning how CPUs work by implementing one from scratch.
-Be reminded though that there is no focus on making things clean and readable, so don't
-expect this to be easily understandable. Although if you want to continue reading,
-there are some useful references and documentation in the `Microarchitecture/` directory.<br>
+This project is an attempt at learning how CPUs work by implementing one from scratch, for
+my own entertainment and as a learning tool.<br>
+Documentation for the CPU Microarchitecture is available in the `Microarchitecture/` directory.<br>
 Note that everything is WIP and in early development.
-If you want to test the latest stable version, try the `main` branch or the latest release.
-The most recent code is in the `development` branch. It is not guaranteed this code won't even run
+If you want to test the latest stable version, try using the latest release.
+The most recent code is in the `development` branch. It is not guaranteed this code will even run
 at all. For long-term changes, additional branches might be added temporarily.
 
 ## Building & Running
@@ -22,14 +21,14 @@ Supported platforms:
 
 Required dependencies:
 - [.NET](https://dotnet.microsoft.com/en-us/download) (9.0 or later, mandatory)
-- [GNU Make](https://www.gnu.org/software/make/) (4.4.1 or later)
+- [Python](https://www.python.org/downloads/) (3.13.7 or later)
 
 *The specified versions are verified to be working, but not strictly required, except those marked as "mandatory"*
 
 ### Running the GUI
 Starting the GUI (graphical user interface) is done simply by running
 ```
-$ make gui
+$ python3 ./tp_gui.py
 ```
 *Documentation on what every GUI element does will be added later, although most of it should be self-explanatory.*
 
@@ -41,33 +40,18 @@ First, find or create an assembly source file to run and save it.<br>
 Demos / Example files can be found in the `prog_examples/` directory.<br>
 To run an assembly file from the project root folder, run
 ```
-$ make emu-run SOURCE_FILE_ASM=<path>
+$ python3 ./tp_run.py <ASM_FILE_PATH>
 ```
-where `<path>` is the source assembly file.
+where `<ASM_FILE_PATH>` is the source assembly file's path.
 
 To just assemble the file without running it, run
 ```
-$ make assemble SOURCE_FILE_ASM=<path>
+$ python3 ./tp_asm.py <ASM_FILE_PATH>
 ```
 
 ### Creating a standalone binary
-Since .NET supports AOT-compilation, you may create a native executable binary using
-```
-$ make emu-build
-```
-or
-```
-$ make gui-build
-```
-To run these AOT-compiled executables directly from Make, run
-```
-$ make emu-run-aot
-```
-or
-```
-$ make gui-run-aot
-```
-respectively.
+.NET theoretically supports AOT compilation to create native executables.
+However, AOT compilation targets have yet to be implemented.
 
 ### Performance notes
 The main emulator is **not** optimized for performance. Instead, it should be as close to the
@@ -82,9 +66,10 @@ Note the AOT-compiled version might be a little faster than the JIT-compiled one
 - **complete arch spec + fully implemented software ISA v1**
 - **FPGA / Verilog implementation** (by [@Maxi12045](https://github.com/Maxi12045))
 ### Future ideas
+- FFI abstraction -> emulators in other languages (C for performance, Python for readability)
 - Hardware interrupts, MMIO
 - video buffers (video memory & console mode)
-- Faster emulator in C (C# <-> C via FFIs)
+- Brainfuck interpreter / compiler
 - [BASIC](https://en.wikipedia.org/wiki/BASIC) implementation (programming language)
 - 6502 / 8086 / x86 -> HLTP32 transpiler (simple instructions only)
 - C compiler
@@ -103,6 +88,12 @@ Internal architecture names: TinyProc/x25_32, HLTPx25_32, x25-32, HLTP32
 The "Can it run Doom" project will be a big one. This will probably take years until
 implemented, but it's seen as the ultimate long-term goal for it so I promise it **will** run
 at some point in the future.
+
+All of the code is guaranteed to not be AI slop (i.e. I have written every line by myself),
+but I can't guarantee some degree of AI use to ask for abstract concepts, pseudocode
+implementations and library specific functions.
+Furthermore, I cannot guarantee the code to be free of slurs, although I avoid them whenever
+possible.
 
 Depending on motivation and how busy I am otherwise, this project might have
 phases of several months without updates. I am, however, committed to keep the project running
