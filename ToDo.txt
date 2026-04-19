@@ -69,19 +69,6 @@ In-progress ToDo's:
 - Logging: Always prepend 0x... for hex values! Don't make it the default!
 - Documentation: special assembly labels are prepended with an underscore. What is regarded special is up to the user. Examples: _start, _halt
 
-Changes for CPU 0.3-indev:
-- Added stack and SP
-- Moved IRB to Bus 2 (makes PC+IRB possible)
-- Added relative / absolute jumps / calls
-- CSOA went from B2 to B1
-- Added relative load/store
-- Memory layout changes:
-  1. Move ROM to high addresses (Specify!)
-  2. .data and .text sections loaded after another
-- Remove B / AB opcodes (they are now pure aliases for JMP/AJMP), added CALLR
-- Added addressing mode bit in instruction encoding
-- Added CMP instruction (SUB but discards result and only affects status)
-
 Naming ideas:
 Useless neglibly simple computer emulator (UNSC-E)
 
