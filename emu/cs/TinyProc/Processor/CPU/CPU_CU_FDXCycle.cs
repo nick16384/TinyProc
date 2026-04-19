@@ -116,7 +116,7 @@ public partial class CPU
             CopyFromRegisterToRegister(InternalRegisterCode.RCODE_SPECIAL_MDR, InternalRegisterCode.RCODE_SPECIAL_IRB, enableFlags: false);
 
             ResetBus3();
-            Logging.LogInfo($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
+            Logging.LogDebug($"Loaded 2 instruction words: {IRA.ValueDirect:x8} {IRB.ValueDirect:x8}");
         }
 
         private IInstruction _currentInstruction;
@@ -141,7 +141,7 @@ public partial class CPU
             else
                 _cpu.TriggerHardwareFault(Fault.UNKNOWN_INSTRUCTION);
 
-            Logging.LogInfo(
+            Logging.LogDebug(
                 $"Type: {_currentInstruction.InstructionType}; " +
                 $"Opcode: {(uint)_currentInstruction.Opcode:X2}->{_currentInstruction.Opcode}; " +
                 $"Condition: {(uint)_currentInstruction.Conditional:X2}->{_currentInstruction.Conditional};");
@@ -171,7 +171,7 @@ public partial class CPU
             
             if (!execute)
             {
-                Logging.LogInfo($"Not executing: Conditional {_currentInstruction.Conditional} not satisfied.");
+                Logging.LogDebug($"Not executing: Conditional {_currentInstruction.Conditional} not satisfied.");
                 return;
             }
 

@@ -162,7 +162,7 @@ public class ExecutionContainer
         catch (Exception) { _isCPUInInvalidState = true; throw; }
         cycleTimer.Stop();
         _lastCycleTimeMicroseconds = cycleTimer.ElapsedMilliseconds * 1000 + cycleTimer.Elapsed.Microseconds;
-        Logging.LogDebug($"Cycle {CurrentCycle} took {_lastCycleTimeMicroseconds}us");
+        Logging.LogInfo($"Cycle {CurrentCycle} took {_lastCycleTimeMicroseconds}us");
         return cycleTimer.Elapsed;
     }
 }
