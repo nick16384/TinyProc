@@ -18,8 +18,8 @@ def tp_buildrom():
     log("Creating ROM image from source files.")
 
     log("Assembling reset and loader...")
-    cmd_run([DOTNET, DOTNET_RUN_ARGS, "--assemble", RESET_SOURCE_PATH, RESET_BIN_PATH, "--raw", "--verbose" if CONFIG_ASM_VERBOSE else []])
-    cmd_run([DOTNET, DOTNET_RUN_ARGS, "--assemble", LOADER_SOURCE_PATH, LOADER_BIN_PATH, "--raw", "--verbose" if CONFIG_ASM_VERBOSE else []])
+    cmd_run([DOTNET, DOTNET_EMU_RUN_ARGS, "--assemble", RESET_SOURCE_PATH, RESET_BIN_PATH, "--raw", "--verbose" if CONFIG_ASM_VERBOSE else []])
+    cmd_run([DOTNET, DOTNET_EMU_RUN_ARGS, "--assemble", LOADER_SOURCE_PATH, LOADER_BIN_PATH, "--raw", "--verbose" if CONFIG_ASM_VERBOSE else []])
 
     log("Merging reset and loader into ROM image...")
     binfileReset = open(RESET_BIN_PATH, "rb")

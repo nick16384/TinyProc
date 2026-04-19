@@ -2,10 +2,10 @@ import sys
 sys.path.append(".") # If launching from ROOT
 from build.tinyprocbuild import *
 from firmware.rom.tp_buildrom import tp_buildrom_enqueue, ROM_IMAGE_PATH
+from tp_asm import tp_asm_enqueue
 
 TP_WORDSIZE = 4
 
-CONFIG_ASM_VERBOSE = False
 CONFIG_VERBOSE = True
 
 def tp_run():
@@ -14,12 +14,11 @@ def tp_run():
         printUsage()
         buildexit(1)
     
-    sourceFileAsm = sys.argv.pop()
-    log(f"Assembling and running source file {sourceFileAsm}")
-    cmd_run([DOTNET, DOTNET_RUN_ARGS, "--assemble", f"{ROOT}/{sourceFileAsm}", "--verbose" if CONFIG_ASM_VERBOSE else []])
+    sourceFileAsm = sys.argv[-1]
+    targetFileBin = sourceFileAsm[:-4] + ".bin"
+    log(f"Running target file {targetFileBin}")
 
-    targetFileBin = sourceFileAsm[:-4]
-    cmd_run([DOTNET, DOTNET_RUN_ARGS, "--run", ROM_IMAGE_PATH, f"{ROOT}/{targetFileBin}.bin", "--verbose" if CONFIG_VERBOSE else []])
+    cmd_run([DOTNET, DOTNET_EMU_RUN_ARGS, "--run", ROM_IMAGE_PATH, f"{ROOT}/{targetFileBin}"])
 
     targetFinish()
 
@@ -31,6 +30,9 @@ def tp_run_enqueue():
     # Ensure latest version of ROM image
     log("Adding dependency for ROM")
     tp_buildrom_enqueue()
+    # Assemble source file
+    log("Adding dependency for ASM")
+    tp_asm_enqueue()
     enqueueTarget("EMU-RUN", tp_run)
 
 if __name__ == "__main__":
