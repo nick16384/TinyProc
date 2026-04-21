@@ -8,6 +8,7 @@ import subprocess
 import atexit
 import platform
 import sys
+import traceback
 
 # Variables similar to Make's environment variables
 PLATFORM = platform.system()
@@ -42,15 +43,21 @@ def log_err(message):
 
 # Commands & targets
 
-def cmd_run(command):
-    command = _list_flatten(command)
-    log(f"CMD: {command}")
+def cmd_run(commandArgs):
+    # Ensure command list is properly readable and standardized:
+    commandArgs = _list_flatten([commandArgs])
+    # Normalize paths
+    for argIdx in range(0, len(commandArgs)):
+        if (os.path.exists(os.path.normpath(commandArgs[argIdx]))):
+            commandArgs[argIdx] = os.path.normpath(commandArgs[argIdx])
+    log(f"CMD: {commandArgs}")
     os.chdir(ROOT)
-    status = subprocess.run(command, cwd=ROOT)
+    status = subprocess.run(commandArgs, cwd=ROOT)
     if (status.returncode != 0):
         builderror(status.returncode, f"Build exited with status {status.returncode}. Aborting.")
 
 def enqueueTarget(targetname, targetfunction):
+    log(f"Adding target to queue: {targetname}")
     buildTargets.append(Target(targetname, targetfunction))
 
 def targetFinish():
@@ -60,6 +67,7 @@ def targetFinish():
 # Cleanup
 
 def addShutdownHook(hook):
+    log(f"Registered shutdown hook.")
     shutdownHooks.append(hook)
 
 def rmfile(file):
@@ -69,15 +77,19 @@ def rmfile(file):
 # Internals & helper functions
 
 def _run_build():
-    for i in range(0, len(buildTargets)):
-        targetTrace.append(buildTargets[i])
-        buildTargets[i].run()
+    try:
+        for i in range(0, len(buildTargets)):
+            targetTrace.append(buildTargets[i])
+            buildTargets[i].run()
+    except Exception:
+        builderror(1, f"Python build encountered an error: {traceback.format_exc()}")
     buildexit(0)
 
 def _get_current_target_name():
-    return targetTrace[-1].name if len(targetTrace) > 0 else "TPBUILD"
+    return targetTrace[-1].name if len(targetTrace) > 0 else "***"
 
 def builderror(exitcode, errormessage = ""):
+    log_err("==========================================================")
     if (len(errormessage) > 0):
         log_err(f"Build failed, aborting:\n{errormessage}")
     else:
@@ -98,6 +110,8 @@ def _list_flatten(inputlist):
         else: resultlist.append(elem)
     return resultlist
 
+def normpath(pathstr):
+    return os.path.normpath(pathstr)
 
 # Annoying __pycache__ stuff:
 # https://stackoverflow.com/questions/50752302/python3-pycache-generating-even-if-pythondontwritebytecode-1

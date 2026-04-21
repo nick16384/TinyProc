@@ -18,7 +18,12 @@ def tp_run():
     targetFileBin = sourceFileAsm[:-4] + ".bin"
     log(f"Running target file {targetFileBin}")
 
-    cmd_run([DOTNET, DOTNET_EMU_RUN_ARGS, "--run", ROM_IMAGE_PATH, f"{ROOT}/{targetFileBin}", "--verbose" if CONFIG_VERBOSE else []])
+    cmd_run([
+        DOTNET, DOTNET_EMU_RUN_ARGS, "--run",
+        ROM_IMAGE_PATH,
+        f"{ROOT}/{targetFileBin}",
+        "--verbose" if CONFIG_VERBOSE else []
+        ])
 
     targetFinish()
 

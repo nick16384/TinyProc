@@ -14,7 +14,11 @@ def tp_asm():
     
     sourceFileAsm = sys.argv[-1]
     log(f"Assembling and running source file {sourceFileAsm}")
-    cmd_run([DOTNET, DOTNET_EMU_RUN_ARGS, "--assemble", f"{ROOT}/{sourceFileAsm}", "--verbose" if CONFIG_ASM_VERBOSE else []])
+    cmd_run([
+        DOTNET, DOTNET_EMU_RUN_ARGS, "--assemble",
+        f"{ROOT}/{sourceFileAsm}",
+        "--verbose" if CONFIG_ASM_VERBOSE else []
+        ])
 
     targetFinish()
 
