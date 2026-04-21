@@ -46,7 +46,7 @@ def log_err(message):
 def cmd_run(commandArgs):
     # Ensure command list is properly readable and standardized:
     commandArgs = _list_flatten([commandArgs])
-    # Normalize paths
+    # Normalize paths (esp. important on Windows)
     for argIdx in range(0, len(commandArgs)):
         if (os.path.exists(os.path.normpath(commandArgs[argIdx]))):
             commandArgs[argIdx] = os.path.normpath(commandArgs[argIdx])
@@ -56,17 +56,17 @@ def cmd_run(commandArgs):
     if (status.returncode != 0):
         builderror(status.returncode, f"Build exited with status {status.returncode}. Aborting.")
 
-def enqueueTarget(targetname, targetfunction):
+def enqueue_target(targetname, targetfunction):
     log(f"Adding target to queue: {targetname}")
     buildTargets.append(Target(targetname, targetfunction))
 
-def targetFinish():
+def target_finish():
     log(f"Target {_get_current_target_name()} finished successfully.")
     # Do nothing
 
 # Cleanup
 
-def addShutdownHook(hook):
+def register_shutdown_hook(hook):
     log(f"Registered shutdown hook.")
     shutdownHooks.append(hook)
 
@@ -109,9 +109,6 @@ def _list_flatten(inputlist):
         if isinstance(elem, list): resultlist.extend(_list_flatten(elem))
         else: resultlist.append(elem)
     return resultlist
-
-def normpath(pathstr):
-    return os.path.normpath(pathstr)
 
 # Annoying __pycache__ stuff:
 # https://stackoverflow.com/questions/50752302/python3-pycache-generating-even-if-pythondontwritebytecode-1

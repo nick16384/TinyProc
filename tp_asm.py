@@ -9,7 +9,7 @@ CONFIG_ASM_VERBOSE = False
 def tp_asm():
     if (len(sys.argv) < 2):
         log_err("Error: Supplied less than 1 argument.")
-        printUsage()
+        print_usage()
         buildexit(1)
     
     sourceFileAsm = sys.argv[-1]
@@ -20,14 +20,14 @@ def tp_asm():
         "--verbose" if CONFIG_ASM_VERBOSE else []
         ])
 
-    targetFinish()
+    target_finish()
 
-def printUsage():
+def print_usage():
     print("Usage:")
     print("python3 tp_asm.py <ASMFILE>")
 
 def tp_asm_enqueue():
-    enqueueTarget("ASM", tp_asm)
+    enqueue_target("ASM", tp_asm)
 
 if __name__ == "__main__":
     tp_asm_enqueue()
