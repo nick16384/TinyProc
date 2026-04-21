@@ -14,8 +14,8 @@ import traceback
 PLATFORM = platform.system()
 ROOT = os.path.dirname(Path(__file__).resolve().parents[0])
 DOTNET = "dotnet.exe" if PLATFORM == "Windows" else "dotnet"
-DOTNET_EMU_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/cs/TinyProc"]
-DOTNET_GUI_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/cs/Avalonia/TinyProcVisualizer"]
+DOTNET_EMU_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/TinyProc"]
+DOTNET_GUI_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/Avalonia/TinyProcVisualizer"]
 
 buildTargets = [] # A list of all targets to run
 targetTrace = [] # Keeps track of the past and currently running target
