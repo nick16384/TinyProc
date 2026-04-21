@@ -1,3 +1,5 @@
+# Run the main emulator
+
 import sys
 sys.path.append(".") # If launching from ROOT
 from build.tinyprocbuild import *

@@ -1,3 +1,5 @@
+# Assemble a HLTP32 assembly program without running it
+
 import sys
 sys.path.append(".") # If launching from ROOT
 from build.tinyprocbuild import *

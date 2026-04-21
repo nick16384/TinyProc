@@ -12,7 +12,7 @@ import traceback
 
 # Variables similar to Make's environment variables
 PLATFORM = platform.system()
-ROOT = os.path.dirname(Path(__file__).resolve().parents[0])
+ROOT = os.path.dirname(Path(__file__).resolve().parent)
 DOTNET = "dotnet.exe" if PLATFORM == "Windows" else "dotnet"
 DOTNET_EMU_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/TinyProc"]
 DOTNET_GUI_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/Avalonia/TinyProcVisualizer"]
@@ -48,8 +48,9 @@ def cmd_run(commandArgs):
     commandArgs = _list_flatten([commandArgs])
     # Normalize paths (esp. important on Windows)
     for argIdx in range(0, len(commandArgs)):
-        if (os.path.exists(os.path.normpath(commandArgs[argIdx]))):
-            commandArgs[argIdx] = os.path.normpath(commandArgs[argIdx])
+        path = Path(commandArgs[argIdx])
+        if (path.exists() or path.parent.is_dir()):
+            commandArgs[argIdx] = str(path)
     log(f"CMD: {commandArgs}")
     os.chdir(ROOT)
     status = subprocess.run(commandArgs, cwd=ROOT)
@@ -91,17 +92,18 @@ def _get_current_target_name():
 def builderror(exitcode, errormessage = ""):
     log_err("==========================================================")
     if (len(errormessage) > 0):
-        log_err(f"Build failed, aborting:\n{errormessage}")
+        log_err("Build failed, aborting:")
+        log_err(errormessage)
     else:
-        log_err(f"Build failed, aborting.")
+        log_err("Build failed, aborting.")
     buildexit(exitcode)
 
 def buildexit(exitcode):
     for hook in shutdownHooks:
         hook()
-    if (exitcode == 0):
-        return exitcode
-    exit(exitcode)
+    # Exit immediately (prevents "Exception ignored in atexit callback")
+    # Might find a cleaner way to do this later.
+    os._exit(exitcode)
 
 def _list_flatten(inputlist):
     resultlist = []
