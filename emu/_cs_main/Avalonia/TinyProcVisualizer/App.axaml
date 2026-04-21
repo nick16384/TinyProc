@@ -1,0 +1,46 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TinyProcVisualizer.ViewModels"
+             x:Class="TinyProcVisualizer.App"
+             x:DataType="vm:Main.MainWindowViewModel"
+             xmlns:local="using:TinyProcVisualizer"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <Application.Resources>
+        <FontFamily x:Key="SourceCodeProFont">avares://TinyProcVisualizer/Resources/Fonts/SourceCodePro-Regular.ttf#Source Code Pro</FontFamily>
+        <FontFamily x:Key="SevenSegmentFont">avares://TinyProcVisualizer/Resources/Fonts/Segment7Standard.otf#Segment7</FontFamily>
+    </Application.Resources>
+  
+    <Application.Styles>
+        <StyleInclude Source="avares://AvaloniaHex/Themes/Simple/AvaloniaHex.axaml"/>
+
+        <!-- Set global font for GUI -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceCodeProFont}" />
+            <Setter Property="FontSize" Value="{Binding GlobalFontSize}" />
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="FontFamily" Value="{StaticResource SourceCodeProFont}" />
+            <Setter Property="FontSize" Value="{Binding GlobalFontSize}" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceCodeProFont}" />
+            <Setter Property="FontSize" Value="{Binding GlobalFontSize}" />
+        </Style>
+        <Style Selector="Label">
+            <Setter Property="FontFamily" Value="{StaticResource SourceCodeProFont}" />
+            <Setter Property="FontSize" Value="{Binding GlobalFontSize}" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource SourceCodeProFont}" />
+            <Setter Property="FontSize" Value="{Binding GlobalFontSize}" />
+        </Style>
+        <FluentTheme />
+    </Application.Styles>
+
+</Application>

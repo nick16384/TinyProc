@@ -8,13 +8,14 @@ import subprocess
 import atexit
 import platform
 import sys
+import traceback
 
 # Variables similar to Make's environment variables
 PLATFORM = platform.system()
-ROOT = os.path.dirname(Path(__file__).resolve().parents[0])
+ROOT = os.path.dirname(Path(__file__).resolve().parent)
 DOTNET = "dotnet.exe" if PLATFORM == "Windows" else "dotnet"
-DOTNET_EMU_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/cs/TinyProc"]
-DOTNET_GUI_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/cs/Avalonia/TinyProcVisualizer"]
+DOTNET_EMU_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/TinyProc"]
+DOTNET_GUI_RUN_ARGS = ["run", "--project", f"{ROOT}/emu/_cs_main/Avalonia/TinyProcVisualizer"]
 
 buildTargets = [] # A list of all targets to run
 targetTrace = [] # Keeps track of the past and currently running target
@@ -42,24 +43,32 @@ def log_err(message):
 
 # Commands & targets
 
-def cmd_run(command):
-    command = _list_flatten(command)
-    log(f"CMD: {command}")
+def cmd_run(commandArgs):
+    # Ensure command list is properly readable and standardized:
+    commandArgs = _list_flatten([commandArgs])
+    # Normalize paths (esp. important on Windows)
+    for argIdx in range(0, len(commandArgs)):
+        path = Path(commandArgs[argIdx])
+        if (path.exists() or path.parent.is_dir()):
+            commandArgs[argIdx] = str(path)
+    log(f"CMD: {commandArgs}")
     os.chdir(ROOT)
-    status = subprocess.run(command, cwd=ROOT)
+    status = subprocess.run(commandArgs, cwd=ROOT)
     if (status.returncode != 0):
         builderror(status.returncode, f"Build exited with status {status.returncode}. Aborting.")
 
-def enqueueTarget(targetname, targetfunction):
+def enqueue_target(targetname, targetfunction):
+    log(f"Adding target to queue: {targetname}")
     buildTargets.append(Target(targetname, targetfunction))
 
-def targetFinish():
+def target_finish():
     log(f"Target {_get_current_target_name()} finished successfully.")
     # Do nothing
 
 # Cleanup
 
-def addShutdownHook(hook):
+def register_shutdown_hook(hook):
+    log(f"Registered shutdown hook.")
     shutdownHooks.append(hook)
 
 def rmfile(file):
@@ -69,27 +78,32 @@ def rmfile(file):
 # Internals & helper functions
 
 def _run_build():
-    for i in range(0, len(buildTargets)):
-        targetTrace.append(buildTargets[i])
-        buildTargets[i].run()
+    try:
+        for i in range(0, len(buildTargets)):
+            targetTrace.append(buildTargets[i])
+            buildTargets[i].run()
+    except Exception:
+        builderror(1, f"Python build encountered an error: {traceback.format_exc()}")
     buildexit(0)
 
 def _get_current_target_name():
-    return targetTrace[-1].name if len(targetTrace) > 0 else "TPBUILD"
+    return targetTrace[-1].name if len(targetTrace) > 0 else "***"
 
 def builderror(exitcode, errormessage = ""):
+    log_err("==========================================================")
     if (len(errormessage) > 0):
-        log_err(f"Build failed, aborting:\n{errormessage}")
+        log_err("Build failed, aborting:")
+        log_err(errormessage)
     else:
-        log_err(f"Build failed, aborting.")
+        log_err("Build failed, aborting.")
     buildexit(exitcode)
 
 def buildexit(exitcode):
     for hook in shutdownHooks:
         hook()
-    if (exitcode == 0):
-        return exitcode
-    exit(exitcode)
+    # Exit immediately (prevents "Exception ignored in atexit callback")
+    # Might find a cleaner way to do this later.
+    os._exit(exitcode)
 
 def _list_flatten(inputlist):
     resultlist = []
@@ -97,7 +111,6 @@ def _list_flatten(inputlist):
         if isinstance(elem, list): resultlist.extend(_list_flatten(elem))
         else: resultlist.append(elem)
     return resultlist
-
 
 # Annoying __pycache__ stuff:
 # https://stackoverflow.com/questions/50752302/python3-pycache-generating-even-if-pythondontwritebytecode-1

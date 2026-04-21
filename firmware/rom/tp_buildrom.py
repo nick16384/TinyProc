@@ -39,19 +39,19 @@ def tp_buildrom():
     romfile.close()
 
     log("Image creation successful.")
-    targetFinish()
+    target_finish()
 
 def cleanup():
     rmfile(RESET_BIN_PATH)
     rmfile(LOADER_BIN_PATH)
 
-def printUsage():
+def print_usage():
     print("Usage:")
     print("python3 tp_buildrom.py")
 
 def tp_buildrom_enqueue():
-    addShutdownHook(cleanup)
-    enqueueTarget("BUILD-ROM", tp_buildrom)
+    register_shutdown_hook(cleanup)
+    enqueue_target("BUILD-ROM", tp_buildrom)
 
 if __name__ == "__main__":
     tp_buildrom_enqueue()
