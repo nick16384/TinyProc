@@ -67,7 +67,7 @@ In-progress ToDo's:
   4. Reset handles executing vector (call stack[0]) -> maybe this is possible more elegantly? reserve another region? INTR?
   -> Microcode??
 - Logging: Always prepend 0x... for hex values! Don't make it the default!
-- Documentation: special assembly labels are prepended with an underscore. What is regarded special is up to the user. Examples: _start, _halt
+- Documentation: 
 
 Naming ideas:
 Useless neglibly simple computer emulator (UNSC-E)
