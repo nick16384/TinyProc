@@ -52,12 +52,9 @@ class Program
             return;
         }
 
-        if (args[0].Equals("--run"))
+        if (args[0].Equals("--run-from-image"))
         {
             string firmwareImagePath = args[1];
-            string executablePath = args[2];
-
-            HLTPExecutable programWrapper = HLTPExecutable.LoadProgramFromFile(executablePath);
 
             Console.CancelKeyPress += delegate
             {
@@ -65,12 +62,11 @@ class Program
             };
 
             ExecutionContainer.Initialize(firmwareImagePath);
-            ExecutionContainer.INSTANCE0.LoadInitialProgram(programWrapper);
 
             // If this program is at this stage, it is probably running in CLI mode.
             Logging.LogInfo("Program ready to execute. Press enter to start first cycle. List of commands below:");
-            Logging.LogInfo ("\"q\":    Exit.");
-            Logging.LogInfo ("\"cN\":   Continue for N cycles.");
+            Logging.LogInfo("\"q\":    Exit.");
+            Logging.LogInfo("\"cN\":   Continue for N cycles.");
             Logging.LogDebug("Debug printing enabled. Additional commands below:");
             Logging.LogDebug("\"r\":    Dump registers.");
             Logging.LogDebug("\"mS-E\": Print all addresses between (including both) S and E.");

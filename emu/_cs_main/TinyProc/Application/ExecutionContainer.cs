@@ -19,7 +19,6 @@ public class ExecutionContainer
     private const uint ROM_SIZE = 0x00010000;
     private const uint INITIAL_PROGRAM_BASE_OFFSET = 0x00030000;
 
-    private readonly ROM _rom1;
     private readonly RawMemory _mem1;
     private readonly CPU _cpu;
     public CPUDebugPort CPUDebugPort { get => _cpu.DebugPort; }
@@ -64,19 +63,16 @@ public class ExecutionContainer
         Logging.LogDebug("Creating working memory & console memory objects");
         _mem1 = new RawMemory(RawMemory.FULL_SIZE);
 
-        Logging.LogDebug($"Reading ROM image at {firmwareImagePath}");
-        byte[] romDataBytes = File.ReadAllBytes(firmwareImagePath);
-        uint[] romData = ByteArrayToUIntArray(romDataBytes);
-        _rom1 = new ROM(ROM_SIZE, romData);
-        // ROM image created
+        ROM firmwareRom = LoadFirmwareFromPath(firmwareImagePath);
+
         // TODO: Funny idea: Copy this image to a physical floppy and boot from it or something
 
         Logging.LogDebug("Creating CPU object, loading main program");
         _cpu = new(
             new Dictionary<uint, IMemoryDevice>
             {
-                { 0x00000000u, _rom1 },
-                { _rom1._size, _mem1 }
+                { 0x00000000u, firmwareRom },
+                { firmwareRom._size, _mem1 }
             }
         );
         Logging.LogDebug("Done.");
@@ -84,12 +80,13 @@ public class ExecutionContainer
 
     public void ResetCPU() => _cpu.Reset();
 
-    public void LoadInitialProgram(HLTPExecutable executable)
+    public ROM LoadFirmwareFromPath(string firmwareImagePath)
     {
-        for (uint i = 0; i < executable.MachineCodeWithHeader.Length; i++)
-        {
-            _mem1.WriteDirect(INITIAL_PROGRAM_BASE_OFFSET - _rom1._size + i, executable.MachineCodeWithHeader[i]);
-        }
+        Logging.LogDebug($"Reading ROM image at {firmwareImagePath}");
+        byte[] romDataBytes = File.ReadAllBytes(firmwareImagePath);
+        uint[] romData = ByteArrayToUIntArray(romDataBytes);
+        return new ROM(ROM_SIZE, romData);
+        // ROM image created
     }
 
     public void LoadBytesAtAddress(byte[] byteData, uint address)
@@ -138,7 +135,7 @@ public class ExecutionContainer
         */
         throw new NotImplementedException();
     }
-    
+
     /// <summary>
     /// Reads a word directly from the underlying virtual address space of the MMU.
     /// </summary>
