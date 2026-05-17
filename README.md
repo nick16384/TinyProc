@@ -1,7 +1,11 @@
 # TinyProc
 A virtual CPU emulator with a full featured custom architecture and instruction set.
 
-## Project status: <span style="color: lime;">Active</span>
+# ⚠️ This project has been migrated to [Codeberg](https://codeberg.org/n16384/TinyProc)!
+**All live development of this project has been migrated to Codeberg under the following new URL: [https://codeberg.org/n16384/TinyProc](https://codeberg.org/n16384/TinyProc).**
+**Only major changes will be pushed to the GitHub release here.**
+
+## Project status: <span style="color: lime;">Active* (see migration note above)</span>
 
 ## What is this about?
 This project is an attempt at learning how CPUs work by implementing one from scratch, for
